@@ -1,0 +1,45 @@
+package io.bytestreams.codec.core;
+
+import io.bytestreams.codec.core.util.InputStreams;
+import io.bytestreams.codec.core.util.Preconditions;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+/**
+ * A codec for fixed-length binary data.
+ */
+public class BinaryCodec implements Codec<byte[]> {
+  private static final String ERROR_MESSAGE = "value must be of length %d, but was [%d]";
+  private final int length;
+
+  /**
+   * Creates a new binary codec with the specified fixed length.
+   *
+   * @param length the expected length of byte arrays
+   */
+  public BinaryCodec(int length) {
+    this.length = length;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @throws IllegalArgumentException if the byte array length does not match the expected length
+   */
+  @Override
+  public void encode(byte[] value, OutputStream output) throws IOException {
+    Preconditions.check(value.length == length, ERROR_MESSAGE, length, value.length);
+    output.write(value);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @throws java.io.EOFException if the stream ends before the required bytes are read
+   */
+  @Override
+  public byte[] decode(InputStream input) throws IOException {
+    return InputStreams.readFully(input, length);
+  }
+}

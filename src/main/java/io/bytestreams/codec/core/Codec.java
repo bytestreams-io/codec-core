@@ -1,11 +1,11 @@
-package io.bytestreams.codec.core.api;
+package io.bytestreams.codec.core;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Abstract base class for encoding and decoding values to and from byte streams.
+ * Interface for encoding and decoding values to and from byte streams.
  *
  * @param <V> the type of value this codec handles
  */

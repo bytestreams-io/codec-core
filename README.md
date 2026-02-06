@@ -36,11 +36,12 @@ int value = codec.decode(inputStream);
 
 ## Available Codecs
 
-| Codec | Type | Range |
-|-------|------|-------|
+| Codec | Type | Description |
+|-------|------|-------------|
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
-| `UnsignedByteCodec` | `Integer` | 0 - 255 |
-| `UnsignedShortCodec` | `Integer` | 0 - 65535 |
+| `HexStringCodec` | `String` | Fixed-length hexadecimal string |
+| `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
+| `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
 
 ## License
 

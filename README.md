@@ -38,6 +38,7 @@ int value = codec.decode(inputStream);
 
 | Codec | Type | Description |
 |-------|------|-------------|
+| `BcdStringCodec` | `String` | Fixed-length BCD (Binary-Coded Decimal) string |
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
 | `HexStringCodec` | `String` | Fixed-length hexadecimal string |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |

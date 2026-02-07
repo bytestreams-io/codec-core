@@ -17,6 +17,15 @@ class StringIntegerCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of();
 
   @Test
+  void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
+    BcdStringCodec bcdCodec = new BcdStringCodec(2);
+    StringIntegerCodec codec = new StringIntegerCodec(bcdCodec);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(value, output);
+    assertThat(HEX_FORMAT.formatHex(output.toByteArray())).isEqualTo(String.format("%02d", value));
+  }
+
+  @Test
   void encode(
       @Randomize(intMin = 0, intMax = Integer.MAX_VALUE) int value,
       @Randomize(intMin = 2, intMax = 17) int radix)

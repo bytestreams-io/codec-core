@@ -17,6 +17,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 class BinaryCodecTest {
 
   @Test
+  void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
+    BinaryCodec codec = new BinaryCodec(length);
+    assertThat(codec.getLength()).isEqualTo(length);
+  }
+
+  @Test
   void encode(@Randomize byte[] value) throws IOException {
     BinaryCodec decoder = new BinaryCodec(value.length);
     ByteArrayOutputStream output = new ByteArrayOutputStream();

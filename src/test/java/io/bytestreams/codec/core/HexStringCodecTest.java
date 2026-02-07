@@ -19,6 +19,12 @@ class HexStringCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of();
 
   @Test
+  void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
+    HexStringCodec codec = new HexStringCodec(length);
+    assertThat(codec.getLength()).isEqualTo(length);
+  }
+
+  @Test
   void encode(@Randomize(intMin = 0, intMax = 0xFF) int value) throws IOException {
     HexStringCodec codec = new HexStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();

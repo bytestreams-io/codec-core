@@ -18,6 +18,12 @@ class BcdStringCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of();
 
   @Test
+  void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
+    BcdStringCodec codec = new BcdStringCodec(length);
+    assertThat(codec.getLength()).isEqualTo(length);
+  }
+
+  @Test
   void encode(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
     BcdStringCodec codec = new BcdStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();

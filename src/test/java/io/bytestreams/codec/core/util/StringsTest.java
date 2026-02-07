@@ -30,4 +30,29 @@ class StringsTest {
   void padStart_exceeds_length() {
     assertThat(Strings.padStart("abcde", 3, '0')).isEqualTo("abcde");
   }
+
+  @Test
+  void padEnd() {
+    assertThat(Strings.padEnd("abc", 5, '0')).isEqualTo("abc00");
+  }
+
+  @Test
+  void padEnd_empty_string() {
+    assertThat(Strings.padEnd("", 3, '0')).isEqualTo("000");
+  }
+
+  @Test
+  void padEnd_different_padding() {
+    assertThat(Strings.padEnd("abc", 5, ' ')).isEqualTo("abc  ");
+  }
+
+  @Test
+  void padEnd_already_at_length() {
+    assertThat(Strings.padEnd("abc", 3, '0')).isEqualTo("abc");
+  }
+
+  @Test
+  void padEnd_exceeds_length() {
+    assertThat(Strings.padEnd("abcde", 3, '0')).isEqualTo("abcde");
+  }
 }

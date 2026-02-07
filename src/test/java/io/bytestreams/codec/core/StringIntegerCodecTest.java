@@ -1,0 +1,103 @@
+package io.bytestreams.codec.core;
+
+import static io.github.lyang.randomparamsresolver.RandomParametersExtension.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import io.github.lyang.randomparamsresolver.RandomParametersExtension;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HexFormat;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+@ExtendWith(RandomParametersExtension.class)
+class StringIntegerCodecTest {
+  private static final HexFormat HEX_FORMAT = HexFormat.of();
+
+  @Test
+  void encode(
+      @Randomize(intMin = 0, intMax = Integer.MAX_VALUE) int value,
+      @Randomize(intMin = 2, intMax = 17) int radix)
+      throws IOException {
+    String string = Integer.toString(value, radix);
+    int length = string.length() + (string.length() % 2);
+    HexStringCodec hexCodec = new HexStringCodec(length);
+    StringIntegerCodec codec = new StringIntegerCodec(hexCodec, radix);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(value, output);
+    assertThat(HEX_FORMAT.formatHex(output.toByteArray())).endsWith(string);
+  }
+
+  @Test
+  void encode_overflow() {
+    HexStringCodec hexCodec = new HexStringCodec(2);
+    StringIntegerCodec codec = new StringIntegerCodec(hexCodec, 16);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    int value = 0x1FF;
+    assertThatThrownBy(() -> codec.encode(value, output))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("value length must be less than or equal to %d, but was [%d]", 2, 3);
+  }
+
+  @Test
+  void invalid_radix_too_low() {
+    HexStringCodec hexCodec = new HexStringCodec(2);
+    assertThatThrownBy(() -> new StringIntegerCodec(hexCodec, 1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "radix must be between %d and %d, but was [%d]",
+            Character.MIN_RADIX, Character.MAX_RADIX, 1);
+  }
+
+  @Test
+  void invalid_radix_too_high() {
+    HexStringCodec hexCodec = new HexStringCodec(2);
+    assertThatThrownBy(() -> new StringIntegerCodec(hexCodec, 37))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "radix must be between %d and %d, but was [%d]",
+            Character.MIN_RADIX, Character.MAX_RADIX, 37);
+  }
+
+  @Test
+  void decode(
+      @Randomize(intMin = 0, intMax = Integer.MAX_VALUE) int value,
+      @Randomize(intMin = 2, intMax = 17) int radix)
+      throws IOException {
+    String string = Integer.toString(value, radix);
+    int length = string.length() + (string.length() % 2);
+    String padded = "0".repeat(length - string.length()) + string;
+    HexStringCodec hexCodec = new HexStringCodec(length);
+    StringIntegerCodec codec = new StringIntegerCodec(hexCodec, radix);
+    ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
+    assertThat(codec.decode(input)).isEqualTo(value);
+  }
+
+  @Test
+  void decode_overflow() {
+    HexStringCodec hexCodec = new HexStringCodec(16);
+    StringIntegerCodec codec = new StringIntegerCodec(hexCodec, 16);
+    // ffffffffffffffff exceeds Integer.MAX_VALUE
+    ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("ffffffffffffffff"));
+    assertThatThrownBy(() -> codec.decode(input))
+        .isInstanceOf(NumberFormatException.class)
+        .hasMessageContaining("For input string");
+  }
+
+  @Test
+  void roundtrip(
+      @Randomize(intMin = 0, intMax = Integer.MAX_VALUE) int value,
+      @Randomize(intMin = 2, intMax = 17) int radix)
+      throws IOException {
+    String string = Integer.toString(value, radix);
+    int length = string.length() + (string.length() % 2);
+    HexStringCodec hexCodec = new HexStringCodec(length);
+    StringIntegerCodec codec = new StringIntegerCodec(hexCodec, radix);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(value, output);
+    ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+    assertThat(codec.decode(input)).isEqualTo(value);
+  }
+}

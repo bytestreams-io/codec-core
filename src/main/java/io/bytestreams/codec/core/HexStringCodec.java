@@ -11,7 +11,7 @@ import java.util.HexFormat;
 /**
  * A codec for fixed-length hexadecimal strings.
  */
-public class HexStringCodec implements Codec<String> {
+public class HexStringCodec implements FixedLengthCodec<String> {
   private static final String ERROR_MESSAGE =
       "value length must be less than or equal to %d, but was [%d]";
   private static final HexFormat HEX_FORMAT = HexFormat.of();
@@ -24,6 +24,16 @@ public class HexStringCodec implements Codec<String> {
    */
   public HexStringCodec(int length) {
     this.length = length;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @return the number of hex digits
+   */
+  @Override
+  public int getLength() {
+    return length;
   }
 
   private static int toByteSize(int digits) {

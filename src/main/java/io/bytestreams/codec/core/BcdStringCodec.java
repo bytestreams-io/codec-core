@@ -27,6 +27,16 @@ public class BcdStringCodec extends HexStringCodec {
   /**
    * {@inheritDoc}
    *
+   * @return the number of BCD digits
+   */
+  @Override
+  public int getLength() {
+    return super.getLength();
+  }
+
+  /**
+   * {@inheritDoc}
+   *
    * @throws IllegalArgumentException if the value contains non-digit characters
    */
   @Override

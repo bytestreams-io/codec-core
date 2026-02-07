@@ -41,6 +41,8 @@ int value = codec.decode(inputStream);
 | `BcdStringCodec` | `String` | Fixed-length BCD (Binary-Coded Decimal) string |
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
 | `HexStringCodec` | `String` | Fixed-length hexadecimal string |
+| `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |
+| `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
 | `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
 

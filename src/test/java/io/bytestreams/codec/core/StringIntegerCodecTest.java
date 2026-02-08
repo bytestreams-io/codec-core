@@ -1,6 +1,7 @@
 package io.bytestreams.codec.core;
 
 import static io.github.lyang.randomparamsresolver.RandomParametersExtension.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -104,6 +105,18 @@ class StringIntegerCodecTest {
     int length = string.length() + (string.length() % 2);
     HexStringCodec hexCodec = new HexStringCodec(length);
     StringIntegerCodec codec = new StringIntegerCodec(hexCodec, radix);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(value, output);
+    ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+    assertThat(codec.decode(input)).isEqualTo(value);
+  }
+
+  @Test
+  void roundtrip_with_code_point_string_codec(
+      @Randomize(intMin = 0, intMax = Integer.MAX_VALUE) int value) throws IOException {
+    String string = Integer.toString(value);
+    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    StringIntegerCodec codec = new StringIntegerCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
     ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());

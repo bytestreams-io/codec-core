@@ -40,6 +40,7 @@ int value = codec.decode(inputStream);
 |-------|------|-------------|
 | `BcdStringCodec` | `String` | Fixed-length BCD (Binary-Coded Decimal) string |
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
+| `CodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FormattedStringCodec` | `String` | String with configurable left/right padding |
 | `HexStringCodec` | `String` | Fixed-length hexadecimal string |
 | `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |

@@ -66,4 +66,14 @@ class BinaryCodecTest {
             "End of stream reached after reading %d bytes, bytes expected [%d]",
             value.length, value.length + 1);
   }
+
+  @Test
+  void constructor_non_positive_length() {
+    assertThatThrownBy(() -> new BinaryCodec(0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("0");
+    assertThatThrownBy(() -> new BinaryCodec(-1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("-1");
+  }
 }

@@ -86,4 +86,14 @@ class HexStringCodecTest {
         .hasMessage(
             "End of stream reached after reading %d bytes, bytes expected [%d]", value.length, 2);
   }
+
+  @Test
+  void constructor_non_positive_length() {
+    assertThatThrownBy(() -> new HexStringCodec(0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("0");
+    assertThatThrownBy(() -> new HexStringCodec(-1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("-1");
+  }
 }

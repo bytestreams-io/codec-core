@@ -47,6 +47,7 @@ int value = codec.decode(inputStream);
 | `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
 | `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
+| `VariableLengthCodec` | `V` | Variable-length value with length prefix |
 
 ## License
 

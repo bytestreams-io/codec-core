@@ -150,12 +150,31 @@ class CodePointStringCodecTest {
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
   }
 
-  @ParameterizedTest
-  @ValueSource(ints = {0, -1})
-  void constructor_non_positive_length(int length) {
-    assertThatThrownBy(() -> new CodePointStringCodec(length, UTF_8))
+  @Test
+  void constructor_negative_length() {
+    assertThatThrownBy(() -> new CodePointStringCodec(-1, UTF_8))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(String.valueOf(length));
+        .hasMessageContaining("-1");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
+  void encode_zero_length(String charsetName) throws IOException {
+    Charset charset = Charset.forName(charsetName);
+    CodePointStringCodec codec = new CodePointStringCodec(0, charset);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode("", output);
+    assertThat(output.toByteArray()).isEmpty();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
+  void decode_zero_length(String charsetName) throws IOException {
+    Charset charset = Charset.forName(charsetName);
+    CodePointStringCodec codec = new CodePointStringCodec(0, charset);
+    ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(charset));
+    assertThat(codec.decode(input)).isEmpty();
+    assertThat(input.available()).isEqualTo("hello".getBytes(charset).length);
   }
 
   @Test

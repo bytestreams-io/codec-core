@@ -16,11 +16,11 @@ public class BinaryCodec implements FixedLengthCodec<byte[]> {
   /**
    * Creates a new binary codec with the specified fixed length.
    *
-   * @param length the expected length of byte arrays (must be positive)
-   * @throws IllegalArgumentException if length is not positive
+   * @param length the expected length of byte arrays (must be non-negative)
+   * @throws IllegalArgumentException if length is negative
    */
   public BinaryCodec(int length) {
-    Preconditions.check(length > 0, "length must be positive, but was [%d]", length);
+    Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
   }
 

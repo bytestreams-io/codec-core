@@ -33,11 +33,11 @@ public interface CodePointReader {
   /**
    * Reads the specified number of code points from the stream.
    *
-   * @param count the number of code points to read (must be positive)
-   * @return the string containing the code points
+   * @param count the number of code points to read (must be non-negative)
+   * @return the string containing the code points, or empty string if count is 0
    * @throws EOFException if end of stream reached before reading the required code points
    * @throws IOException if an I/O error occurs
-   * @throws IllegalArgumentException if count is not positive
+   * @throws IllegalArgumentException if count is negative
    */
   String read(int count) throws IOException;
 }

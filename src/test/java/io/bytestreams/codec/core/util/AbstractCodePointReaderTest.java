@@ -134,15 +134,23 @@ abstract class AbstractCodePointReaderTest {
     assertThat(reader.read(5)).isEqualTo(value);
   }
 
-  @ParameterizedTest
-  @ValueSource(ints = {0, -1})
-  void read_non_positive(int count) {
+  @Test
+  void read_zero() throws IOException {
     InputStream input = createInputStream("hello".getBytes(UTF_8));
     CodePointReader reader = createReader(input, getDecoder(UTF_8));
 
-    assertThatThrownBy(() -> reader.read(count))
+    assertThat(reader.read(0)).isEmpty();
+    assertThat(input.available()).isEqualTo(5);
+  }
+
+  @Test
+  void read_negative() {
+    InputStream input = createInputStream("hello".getBytes(UTF_8));
+    CodePointReader reader = createReader(input, getDecoder(UTF_8));
+
+    assertThatThrownBy(() -> reader.read(-1))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(String.valueOf(count));
+        .hasMessageContaining("-1");
   }
 
   @Test

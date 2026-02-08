@@ -30,7 +30,10 @@ class UnbufferedCodePointReader implements CodePointReader {
 
   @Override
   public String read(int count) throws IOException {
-    Preconditions.check(count > 0, "count must be positive, but was [%d]", count);
+    Preconditions.check(count >= 0, "count must be non-negative, but was [%d]", count);
+    if (count == 0) {
+      return "";
+    }
     StringBuilder result = new StringBuilder(count);
     for (int i = 0; i < count; i++) {
       int codePoint = readCodePoint();

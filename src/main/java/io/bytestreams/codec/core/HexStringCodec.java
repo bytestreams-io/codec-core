@@ -20,11 +20,11 @@ public class HexStringCodec implements FixedLengthCodec<String> {
   /**
    * Creates a new hex string codec with the specified length.
    *
-   * @param length the number of hex digits (must be positive)
-   * @throws IllegalArgumentException if length is not positive
+   * @param length the number of hex digits (must be non-negative)
+   * @throws IllegalArgumentException if length is negative
    */
   public HexStringCodec(int length) {
-    Preconditions.check(length > 0, "length must be positive, but was [%d]", length);
+    Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
   }
 

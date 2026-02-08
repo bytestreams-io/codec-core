@@ -9,28 +9,32 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.MalformedInputException;
 
-public class CodePointStreamReader {
+/**
+ * Code point reader that reads one byte at a time until a complete code point is decoded.
+ *
+ * <p>This implementation works with any input stream but may be slower than {@link
+ * BufferedCodePointReader} for streams that support mark/reset.
+ */
+class UnbufferedCodePointReader implements CodePointReader {
   private final InputStream input;
   private final CharsetDecoder decoder;
   private final ByteBuffer byteBuffer;
   private final CharBuffer charBuffer;
 
-  public CodePointStreamReader(InputStream input, CharsetDecoder decoder) {
+  UnbufferedCodePointReader(InputStream input, CharsetDecoder decoder) {
     this.input = input;
     this.decoder = decoder;
     this.byteBuffer = ByteBuffer.allocate(8);
     this.charBuffer = CharBuffer.allocate(2);
   }
 
+  @Override
   public String read(int count) throws IOException {
     Preconditions.check(count > 0, "count must be positive, but was [%d]", count);
     StringBuilder result = new StringBuilder(count);
     for (int i = 0; i < count; i++) {
       int codePoint = readCodePoint();
       if (codePoint == -1) {
-        if (i == 0) {
-          return null;
-        }
         throw new EOFException("Read %d code point(s), expected %d".formatted(i, count));
       }
       result.appendCodePoint(codePoint);

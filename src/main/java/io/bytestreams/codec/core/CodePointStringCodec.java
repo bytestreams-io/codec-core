@@ -1,6 +1,6 @@
 package io.bytestreams.codec.core;
 
-import io.bytestreams.codec.core.util.CodePointStreamReader;
+import io.bytestreams.codec.core.util.CodePointReader;
 import io.bytestreams.codec.core.util.InputStreams;
 import io.bytestreams.codec.core.util.Preconditions;
 import java.io.EOFException;
@@ -15,8 +15,8 @@ import java.nio.charset.CharsetDecoder;
  *
  * <p>The length is specified in code points, not bytes or chars. For single-byte charsets (e.g.,
  * ISO-8859-1, US-ASCII), decoding uses simple byte-to-string conversion. For multi-byte charsets
- * (e.g., UTF-8, UTF-16), decoding uses {@link CodePointStreamReader} to read exactly the required
- * number of code points.
+ * (e.g., UTF-8, UTF-16), decoding uses {@link CodePointReader} to read exactly the required number
+ * of code points.
  */
 public class CodePointStringCodec implements FixedLengthCodec<String> {
   private final int length;
@@ -86,10 +86,6 @@ public class CodePointStringCodec implements FixedLengthCodec<String> {
     if (singleByteCharset) {
       return new String(InputStreams.readFully(input, length), charset);
     }
-    String result = new CodePointStreamReader(input, decoder).read(length);
-    if (result == null) {
-      throw new EOFException("End of stream reached, expected %d code points".formatted(length));
-    }
-    return result;
+    return CodePointReader.create(input, decoder).read(length);
   }
 }

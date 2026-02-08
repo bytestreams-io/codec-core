@@ -88,12 +88,25 @@ class HexStringCodecTest {
   }
 
   @Test
-  void constructor_non_positive_length() {
-    assertThatThrownBy(() -> new HexStringCodec(0))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("0");
+  void constructor_negative_length() {
     assertThatThrownBy(() -> new HexStringCodec(-1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("-1");
+  }
+
+  @Test
+  void encode_zero_length() throws IOException {
+    HexStringCodec codec = new HexStringCodec(0);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode("", output);
+    assertThat(output.toByteArray()).isEmpty();
+  }
+
+  @Test
+  void decode_zero_length() throws IOException {
+    HexStringCodec codec = new HexStringCodec(0);
+    ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0x12, 0x34});
+    assertThat(codec.decode(input)).isEmpty();
+    assertThat(input.available()).isEqualTo(2);
   }
 }

@@ -68,12 +68,25 @@ class BinaryCodecTest {
   }
 
   @Test
-  void constructor_non_positive_length() {
-    assertThatThrownBy(() -> new BinaryCodec(0))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("0");
+  void constructor_negative_length() {
     assertThatThrownBy(() -> new BinaryCodec(-1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("-1");
+  }
+
+  @Test
+  void encode_zero_length() throws IOException {
+    BinaryCodec codec = new BinaryCodec(0);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(new byte[0], output);
+    assertThat(output.toByteArray()).isEmpty();
+  }
+
+  @Test
+  void decode_zero_length() throws IOException {
+    BinaryCodec codec = new BinaryCodec(0);
+    ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {1, 2, 3});
+    assertThat(codec.decode(input)).isEmpty();
+    assertThat(input.available()).isEqualTo(3);
   }
 }

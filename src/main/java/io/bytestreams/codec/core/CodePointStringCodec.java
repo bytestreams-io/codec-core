@@ -27,9 +27,9 @@ public class CodePointStringCodec implements FixedLengthCodec<String> {
   /**
    * Creates a new character string codec.
    *
-   * @param length the number of code points to read/write (must be positive)
+   * @param length the number of code points to read/write (must be non-negative)
    * @param charset the charset to use for encoding and decoding
-   * @throws IllegalArgumentException if length is not positive
+   * @throws IllegalArgumentException if length is negative
    */
   public CodePointStringCodec(int length, Charset charset) {
     this(length, charset.newDecoder());
@@ -38,12 +38,12 @@ public class CodePointStringCodec implements FixedLengthCodec<String> {
   /**
    * Creates a new character string codec with a custom decoder.
    *
-   * @param length the number of code points to read/write (must be positive)
+   * @param length the number of code points to read/write (must be non-negative)
    * @param decoder the decoder to use for decoding (charset is derived from decoder)
-   * @throws IllegalArgumentException if length is not positive
+   * @throws IllegalArgumentException if length is negative
    */
   public CodePointStringCodec(int length, CharsetDecoder decoder) {
-    Preconditions.check(length > 0, "length must be positive, but was [%d]", length);
+    Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
     this.charset = decoder.charset();
     this.decoder = decoder;

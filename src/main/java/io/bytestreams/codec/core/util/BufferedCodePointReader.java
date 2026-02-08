@@ -26,7 +26,10 @@ class BufferedCodePointReader implements CodePointReader {
 
   @Override
   public String read(int count) throws IOException {
-    Preconditions.check(count > 0, "count must be positive, but was [%d]", count);
+    Preconditions.check(count >= 0, "count must be non-negative, but was [%d]", count);
+    if (count == 0) {
+      return "";
+    }
 
     int maxBytes = count * 4;
     input.mark(maxBytes);

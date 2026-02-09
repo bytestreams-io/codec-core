@@ -43,11 +43,12 @@ int value = codec.decode(inputStream);
 | `CodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FormattedStringCodec` | `String` | String with configurable left/right padding |
 | `HexStringCodec` | `String` | Fixed-length hexadecimal string |
+| `ListCodec<V>` | `List<V>` | List of values with configurable max items |
 | `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |
 | `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
 | `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
-| `VariableLengthCodec` | `V` | Variable-length value with length prefix |
+| `VariableLengthCodec<V>` | `V` | Variable-length value with length prefix |
 
 ## License
 

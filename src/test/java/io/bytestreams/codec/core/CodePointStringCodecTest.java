@@ -28,34 +28,39 @@ class CodePointStringCodecTest {
   }
 
   @Test
-  void encode_single_byte_charset(@Randomize String value) throws IOException {
-    CodePointStringCodec codec = new CodePointStringCodec(5, ISO_8859_1);
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-    codec.encode(value, output);
-
-    assertThat(output.toByteArray()).isEqualTo(value.getBytes(ISO_8859_1));
+  void constructor_negative_length() {
+    assertThatThrownBy(() -> new CodePointStringCodec(-1, UTF_8))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("-1");
   }
 
-  @Test
-  void encode_multi_byte_charset(@Randomize String value) throws IOException {
-    CodePointStringCodec codec = new CodePointStringCodec(5, UTF_8);
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-    codec.encode(value, output);
-
-    assertThat(output.toByteArray()).isEqualTo(value.getBytes(UTF_8));
+  @ParameterizedTest
+  @ValueSource(strings = {"US-ASCII", "IBM1047", "ISO-8859-1"})
+  void encode_single_byte_charset(
+      String charsetName, @Randomize(unicodeBlocks = "BASIC_LATIN") String value)
+      throws IOException {
+    verifyEncode(value, Charset.forName(charsetName));
   }
 
-  @Test
-  void encode_multi_byte_charset_cjk(
-      @Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value) throws IOException {
-    CodePointStringCodec codec = new CodePointStringCodec(5, UTF_8);
+  @ParameterizedTest
+  @ValueSource(strings = {"UTF-8", "UTF-16"})
+  void encode_multi_byte_charset(
+      String charsetName,
+      @Randomize(unicodeBlocks = {"CJK_UNIFIED_IDEOGRAPHS", "EMOTICONS"}) String value)
+      throws IOException {
+    verifyEncode(value, Charset.forName(charsetName));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
+  void encode_zero_length(String charsetName) throws IOException {
+    Charset charset = Charset.forName(charsetName);
+    CodePointStringCodec codec = new CodePointStringCodec(0, charset);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    codec.encode(value, output);
+    codec.encode("", output);
 
-    assertThat(output.toByteArray()).isEqualTo(value.getBytes(UTF_8));
+    assertThat(output.toByteArray()).isEmpty();
   }
 
   @Test
@@ -69,38 +74,32 @@ class CodePointStringCodecTest {
         .hasMessageContaining("5");
   }
 
-  @Test
-  void decode_single_byte_charset(@Randomize String value) throws IOException {
-    CodePointStringCodec codec = new CodePointStringCodec(5, ISO_8859_1);
-    ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(ISO_8859_1));
-
-    assertThat(codec.decode(input)).isEqualTo(value);
-  }
-
-  @Test
-  void decode_multi_byte_charset(@Randomize String value) throws IOException {
-    CodePointStringCodec codec = new CodePointStringCodec(5, UTF_8);
-    ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(UTF_8));
-
-    assertThat(codec.decode(input)).isEqualTo(value);
-  }
-
-  @Test
-  void decode_multi_byte_charset_cjk(
-      @Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value) throws IOException {
-    CodePointStringCodec codec = new CodePointStringCodec(5, UTF_8);
-    ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(UTF_8));
-
-    assertThat(codec.decode(input)).isEqualTo(value);
-  }
-
-  @Test
-  void decode_multi_byte_charset_emoji(@Randomize(unicodeBlocks = "EMOTICONS") String value)
+  @ParameterizedTest
+  @ValueSource(strings = {"US-ASCII", "IBM1047", "ISO-8859-1"})
+  void decode_single_byte_charset(
+      String charsetName, @Randomize(unicodeBlocks = "BASIC_LATIN") String value)
       throws IOException {
-    CodePointStringCodec codec = new CodePointStringCodec(5, UTF_8);
-    ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(UTF_8));
+    verifyDecode(value, Charset.forName(charsetName));
+  }
 
-    assertThat(codec.decode(input)).isEqualTo(value);
+  @ParameterizedTest
+  @ValueSource(strings = {"UTF-8", "UTF-16"})
+  void decode_multi_byte_charset(
+      String charsetName,
+      @Randomize(unicodeBlocks = {"CJK_UNIFIED_IDEOGRAPHS", "EMOTICONS"}) String value)
+      throws IOException {
+    verifyDecode(value, Charset.forName(charsetName));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
+  void decode_zero_length(String charsetName) throws IOException {
+    Charset charset = Charset.forName(charsetName);
+    CodePointStringCodec codec = new CodePointStringCodec(0, charset);
+    ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(charset));
+
+    assertThat(codec.decode(input)).isEmpty();
+    assertThat(input.available()).isEqualTo("hello".getBytes(charset).length);
   }
 
   @ParameterizedTest
@@ -151,33 +150,6 @@ class CodePointStringCodecTest {
   }
 
   @Test
-  void constructor_negative_length() {
-    assertThatThrownBy(() -> new CodePointStringCodec(-1, UTF_8))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("-1");
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
-  void encode_zero_length(String charsetName) throws IOException {
-    Charset charset = Charset.forName(charsetName);
-    CodePointStringCodec codec = new CodePointStringCodec(0, charset);
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode("", output);
-    assertThat(output.toByteArray()).isEmpty();
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
-  void decode_zero_length(String charsetName) throws IOException {
-    Charset charset = Charset.forName(charsetName);
-    CodePointStringCodec codec = new CodePointStringCodec(0, charset);
-    ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(charset));
-    assertThat(codec.decode(input)).isEmpty();
-    assertThat(input.available()).isEqualTo("hello".getBytes(charset).length);
-  }
-
-  @Test
   void decode_with_custom_decoder(@Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
       throws IOException {
     CodePointStringCodec codec =
@@ -188,6 +160,22 @@ class CodePointStringCodecTest {
                 .onMalformedInput(CodingErrorAction.REPLACE)
                 .onUnmappableCharacter(CodingErrorAction.REPLACE));
     ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(UTF_8));
+
+    assertThat(codec.decode(input)).isEqualTo(value);
+  }
+
+  private void verifyEncode(String value, Charset charset) throws IOException {
+    CodePointStringCodec codec = new CodePointStringCodec(5, charset);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    codec.encode(value, output);
+
+    assertThat(output.toByteArray()).isEqualTo(value.getBytes(charset));
+  }
+
+  private void verifyDecode(String value, Charset charset) throws IOException {
+    CodePointStringCodec codec = new CodePointStringCodec(5, charset);
+    ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(charset));
 
     assertThat(codec.decode(input)).isEqualTo(value);
   }

@@ -75,8 +75,9 @@ class ListCodecTest {
     Charset charset = Charset.forName(charsetName);
     ListCodec<String> codec = listCodec(charset, 5);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
+    List<String> values = List.of("12345", "abc");
 
-    assertThatThrownBy(() -> codec.encode(List.of("12345", "abc"), output))
+    assertThatThrownBy(() -> codec.encode(values, output))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -160,8 +161,7 @@ class ListCodecTest {
 
     List<String> decoded = codec.decode(input);
 
-    assertThat(decoded).isInstanceOf(LinkedList.class);
-    assertThat(decoded).containsExactly(value1, value2);
+    assertThat(decoded).isInstanceOf(LinkedList.class).containsExactly(value1, value2);
   }
 
   @Test
@@ -187,8 +187,7 @@ class ListCodecTest {
 
     List<String> decoded = codec.decode(input);
 
-    assertThat(decoded).isInstanceOf(LinkedList.class);
-    assertThat(decoded).containsExactly(value1);
+    assertThat(decoded).isInstanceOf(LinkedList.class).containsExactly(value1);
   }
 
   @Test
@@ -226,7 +225,9 @@ class ListCodecTest {
 
   @Test
   void constructor_null_list_supplier() {
-    assertThatThrownBy(() -> new ListCodec<>(new CodePointStringCodec(5, UTF_8), null, 10))
+    Codec<String> itemCodec = new CodePointStringCodec(5, UTF_8);
+
+    assertThatThrownBy(() -> new ListCodec<>(itemCodec, null, 10))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("listSupplier");
   }
@@ -244,7 +245,9 @@ class ListCodecTest {
 
   @Test
   void constructor_negative_max_items() {
-    assertThatThrownBy(() -> new ListCodec<>(new CodePointStringCodec(5, UTF_8), -1))
+    Codec<String> itemCodec = new CodePointStringCodec(5, UTF_8);
+
+    assertThatThrownBy(() -> new ListCodec<>(itemCodec, -1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("-1");
   }

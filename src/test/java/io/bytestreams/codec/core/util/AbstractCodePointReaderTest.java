@@ -44,23 +44,21 @@ abstract class AbstractCodePointReaderTest {
   @Test
   void read_utf8_multi_byte(@Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
       throws IOException {
-    InputStream input = createInputStream(value.getBytes(UTF_8));
-    CodePointReader reader = createReader(input, getDecoder(UTF_8));
-
-    assertThat(reader.read(1)).isEqualTo(value.substring(0, value.offsetByCodePoints(0, 1)));
-    String remaining = value.substring(value.offsetByCodePoints(0, 1));
-    assertThat(input.available()).isEqualTo(remaining.getBytes(UTF_8).length);
+    verifyReadOneCodePoint(value, UTF_8);
   }
 
   @Test
   void read_utf8_surrogate_pair(@Randomize(unicodeBlocks = "EMOTICONS") String value)
       throws IOException {
-    InputStream input = createInputStream(value.getBytes(UTF_8));
-    CodePointReader reader = createReader(input, getDecoder(UTF_8));
+    verifyReadOneCodePoint(value, UTF_8);
+  }
 
+  private void verifyReadOneCodePoint(String value, Charset charset) throws IOException {
+    InputStream input = createInputStream(value.getBytes(charset));
+    CodePointReader reader = createReader(input, getDecoder(charset));
     assertThat(reader.read(1)).isEqualTo(value.substring(0, value.offsetByCodePoints(0, 1)));
     String remaining = value.substring(value.offsetByCodePoints(0, 1));
-    assertThat(input.available()).isEqualTo(remaining.getBytes(UTF_8).length);
+    assertThat(input.available()).isEqualTo(remaining.getBytes(charset).length);
   }
 
   @ParameterizedTest
@@ -119,17 +117,18 @@ abstract class AbstractCodePointReaderTest {
 
   @Test
   void read_multiple(@Randomize String value) throws IOException {
-    InputStream input = createInputStream(value.getBytes(UTF_8));
-    CodePointReader reader = createReader(input, getDecoder(UTF_8));
-
-    assertThat(reader.read(5)).isEqualTo(value);
+    verifyReadMultiple(value, UTF_8);
   }
 
   @Test
   void read_multiple_multi_byte(@Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
       throws IOException {
-    InputStream input = createInputStream(value.getBytes(UTF_8));
-    CodePointReader reader = createReader(input, getDecoder(UTF_8));
+    verifyReadMultiple(value, UTF_8);
+  }
+
+  private void verifyReadMultiple(String value, Charset charset) throws IOException {
+    InputStream input = createInputStream(value.getBytes(charset));
+    CodePointReader reader = createReader(input, getDecoder(charset));
 
     assertThat(reader.read(5)).isEqualTo(value);
   }

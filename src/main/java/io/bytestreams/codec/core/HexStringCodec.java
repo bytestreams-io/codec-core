@@ -31,7 +31,7 @@ public class HexStringCodec implements FixedLengthCodec<String> {
   /**
    * {@inheritDoc}
    *
-   * @return the number of hex digits
+   * @return the number of digits
    */
   @Override
   public int getLength() {

@@ -119,19 +119,20 @@ class VariableLengthCodecTest {
 
   @Test
   void constructor_null_value_codec_provider() {
-    assertThatThrownBy(() -> new VariableLengthCodec<>(new UnsignedByteCodec(), null, v -> 0))
+    Codec<Integer> lengthCodec = new UnsignedByteCodec();
+
+    assertThatThrownBy(() -> new VariableLengthCodec<>(lengthCodec, null, v -> 0))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("valueCodecProvider");
   }
 
   @Test
   void constructor_null_length_provider() {
-    assertThatThrownBy(
-            () ->
-                new VariableLengthCodec<>(
-                    new UnsignedByteCodec(),
-                    length -> new CodePointStringCodec(length, UTF_8),
-                    null))
+    Codec<Integer> lengthCodec = new UnsignedByteCodec();
+    Function<Integer, Codec<String>> valueCodecProvider =
+        length -> new CodePointStringCodec(length, UTF_8);
+
+    assertThatThrownBy(() -> new VariableLengthCodec<>(lengthCodec, valueCodecProvider, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("lengthProvider");
   }

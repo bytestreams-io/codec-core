@@ -97,7 +97,7 @@ class OrderedObjectCodecTest {
 
     TestObject decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
-    assertThat(decoded.getId()).isEqualTo(0);
+    assertThat(decoded.getId()).isZero();
     assertThat(decoded.getTag()).isNull();
   }
 
@@ -161,86 +161,81 @@ class OrderedObjectCodecTest {
 
   @Test
   void builder_null_name() {
-    assertThatThrownBy(
-            () ->
-                OrderedObjectCodec.<TestObject>builder()
-                    .field(null, new UnsignedShortCodec(), TestObject::getId, TestObject::setId))
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
+    Codec<Integer> codec = new UnsignedShortCodec();
+
+    assertThatThrownBy(() -> builder.field(null, codec, TestObject::getId, TestObject::setId))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("name");
   }
 
   @Test
   void builder_null_codec() {
-    assertThatThrownBy(
-            () ->
-                OrderedObjectCodec.<TestObject>builder()
-                    .field("id", null, TestObject::getId, TestObject::setId))
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
+
+    assertThatThrownBy(() -> builder.field("id", null, TestObject::getId, TestObject::setId))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("codec");
   }
 
   @Test
   void builder_null_getter() {
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
     Codec<Integer> codec = new UnsignedShortCodec();
 
-    assertThatThrownBy(
-            () ->
-                OrderedObjectCodec.<TestObject>builder()
-                    .field("id", codec, null, TestObject::setId))
+    assertThatThrownBy(() -> builder.field("id", codec, null, TestObject::setId))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("getter");
   }
 
   @Test
   void builder_null_setter() {
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
     Codec<Integer> codec = new UnsignedShortCodec();
 
-    assertThatThrownBy(
-            () ->
-                OrderedObjectCodec.<TestObject>builder()
-                    .field("id", codec, TestObject::getId, null))
+    assertThatThrownBy(() -> builder.field("id", codec, TestObject::getId, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("setter");
   }
 
   @Test
   void builder_null_presence() {
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
     Codec<Integer> codec = new UnsignedShortCodec();
 
-    assertThatThrownBy(
-            () ->
-                OrderedObjectCodec.<TestObject>builder()
-                    .field("id", codec, TestObject::getId, TestObject::setId, null))
+    assertThatThrownBy(() -> builder.field("id", codec, TestObject::getId, TestObject::setId, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("presence");
   }
 
   @Test
   void builder_null_supplier() {
-    assertThatThrownBy(
-            () ->
-                OrderedObjectCodec.<TestObject>builder()
-                    .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
-                    .supplier(null))
+    OrderedObjectCodec.Builder<TestObject> builder =
+        OrderedObjectCodec.<TestObject>builder()
+            .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId);
+
+    assertThatThrownBy(() -> builder.supplier(null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("supplier");
   }
 
   @Test
   void builder_missing_supplier() {
-    assertThatThrownBy(
-            () ->
-                OrderedObjectCodec.<TestObject>builder()
-                    .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
-                    .build())
+    OrderedObjectCodec.Builder<TestObject> builder =
+        OrderedObjectCodec.<TestObject>builder()
+            .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId);
+
+    assertThatThrownBy(builder::build)
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("supplier");
   }
 
   @Test
   void builder_no_fields() {
-    assertThatThrownBy(
-            () -> OrderedObjectCodec.<TestObject>builder().supplier(TestObject::new).build())
+    OrderedObjectCodec.Builder<TestObject> builder =
+        OrderedObjectCodec.<TestObject>builder().supplier(TestObject::new);
+
+    assertThatThrownBy(builder::build)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("at least one field");
   }

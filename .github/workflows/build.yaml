@@ -56,7 +56,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: SonarQube
-        if: github.ref_name == github.event.repository.default_branch
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar

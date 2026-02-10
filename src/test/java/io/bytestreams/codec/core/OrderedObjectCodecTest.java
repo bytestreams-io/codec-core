@@ -24,7 +24,7 @@ class OrderedObjectCodecTest {
                 new CodePointStringCodec(5, UTF_8),
                 TestObject::getName,
                 TestObject::setName)
-            .supplier(TestObject::new)
+            .factory(TestObject::new)
             .build();
 
     TestObject original = new TestObject();
@@ -53,7 +53,7 @@ class OrderedObjectCodecTest {
                 TestObject::getTag,
                 TestObject::setTag,
                 obj -> obj.getId() > 0)
-            .supplier(TestObject::new)
+            .factory(TestObject::new)
             .build();
 
     TestObject original = new TestObject();
@@ -82,7 +82,7 @@ class OrderedObjectCodecTest {
                 TestObject::getTag,
                 TestObject::setTag,
                 obj -> obj.getId() > 0)
-            .supplier(TestObject::new)
+            .factory(TestObject::new)
             .build();
 
     TestObject original = new TestObject();
@@ -108,7 +108,7 @@ class OrderedObjectCodecTest {
         OrderedObjectCodec.<TestObject>builder()
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
             .field("data", new BinaryCodec(5), obj -> new byte[3], (obj, v) -> {})
-            .supplier(TestObject::new)
+            .factory(TestObject::new)
             .build();
 
     TestObject obj = new TestObject();
@@ -126,7 +126,7 @@ class OrderedObjectCodecTest {
     OrderedObjectCodec<TestObject> codec =
         OrderedObjectCodec.<TestObject>builder()
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
-            .supplier(TestObject::new)
+            .factory(TestObject::new)
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
@@ -147,7 +147,7 @@ class OrderedObjectCodecTest {
                 new CodePointStringCodec(5, UTF_8),
                 TestObject::getName,
                 TestObject::setName)
-            .supplier(TestObject::new)
+            .factory(TestObject::new)
             .build();
 
     // Only 2 bytes for id, missing name
@@ -209,31 +209,31 @@ class OrderedObjectCodecTest {
   }
 
   @Test
-  void builder_null_supplier() {
+  void builder_null_factory() {
     OrderedObjectCodec.Builder<TestObject> builder =
         OrderedObjectCodec.<TestObject>builder()
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId);
 
-    assertThatThrownBy(() -> builder.supplier(null))
+    assertThatThrownBy(() -> builder.factory(null))
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("supplier");
+        .hasMessageContaining("factory");
   }
 
   @Test
-  void builder_missing_supplier() {
+  void builder_missing_factory() {
     OrderedObjectCodec.Builder<TestObject> builder =
         OrderedObjectCodec.<TestObject>builder()
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId);
 
     assertThatThrownBy(builder::build)
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("supplier");
+        .hasMessageContaining("factory");
   }
 
   @Test
   void builder_no_fields() {
     OrderedObjectCodec.Builder<TestObject> builder =
-        OrderedObjectCodec.<TestObject>builder().supplier(TestObject::new);
+        OrderedObjectCodec.<TestObject>builder().factory(TestObject::new);
 
     assertThatThrownBy(builder::build)
         .isInstanceOf(IllegalArgumentException.class)
@@ -241,18 +241,18 @@ class OrderedObjectCodecTest {
   }
 
   @Test
-  void supplier_returns_null() {
+  void factory_returns_null() {
     OrderedObjectCodec<TestObject> codec =
         OrderedObjectCodec.<TestObject>builder()
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
-            .supplier(() -> null)
+            .factory(() -> null)
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0, 1});
 
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("supplier.get()");
+        .hasMessageContaining("factory.get()");
   }
 
   @Test
@@ -260,14 +260,14 @@ class OrderedObjectCodecTest {
     OrderedObjectCodec<InnerObject> innerCodec =
         OrderedObjectCodec.<InnerObject>builder()
             .field("value", new UnsignedByteCodec(), InnerObject::getValue, InnerObject::setValue)
-            .supplier(InnerObject::new)
+            .factory(InnerObject::new)
             .build();
 
     OrderedObjectCodec<OuterObject> outerCodec =
         OrderedObjectCodec.<OuterObject>builder()
             .field("id", new UnsignedShortCodec(), OuterObject::getId, OuterObject::setId)
             .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
-            .supplier(OuterObject::new)
+            .factory(OuterObject::new)
             .build();
 
     // Only provide id bytes, not inner.value
@@ -298,14 +298,14 @@ class OrderedObjectCodecTest {
     OrderedObjectCodec<InnerObject> innerCodec =
         OrderedObjectCodec.<InnerObject>builder()
             .field("value", throwingCodec, InnerObject::getValue, InnerObject::setValue)
-            .supplier(InnerObject::new)
+            .factory(InnerObject::new)
             .build();
 
     OrderedObjectCodec<OuterObject> outerCodec =
         OrderedObjectCodec.<OuterObject>builder()
             .field("id", new UnsignedShortCodec(), OuterObject::getId, OuterObject::setId)
             .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
-            .supplier(OuterObject::new)
+            .factory(OuterObject::new)
             .build();
 
     OuterObject obj = new OuterObject();
@@ -324,14 +324,14 @@ class OrderedObjectCodecTest {
     OrderedObjectCodec<InnerObject> innerCodec =
         OrderedObjectCodec.<InnerObject>builder()
             .field("value", new UnsignedByteCodec(), InnerObject::getValue, InnerObject::setValue)
-            .supplier(InnerObject::new)
+            .factory(InnerObject::new)
             .build();
 
     OrderedObjectCodec<OuterObject> outerCodec =
         OrderedObjectCodec.<OuterObject>builder()
             .field("id", new UnsignedShortCodec(), OuterObject::getId, OuterObject::setId)
             .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
-            .supplier(OuterObject::new)
+            .factory(OuterObject::new)
             .build();
 
     OuterObject original = new OuterObject();

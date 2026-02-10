@@ -45,6 +45,7 @@ int value = codec.decode(inputStream);
 | `HexStringCodec` | `String` | Fixed-length hexadecimal string |
 | `ListCodec<V>` | `List<V>` | List of values with configurable max items |
 | `OrderedObjectCodec<T>` | `T` | Object with ordered fields, supports optional fields |
+| `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
 | `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |
 | `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |

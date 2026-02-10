@@ -53,6 +53,9 @@ int value = codec.decode(inputStream);
 | `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |
 | `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
 | `StringShortCodec` | `Short` | Short encoded as a string with configurable radix |
+| `ShortCodec` | `Short` | Signed short (-32768 to 32767) |
+| `IntegerCodec` | `Integer` | Signed integer (-2147483648 to 2147483647) |
+| `LongCodec` | `Long` | Signed long (-2^63 to 2^63-1) |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
 | `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
 | `VariableLengthCodec<V>` | `V` | Variable-length value with length prefix |

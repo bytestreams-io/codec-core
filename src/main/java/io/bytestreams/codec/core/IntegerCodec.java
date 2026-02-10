@@ -3,7 +3,7 @@ package io.bytestreams.codec.core;
 import java.nio.ByteBuffer;
 
 /**
- * A codec for signed integer values.
+ * A codec for signed integer values (-2147483648 to 2147483647).
  */
 public class IntegerCodec extends BinaryNumberCodec<Integer> {
 

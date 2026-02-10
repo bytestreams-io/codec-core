@@ -1,15 +1,19 @@
 package io.bytestreams.codec.core;
 
+import static io.github.lyang.randomparamsresolver.RandomParametersExtension.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.lyang.randomparamsresolver.RandomParametersExtension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(RandomParametersExtension.class)
 class LongCodecTest {
   private final LongCodec codec = new LongCodec();
 
@@ -19,8 +23,7 @@ class LongCodecTest {
   }
 
   @Test
-  void encode() throws IOException {
-    long value = 1234567890123456789L;
+  void encode(@Randomize long value) throws IOException {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
     assertThat(output.toByteArray())
@@ -28,36 +31,10 @@ class LongCodecTest {
   }
 
   @Test
-  void encode_negative() throws IOException {
-    long value = -1234567890123456789L;
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode(value, output);
-    assertThat(output.toByteArray())
-        .isEqualTo(ByteBuffer.allocate(Long.BYTES).putLong(value).array());
-  }
-
-  @Test
-  void decode() throws IOException {
-    long expected = 1234567890123456789L;
-    byte[] bytes = ByteBuffer.allocate(Long.BYTES).putLong(expected).array();
-    ByteArrayInputStream input = new ByteArrayInputStream(bytes);
-    assertThat(codec.decode(input)).isEqualTo(expected);
-  }
-
-  @Test
-  void decode_negative() throws IOException {
-    long expected = -1234567890123456789L;
-    byte[] bytes = ByteBuffer.allocate(Long.BYTES).putLong(expected).array();
-    ByteArrayInputStream input = new ByteArrayInputStream(bytes);
-    assertThat(codec.decode(input)).isEqualTo(expected);
-  }
-
-  @Test
-  void decode_only_reads_required_bytes() throws IOException {
-    byte[] bytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
-    ByteArrayInputStream input = new ByteArrayInputStream(bytes);
-    codec.decode(input);
-    assertThat(input.available()).isEqualTo(2);
+  void decode(@Randomize(length = 10) byte[] value) throws IOException {
+    ByteArrayInputStream input = new ByteArrayInputStream(value);
+    assertThat(codec.decode(input)).isEqualTo(ByteBuffer.wrap(value, 0, Long.BYTES).getLong());
+    assertThat(input.available()).isEqualTo(value.length - Long.BYTES);
   }
 
   @Test

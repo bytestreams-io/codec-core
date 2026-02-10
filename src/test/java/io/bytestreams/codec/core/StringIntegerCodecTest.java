@@ -92,8 +92,9 @@ class StringIntegerCodecTest {
     // ffffffffffffffff exceeds Integer.MAX_VALUE
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("ffffffffffffffff"));
     assertThatThrownBy(() -> codec.decode(input))
-        .isInstanceOf(NumberFormatException.class)
-        .hasMessageContaining("For input string");
+        .isInstanceOf(CodecException.class)
+        .hasMessageContaining("failed to parse number from string")
+        .hasCauseInstanceOf(NumberFormatException.class);
   }
 
   @Test

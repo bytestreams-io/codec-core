@@ -40,6 +40,7 @@ int value = codec.decode(inputStream);
 |-------|------|-------------|
 | `BcdStringCodec` | `String` | Fixed-length BCD (Binary-Coded Decimal) string |
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
+| `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
 | `CodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FormattedStringCodec` | `String` | String with configurable left/right padding |
 | `HexStringCodec` | `String` | Fixed-length hexadecimal string |
@@ -56,7 +57,10 @@ int value = codec.decode(inputStream);
 | `ShortCodec` | `Short` | Signed short (-32768 to 32767) |
 | `IntegerCodec` | `Integer` | Signed integer (-2147483648 to 2147483647) |
 | `LongCodec` | `Long` | Signed long (-2^63 to 2^63-1) |
+| `FloatCodec` | `Float` | Float (IEEE 754 single-precision, 4 bytes) |
+| `DoubleCodec` | `Double` | Double (IEEE 754 double-precision, 8 bytes) |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
+| `UnsignedIntegerCodec` | `Long` | Unsigned integer (0 - 4294967295) |
 | `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
 | `VariableLengthCodec<V>` | `V` | Variable-length value with length prefix |
 

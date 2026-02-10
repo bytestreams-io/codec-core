@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  *     .field("content", contentCodec, Message::getContent, Message::setContent)
  *     .field("tag", tagCodec, Message::getTag, Message::setTag,
  *            msg -> msg.getId() > 0)  // optional, based on earlier field
- *     .supplier(Message::new)
+ *     .factory(Message::new)
  *     .build();
  * }</pre>
  *
@@ -37,11 +37,11 @@ import java.util.function.Supplier;
 public class OrderedObjectCodec<T> implements Codec<T> {
 
   private final List<FieldCodec<T, ?>> fields;
-  private final Supplier<T> supplier;
+  private final Supplier<T> factory;
 
-  OrderedObjectCodec(List<FieldCodec<T, ?>> fields, Supplier<T> supplier) {
+  OrderedObjectCodec(List<FieldCodec<T, ?>> fields, Supplier<T> factory) {
     this.fields = List.copyOf(fields);
-    this.supplier = supplier;
+    this.factory = factory;
   }
 
   /**
@@ -63,7 +63,7 @@ public class OrderedObjectCodec<T> implements Codec<T> {
 
   @Override
   public T decode(InputStream input) throws IOException {
-    T instance = Objects.requireNonNull(supplier.get(), "supplier.get() returned null");
+    T instance = Objects.requireNonNull(factory.get(), "factory.get() returned null");
     for (FieldCodec<T, ?> field : fields) {
       field.decode(instance, input);
     }
@@ -73,7 +73,7 @@ public class OrderedObjectCodec<T> implements Codec<T> {
   /** Builder for constructing an OrderedObjectCodec. */
   public static class Builder<T> {
     private final List<FieldCodec<T, ?>> fields = new ArrayList<>();
-    private Supplier<T> supplier;
+    private Supplier<T> factory;
 
     /**
      * Adds a required field to the codec.
@@ -121,13 +121,13 @@ public class OrderedObjectCodec<T> implements Codec<T> {
     }
 
     /**
-     * Sets the supplier for creating new instances during decoding.
+     * Sets the factory for creating new instances during decoding.
      *
-     * @param supplier supplier that creates new instances
+     * @param factory factory that creates new instances
      * @return this builder
      */
-    public Builder<T> supplier(Supplier<T> supplier) {
-      this.supplier = Objects.requireNonNull(supplier, "supplier");
+    public Builder<T> factory(Supplier<T> factory) {
+      this.factory = Objects.requireNonNull(factory, "factory");
       return this;
     }
 
@@ -135,13 +135,13 @@ public class OrderedObjectCodec<T> implements Codec<T> {
      * Builds the OrderedObjectCodec.
      *
      * @return the constructed codec
-     * @throws NullPointerException if supplier was not set
+     * @throws NullPointerException if factory was not set
      * @throws IllegalArgumentException if no fields were added
      */
     public OrderedObjectCodec<T> build() {
-      Objects.requireNonNull(supplier, "supplier must be set");
+      Objects.requireNonNull(factory, "factory must be set");
       Preconditions.check(!fields.isEmpty(), "at least one field is required");
-      return new OrderedObjectCodec<>(fields, supplier);
+      return new OrderedObjectCodec<>(fields, factory);
     }
   }
 

@@ -154,7 +154,7 @@ class ListCodecTest {
   }
 
   @Test
-  void decode_with_custom_list_supplier(@Randomize String value1, @Randomize String value2)
+  void decode_with_custom_list_factory(@Randomize String value1, @Randomize String value2)
       throws IOException {
     ListCodec<String> codec = new ListCodec<>(new CodePointStringCodec(5, UTF_8), LinkedList::new);
     ByteArrayInputStream input = new ByteArrayInputStream((value1 + value2).getBytes(UTF_8));
@@ -179,7 +179,7 @@ class ListCodecTest {
   }
 
   @Test
-  void decode_with_max_items_and_custom_supplier(@Randomize String value1, @Randomize String value2)
+  void decode_with_max_items_and_custom_factory(@Randomize String value1, @Randomize String value2)
       throws IOException {
     ListCodec<String> codec =
         new ListCodec<>(new CodePointStringCodec(5, UTF_8), LinkedList::new, 1);
@@ -224,12 +224,12 @@ class ListCodecTest {
   }
 
   @Test
-  void constructor_null_list_supplier() {
+  void constructor_null_list_factory() {
     Codec<String> itemCodec = new CodePointStringCodec(5, UTF_8);
 
     assertThatThrownBy(() -> new ListCodec<>(itemCodec, null, 10))
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("listSupplier");
+        .hasMessageContaining("listFactory");
   }
 
   @Test
@@ -253,12 +253,12 @@ class ListCodecTest {
   }
 
   @Test
-  void decode_list_supplier_returns_null() {
+  void decode_list_factory_returns_null() {
     ListCodec<String> codec = new ListCodec<>(new CodePointStringCodec(5, UTF_8), () -> null, 10);
     ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(UTF_8));
 
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("listSupplier.get()");
+        .hasMessageContaining("listFactory.get()");
   }
 }

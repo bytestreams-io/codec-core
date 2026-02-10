@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  * codec.encode(List.of("hello", "world"), output);
  * List<String> values = codec.decode(input);
  *
- * // Using custom list supplier
+ * // Using custom list factory
  * ListCodec<String> linkedCodec = new ListCodec<>(
  *     new CodePointStringCodec(5, UTF_8),
  *     LinkedList::new);
@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  */
 public class ListCodec<V> implements Codec<List<V>> {
   private final Codec<V> itemCodec;
-  private final Supplier<List<V>> listSupplier;
+  private final Supplier<List<V>> listFactory;
   private final int maxItems;
 
   /**
@@ -52,14 +52,14 @@ public class ListCodec<V> implements Codec<List<V>> {
   }
 
   /**
-   * Creates a new list codec with a custom list supplier.
+   * Creates a new list codec with a custom list factory.
    *
    * @param itemCodec the codec for encoding/decoding individual list items
-   * @param listSupplier a supplier that creates new list instances for decoding
+   * @param listFactory a factory that creates new list instances for decoding
    * @throws NullPointerException if any argument is null
    */
-  public ListCodec(Codec<V> itemCodec, Supplier<List<V>> listSupplier) {
-    this(itemCodec, listSupplier, Integer.MAX_VALUE);
+  public ListCodec(Codec<V> itemCodec, Supplier<List<V>> listFactory) {
+    this(itemCodec, listFactory, Integer.MAX_VALUE);
   }
 
   /**
@@ -75,17 +75,17 @@ public class ListCodec<V> implements Codec<List<V>> {
   }
 
   /**
-   * Creates a new list codec with a custom list supplier and maximum items limit.
+   * Creates a new list codec with a custom list factory and maximum items limit.
    *
    * @param itemCodec the codec for encoding/decoding individual list items
-   * @param listSupplier a supplier that creates new list instances for decoding
+   * @param listFactory a factory that creates new list instances for decoding
    * @param maxItems the maximum number of items to decode
    * @throws NullPointerException if any argument is null
    * @throws IllegalArgumentException if maxItems is negative
    */
-  public ListCodec(Codec<V> itemCodec, Supplier<List<V>> listSupplier, int maxItems) {
+  public ListCodec(Codec<V> itemCodec, Supplier<List<V>> listFactory, int maxItems) {
     this.itemCodec = Objects.requireNonNull(itemCodec, "itemCodec");
-    this.listSupplier = Objects.requireNonNull(listSupplier, "listSupplier");
+    this.listFactory = Objects.requireNonNull(listFactory, "listFactory");
     if (maxItems < 0) {
       throw new IllegalArgumentException(
           "maxItems must be non-negative, but was [%d]".formatted(maxItems));
@@ -115,7 +115,7 @@ public class ListCodec<V> implements Codec<List<V>> {
    */
   @Override
   public List<V> decode(InputStream input) throws IOException {
-    List<V> values = Objects.requireNonNull(listSupplier.get(), "listSupplier.get() returned null");
+    List<V> values = Objects.requireNonNull(listFactory.get(), "listFactory.get() returned null");
     PushbackInputStream pushback = new PushbackInputStream(input);
     int next;
     while (values.size() < maxItems && (next = pushback.read()) != -1) {

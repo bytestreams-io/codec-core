@@ -46,8 +46,13 @@ int value = codec.decode(inputStream);
 | `ListCodec<V>` | `List<V>` | List of values with configurable max items |
 | `OrderedObjectCodec<T>` | `T` | Object with ordered fields, supports optional fields |
 | `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
+| `StringBigDecimalCodec` | `BigDecimal` | BigDecimal encoded as a string |
+| `StringBigIntegerCodec` | `BigInteger` | BigInteger encoded as a string with configurable radix |
+| `StringDoubleCodec` | `Double` | Double encoded as a string |
+| `StringFloatCodec` | `Float` | Float encoded as a string |
 | `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |
 | `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
+| `StringShortCodec` | `Short` | Short encoded as a string with configurable radix |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
 | `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
 | `VariableLengthCodec<V>` | `V` | Variable-length value with length prefix |

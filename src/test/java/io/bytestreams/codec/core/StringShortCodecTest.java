@@ -14,38 +14,38 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(RandomParametersExtension.class)
-class StringLongCodecTest {
+class StringShortCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of();
 
   @Test
   void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
     BcdStringCodec bcdCodec = new BcdStringCodec(2);
-    StringLongCodec codec = new StringLongCodec(bcdCodec);
+    StringShortCodec codec = new StringShortCodec(bcdCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode((long) value, output);
+    codec.encode((short) value, output);
     assertThat(HEX_FORMAT.formatHex(output.toByteArray())).isEqualTo(String.format("%02d", value));
   }
 
   @Test
   void encode(
-      @Randomize(longMin = 0, longMax = Long.MAX_VALUE) long value,
+      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value,
       @Randomize(intMin = 2, intMax = 17) int radix)
       throws IOException {
-    String string = Long.toString(value, radix);
+    String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
     HexStringCodec hexCodec = new HexStringCodec(length);
-    StringLongCodec codec = new StringLongCodec(hexCodec, radix);
+    StringShortCodec codec = new StringShortCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode(value, output);
+    codec.encode((short) value, output);
     assertThat(HEX_FORMAT.formatHex(output.toByteArray())).endsWith(string);
   }
 
   @Test
   void encode_overflow() {
     HexStringCodec hexCodec = new HexStringCodec(2);
-    StringLongCodec codec = new StringLongCodec(hexCodec, 16);
+    StringShortCodec codec = new StringShortCodec(hexCodec, 16);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    long value = 0x1FFL;
+    short value = 0x1FF;
     assertThatThrownBy(() -> codec.encode(value, output))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("value length must be less than or equal to %d, but was [%d]", 2, 3);
@@ -54,7 +54,7 @@ class StringLongCodecTest {
   @Test
   void invalid_radix_too_low() {
     HexStringCodec hexCodec = new HexStringCodec(2);
-    assertThatThrownBy(() -> new StringLongCodec(hexCodec, 1))
+    assertThatThrownBy(() -> new StringShortCodec(hexCodec, 1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "radix must be between %d and %d, but was [%d]",
@@ -64,7 +64,7 @@ class StringLongCodecTest {
   @Test
   void invalid_radix_too_high() {
     HexStringCodec hexCodec = new HexStringCodec(2);
-    assertThatThrownBy(() -> new StringLongCodec(hexCodec, 37))
+    assertThatThrownBy(() -> new StringShortCodec(hexCodec, 37))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "radix must be between %d and %d, but was [%d]",
@@ -73,25 +73,24 @@ class StringLongCodecTest {
 
   @Test
   void decode(
-      @Randomize(longMin = 0, longMax = Long.MAX_VALUE) long value,
+      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value,
       @Randomize(intMin = 2, intMax = 17) int radix)
       throws IOException {
-    String string = Long.toString(value, radix);
+    String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
     String padded = "0".repeat(length - string.length()) + string;
     HexStringCodec hexCodec = new HexStringCodec(length);
-    StringLongCodec codec = new StringLongCodec(hexCodec, radix);
+    StringShortCodec codec = new StringShortCodec(hexCodec, radix);
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
-    assertThat(codec.decode(input)).isEqualTo(value);
+    assertThat(codec.decode(input)).isEqualTo((short) value);
   }
 
   @Test
   void decode_overflow() {
-    HexStringCodec hexCodec = new HexStringCodec(20);
-    StringLongCodec codec = new StringLongCodec(hexCodec, 16);
-    // 20 hex digits exceeds Long.MAX_VALUE
-    ByteArrayInputStream input =
-        new ByteArrayInputStream(HEX_FORMAT.parseHex("ffffffffffffffffffff"));
+    HexStringCodec hexCodec = new HexStringCodec(16);
+    StringShortCodec codec = new StringShortCodec(hexCodec, 16);
+    // ffffffffffffffff exceeds Short.MAX_VALUE
+    ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("ffffffffffffffff"));
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(CodecException.class)
         .hasMessageContaining("failed to parse number from string")
@@ -100,28 +99,28 @@ class StringLongCodecTest {
 
   @Test
   void roundtrip(
-      @Randomize(longMin = 0, longMax = Long.MAX_VALUE) long value,
+      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value,
       @Randomize(intMin = 2, intMax = 17) int radix)
       throws IOException {
-    String string = Long.toString(value, radix);
+    String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
     HexStringCodec hexCodec = new HexStringCodec(length);
-    StringLongCodec codec = new StringLongCodec(hexCodec, radix);
+    StringShortCodec codec = new StringShortCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode(value, output);
+    codec.encode((short) value, output);
     ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-    assertThat(codec.decode(input)).isEqualTo(value);
+    assertThat(codec.decode(input)).isEqualTo((short) value);
   }
 
   @Test
   void roundtrip_with_code_point_string_codec(
-      @Randomize(longMin = 0, longMax = Long.MAX_VALUE) long value) throws IOException {
-    String string = Long.toString(value);
+      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value) throws IOException {
+    String string = Integer.toString(value);
     CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
-    StringLongCodec codec = new StringLongCodec(codePointCodec);
+    StringShortCodec codec = new StringShortCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode(value, output);
+    codec.encode((short) value, output);
     ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-    assertThat(codec.decode(input)).isEqualTo(value);
+    assertThat(codec.decode(input)).isEqualTo((short) value);
   }
 }

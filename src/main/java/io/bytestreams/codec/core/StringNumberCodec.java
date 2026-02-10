@@ -34,14 +34,14 @@ public abstract class StringNumberCodec<V extends Number> implements Codec<V> {
     stringCodec.encode(fromNumber(value), output);
   }
 
-  /**
-   * {@inheritDoc}
-   *
-   * @throws NumberFormatException if the decoded string cannot be parsed as a number
-   */
   @Override
   public V decode(InputStream input) throws IOException {
-    return toNumber(stringCodec.decode(input));
+    String string = stringCodec.decode(input);
+    try {
+      return toNumber(string);
+    } catch (NumberFormatException e) {
+      throw new CodecException("failed to parse number from string [%s]".formatted(string), e);
+    }
   }
 
   /**

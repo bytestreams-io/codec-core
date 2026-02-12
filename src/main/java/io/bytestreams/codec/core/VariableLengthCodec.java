@@ -11,35 +11,30 @@ import java.util.Objects;
 /**
  * A codec for variable-length values where the length is encoded as a prefix.
  *
- * <p>The {@code lengthCodec} handles the length prefix: on decode it decodes the length prefix into
- * the corresponding byte size; on encode it receives the byte size and encodes the corresponding
- * length prefix. The {@code valueCodec} handles both encoding and decoding the value. On decode,
- * the value bytes are read into a bounded byte array and passed to the {@code valueCodec}.
- *
- * <p>Example usage with a string codec:
- *
- * <pre>{@code
- * VariableLengthCodec<String> codec = new VariableLengthCodec<>(
- *     new UnsignedByteCodec(),
- *     myStringCodec);
- * }</pre>
+ * <p>The {@code lengthCodec} handles the length prefix: on encode it receives the value codec's
+ * {@link EncodeResult} and encodes the corresponding length prefix; on decode it decodes the length
+ * prefix and returns an {@link EncodeResult} whose {@link EncodeResult#bytes() bytes()} is the byte
+ * size of the value that follows. The {@code valueCodec} handles both encoding and decoding the
+ * value. On decode, the value bytes are read into a bounded byte array and passed to the {@code
+ * valueCodec}.
  *
  * @param <V> the type of value this codec handles
  */
 public class VariableLengthCodec<V> implements Codec<V> {
-  private final Codec<Integer> lengthCodec;
+  private final Codec<EncodeResult> lengthCodec;
   private final Codec<V> valueCodec;
 
   /**
    * Creates a new variable-length codec.
    *
-   * @param lengthCodec the codec for the length prefix; {@code decode} decodes the length prefix
-   *     into the corresponding byte size, {@code encode} receives the byte size and encodes the
-   *     corresponding length prefix
+   * @param lengthCodec the codec for the length prefix; {@code encode} receives the value codec's
+   *     {@link EncodeResult} and encodes the corresponding length prefix, {@code decode} decodes
+   *     the length prefix and returns an {@link EncodeResult} whose {@link EncodeResult#bytes()
+   *     bytes()} is the byte size of the value that follows
    * @param valueCodec the codec for encoding and decoding the value
    * @throws NullPointerException if any argument is null
    */
-  public VariableLengthCodec(Codec<Integer> lengthCodec, Codec<V> valueCodec) {
+  public VariableLengthCodec(Codec<EncodeResult> lengthCodec, Codec<V> valueCodec) {
     this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
     this.valueCodec = Objects.requireNonNull(valueCodec, "valueCodec");
   }
@@ -54,7 +49,7 @@ public class VariableLengthCodec<V> implements Codec<V> {
   public EncodeResult encode(V value, OutputStream output) throws IOException {
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     EncodeResult valueResult = valueCodec.encode(value, buffer);
-    EncodeResult prefixResult = lengthCodec.encode(buffer.size(), output);
+    EncodeResult prefixResult = lengthCodec.encode(valueResult, output);
     buffer.writeTo(output);
     return new EncodeResult(valueResult.length(), prefixResult.bytes() + valueResult.bytes());
   }
@@ -69,8 +64,8 @@ public class VariableLengthCodec<V> implements Codec<V> {
    */
   @Override
   public V decode(InputStream input) throws IOException {
-    int byteSize = lengthCodec.decode(input);
-    byte[] data = InputStreams.readFully(input, byteSize);
+    EncodeResult lengthResult = lengthCodec.decode(input);
+    byte[] data = InputStreams.readFully(input, lengthResult.bytes());
     return valueCodec.decode(new ByteArrayInputStream(data));
   }
 }

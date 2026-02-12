@@ -10,6 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -20,8 +22,19 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ExtendWith(RandomParametersExtension.class)
 class VariableLengthCodecTest {
 
-  private static Codec<Integer> lengthCodec() {
-    return new UnsignedByteCodec();
+  private static Codec<EncodeResult> lengthCodec() {
+    UnsignedByteCodec byteCodec = new UnsignedByteCodec();
+    return new Codec<>() {
+      @Override
+      public EncodeResult encode(EncodeResult value, OutputStream output) throws IOException {
+        return byteCodec.encode(value.bytes(), output);
+      }
+
+      @Override
+      public EncodeResult decode(InputStream input) throws IOException {
+        return EncodeResult.ofBytes(byteCodec.decode(input));
+      }
+    };
   }
 
   private static VariableLengthCodec<String> variableLengthCodec(Charset charset) {
@@ -114,7 +127,7 @@ class VariableLengthCodecTest {
 
   @Test
   void constructor_null_value_codec() {
-    Codec<Integer> lengthCodec = new UnsignedByteCodec();
+    Codec<EncodeResult> lengthCodec = lengthCodec();
 
     assertThatThrownBy(() -> new VariableLengthCodec<>(lengthCodec, null))
         .isInstanceOf(NullPointerException.class)

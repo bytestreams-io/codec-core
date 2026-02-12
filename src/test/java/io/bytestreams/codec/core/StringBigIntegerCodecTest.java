@@ -1,6 +1,6 @@
 package io.bytestreams.codec.core;
 
-import static io.github.lyang.randomparamsresolver.RandomParametersExtension.*;
+import static io.github.lyang.randomparamsresolver.RandomParametersExtension.Randomize;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

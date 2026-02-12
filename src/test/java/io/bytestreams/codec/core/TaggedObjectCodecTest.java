@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 class TaggedObjectCodecTest {
 
-  private static final Codec<String> TAG_CODEC = new CodePointStringCodec(4, UTF_8);
+  private static final Codec<String> TAG_CODEC = new FixedCodePointStringCodec(4, UTF_8);
 
   @Test
   void roundtrip_single_field() throws IOException {
@@ -47,7 +47,7 @@ class TaggedObjectCodecTest {
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
             .field("code", new UnsignedShortCodec())
-            .field("name", new CodePointStringCodec(5, UTF_8))
+            .field("name", new FixedCodePointStringCodec(5, UTF_8))
             .factory(TestTagged::new)
             .build();
 

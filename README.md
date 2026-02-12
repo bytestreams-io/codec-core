@@ -40,15 +40,23 @@ int value = codec.decode(inputStream);
 
 | Codec | Type | Description |
 |-------|------|-------------|
-| `BcdStringCodec` | `String` | Fixed-length BCD (Binary-Coded Decimal) string |
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
 | `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
-| `CodePointStringCodec` | `String` | Fixed-length string measured in code points |
+| `DoubleCodec` | `Double` | Double (IEEE 754 double-precision, 8 bytes) |
+| `FixedBcdStringCodec` | `String` | Fixed-length BCD (Binary-Coded Decimal) string |
+| `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
+| `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string |
+| `FixedListCodec<V>` | `List<V>` | Fixed-length list that encodes/decodes exactly N items |
+| `FloatCodec` | `Float` | Float (IEEE 754 single-precision, 4 bytes) |
 | `FormattedStringCodec` | `String` | String with configurable left/right padding |
-| `HexStringCodec` | `String` | Fixed-length hexadecimal string |
-| `ListCodec<V>` | `List<V>` | List of values with configurable max items |
+| `IntegerCodec` | `Integer` | Signed integer (-2147483648 to 2147483647) |
+| `LongCodec` | `Long` | Signed long (-2^63 to 2^63-1) |
 | `OrderedObjectCodec<T>` | `T` | Object with ordered fields, supports optional fields |
-| `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
+| `ShortCodec` | `Short` | Signed short (-32768 to 32767) |
+| `StreamBcdStringCodec` | `String` | Variable-length BCD string (reads to EOF) |
+| `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
+| `StreamHexStringCodec` | `String` | Variable-length hexadecimal string (reads to EOF) |
+| `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
 | `StringBigDecimalCodec` | `BigDecimal` | BigDecimal encoded as a string |
 | `StringBigIntegerCodec` | `BigInteger` | BigInteger encoded as a string with configurable radix |
 | `StringDoubleCodec` | `Double` | Double encoded as a string |
@@ -56,11 +64,7 @@ int value = codec.decode(inputStream);
 | `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |
 | `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
 | `StringShortCodec` | `Short` | Short encoded as a string with configurable radix |
-| `ShortCodec` | `Short` | Signed short (-32768 to 32767) |
-| `IntegerCodec` | `Integer` | Signed integer (-2147483648 to 2147483647) |
-| `LongCodec` | `Long` | Signed long (-2^63 to 2^63-1) |
-| `FloatCodec` | `Float` | Float (IEEE 754 single-precision, 4 bytes) |
-| `DoubleCodec` | `Double` | Double (IEEE 754 double-precision, 8 bytes) |
+| `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
 | `UnsignedIntegerCodec` | `Long` | Unsigned integer (0 - 4294967295) |
 | `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |

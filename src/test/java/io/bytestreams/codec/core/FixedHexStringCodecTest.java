@@ -15,18 +15,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(RandomParametersExtension.class)
-class HexStringCodecTest {
+class FixedHexStringCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of();
 
   @Test
   void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
-    HexStringCodec codec = new HexStringCodec(length);
+    FixedHexStringCodec codec = new FixedHexStringCodec(length);
     assertThat(codec.getLength()).isEqualTo(length);
   }
 
   @Test
   void encode(@Randomize(intMin = 0, intMax = 0xFF) int value) throws IOException {
-    HexStringCodec codec = new HexStringCodec(2);
+    FixedHexStringCodec codec = new FixedHexStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     String expected = String.format("%02x", value);
     codec.encode(expected, output);
@@ -35,7 +35,7 @@ class HexStringCodecTest {
 
   @Test
   void encode_odd_length(@Randomize(intMin = 0, intMax = 0x0FFF) int value) throws IOException {
-    HexStringCodec codec = new HexStringCodec(3);
+    FixedHexStringCodec codec = new FixedHexStringCodec(3);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     String expected = String.format("%03x", value);
     codec.encode(expected, output);
@@ -44,7 +44,7 @@ class HexStringCodecTest {
 
   @Test
   void encode_short_value() throws IOException {
-    HexStringCodec codec = new HexStringCodec(4);
+    FixedHexStringCodec codec = new FixedHexStringCodec(4);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("f", output);
     assertThat(output.toByteArray()).isEqualTo(new byte[] {0x00, 0x0f});
@@ -52,7 +52,7 @@ class HexStringCodecTest {
 
   @Test
   void encode_overflow(@Randomize(intMin = 0, intMax = 0x0FFF) int value) {
-    HexStringCodec codec = new HexStringCodec(2);
+    FixedHexStringCodec codec = new FixedHexStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     String data = String.format("%03x", value);
     assertThatThrownBy(() -> codec.encode(data, output))
@@ -62,7 +62,7 @@ class HexStringCodecTest {
 
   @Test
   void decode(@Randomize(length = 3) byte[] value) throws IOException {
-    HexStringCodec codec = new HexStringCodec(2);
+    FixedHexStringCodec codec = new FixedHexStringCodec(2);
     ByteArrayInputStream input = new ByteArrayInputStream(value);
     assertThat(codec.decode(input))
         .isEqualTo(HEX_FORMAT.formatHex(Arrays.copyOfRange(value, 0, 1)));
@@ -71,7 +71,7 @@ class HexStringCodecTest {
 
   @Test
   void decode_odd_length(@Randomize(length = 3) byte[] value) throws IOException {
-    HexStringCodec codec = new HexStringCodec(3);
+    FixedHexStringCodec codec = new FixedHexStringCodec(3);
     ByteArrayInputStream input = new ByteArrayInputStream(value);
     String expected = HEX_FORMAT.formatHex(Arrays.copyOfRange(value, 0, 2)).substring(1, 4);
     assertThat(codec.decode(input)).isEqualTo(expected);
@@ -79,7 +79,7 @@ class HexStringCodecTest {
 
   @Test
   void decode_insufficient_data(@Randomize(length = 1) byte[] value) {
-    HexStringCodec codec = new HexStringCodec(3);
+    FixedHexStringCodec codec = new FixedHexStringCodec(3);
     ByteArrayInputStream input = new ByteArrayInputStream(value);
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(EOFException.class)
@@ -89,14 +89,14 @@ class HexStringCodecTest {
 
   @Test
   void constructor_negative_length() {
-    assertThatThrownBy(() -> new HexStringCodec(-1))
+    assertThatThrownBy(() -> new FixedHexStringCodec(-1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("-1");
   }
 
   @Test
   void encode_zero_length() throws IOException {
-    HexStringCodec codec = new HexStringCodec(0);
+    FixedHexStringCodec codec = new FixedHexStringCodec(0);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("", output);
     assertThat(output.toByteArray()).isEmpty();
@@ -104,7 +104,7 @@ class HexStringCodecTest {
 
   @Test
   void decode_zero_length() throws IOException {
-    HexStringCodec codec = new HexStringCodec(0);
+    FixedHexStringCodec codec = new FixedHexStringCodec(0);
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0x12, 0x34});
     assertThat(codec.decode(input)).isEmpty();
     assertThat(input.available()).isEqualTo(2);

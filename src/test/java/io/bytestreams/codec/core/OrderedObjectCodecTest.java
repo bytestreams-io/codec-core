@@ -21,7 +21,7 @@ class OrderedObjectCodecTest {
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
             .field(
                 "name",
-                new CodePointStringCodec(5, UTF_8),
+                new FixedCodePointStringCodec(5, UTF_8),
                 TestObject::getName,
                 TestObject::setName)
             .factory(TestObject::new)
@@ -49,7 +49,7 @@ class OrderedObjectCodecTest {
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
             .field(
                 "tag",
-                new CodePointStringCodec(3, UTF_8),
+                new FixedCodePointStringCodec(3, UTF_8),
                 TestObject::getTag,
                 TestObject::setTag,
                 obj -> obj.getId() > 0)
@@ -78,7 +78,7 @@ class OrderedObjectCodecTest {
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
             .field(
                 "tag",
-                new CodePointStringCodec(3, UTF_8),
+                new FixedCodePointStringCodec(3, UTF_8),
                 TestObject::getTag,
                 TestObject::setTag,
                 obj -> obj.getId() > 0)
@@ -144,7 +144,7 @@ class OrderedObjectCodecTest {
             .field("id", new UnsignedShortCodec(), TestObject::getId, TestObject::setId)
             .field(
                 "name",
-                new CodePointStringCodec(5, UTF_8),
+                new FixedCodePointStringCodec(5, UTF_8),
                 TestObject::getName,
                 TestObject::setName)
             .factory(TestObject::new)

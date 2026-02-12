@@ -18,7 +18,8 @@ class StringFloatCodecTest {
   @Test
   void encode(@Randomize(floatMin = 0, floatMax = Float.MAX_VALUE) float value) throws IOException {
     String string = Float.toString(value);
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    FixedCodePointStringCodec codePointCodec =
+        new FixedCodePointStringCodec(string.length(), UTF_8);
     StringFloatCodec codec = new StringFloatCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
@@ -27,7 +28,7 @@ class StringFloatCodecTest {
 
   @Test
   void encode_overflow() {
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(3, UTF_8);
+    FixedCodePointStringCodec codePointCodec = new FixedCodePointStringCodec(3, UTF_8);
     StringFloatCodec codec = new StringFloatCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     float value = 1234.5f;
@@ -38,7 +39,8 @@ class StringFloatCodecTest {
   @Test
   void decode() throws IOException {
     String string = "3.14";
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    FixedCodePointStringCodec codePointCodec =
+        new FixedCodePointStringCodec(string.length(), UTF_8);
     StringFloatCodec codec = new StringFloatCodec(codePointCodec);
     ByteArrayInputStream input = new ByteArrayInputStream(string.getBytes(UTF_8));
     assertThat(codec.decode(input)).isEqualTo(3.14f);
@@ -46,7 +48,7 @@ class StringFloatCodecTest {
 
   @Test
   void decode_invalid() {
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(3, UTF_8);
+    FixedCodePointStringCodec codePointCodec = new FixedCodePointStringCodec(3, UTF_8);
     StringFloatCodec codec = new StringFloatCodec(codePointCodec);
     ByteArrayInputStream input = new ByteArrayInputStream("abc".getBytes(UTF_8));
     assertThatThrownBy(() -> codec.decode(input))
@@ -59,7 +61,8 @@ class StringFloatCodecTest {
   void roundtrip(@Randomize(floatMin = 0, floatMax = Float.MAX_VALUE) float value)
       throws IOException {
     String string = Float.toString(value);
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    FixedCodePointStringCodec codePointCodec =
+        new FixedCodePointStringCodec(string.length(), UTF_8);
     StringFloatCodec codec = new StringFloatCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);

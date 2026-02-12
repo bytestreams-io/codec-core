@@ -10,8 +10,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -27,21 +25,7 @@ class VariableLengthCodecTest {
   }
 
   private static VariableLengthCodec<String> variableLengthCodec(Charset charset) {
-    Codec<String> stringCodec =
-        new Codec<>() {
-          @Override
-          public EncodeResult encode(String value, OutputStream output) throws IOException {
-            byte[] encoded = value.getBytes(charset);
-            output.write(encoded);
-            return new EncodeResult(value.codePointCount(0, value.length()), encoded.length);
-          }
-
-          @Override
-          public String decode(InputStream input) throws IOException {
-            return new String(input.readAllBytes(), charset);
-          }
-        };
-    return new VariableLengthCodec<>(lengthCodec(), stringCodec);
+    return new VariableLengthCodec<>(lengthCodec(), new StreamCodePointStringCodec(charset));
   }
 
   @ParameterizedTest

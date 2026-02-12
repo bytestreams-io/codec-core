@@ -19,7 +19,8 @@ class StringBigDecimalCodecTest {
   @Test
   void encode(@Randomize BigDecimal value) throws IOException {
     String string = value.toPlainString();
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    FixedCodePointStringCodec codePointCodec =
+        new FixedCodePointStringCodec(string.length(), UTF_8);
     StringBigDecimalCodec codec = new StringBigDecimalCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
@@ -28,7 +29,7 @@ class StringBigDecimalCodecTest {
 
   @Test
   void encode_overflow() {
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(3, UTF_8);
+    FixedCodePointStringCodec codePointCodec = new FixedCodePointStringCodec(3, UTF_8);
     StringBigDecimalCodec codec = new StringBigDecimalCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     BigDecimal value = new BigDecimal("1234.56");
@@ -39,7 +40,8 @@ class StringBigDecimalCodecTest {
   @Test
   void decode() throws IOException {
     String string = "3.14";
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    FixedCodePointStringCodec codePointCodec =
+        new FixedCodePointStringCodec(string.length(), UTF_8);
     StringBigDecimalCodec codec = new StringBigDecimalCodec(codePointCodec);
     ByteArrayInputStream input = new ByteArrayInputStream(string.getBytes(UTF_8));
     assertThat(codec.decode(input)).isEqualByComparingTo(new BigDecimal("3.14"));
@@ -47,7 +49,7 @@ class StringBigDecimalCodecTest {
 
   @Test
   void decode_invalid() {
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(3, UTF_8);
+    FixedCodePointStringCodec codePointCodec = new FixedCodePointStringCodec(3, UTF_8);
     StringBigDecimalCodec codec = new StringBigDecimalCodec(codePointCodec);
     ByteArrayInputStream input = new ByteArrayInputStream("abc".getBytes(UTF_8));
     assertThatThrownBy(() -> codec.decode(input))
@@ -59,7 +61,8 @@ class StringBigDecimalCodecTest {
   @Test
   void roundtrip(@Randomize BigDecimal value) throws IOException {
     String string = value.toPlainString();
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    FixedCodePointStringCodec codePointCodec =
+        new FixedCodePointStringCodec(string.length(), UTF_8);
     StringBigDecimalCodec codec = new StringBigDecimalCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);

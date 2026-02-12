@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  *
  * @see <a href="https://en.wikipedia.org/wiki/Binary-coded_decimal">Binary-Coded Decimal</a>
  */
-public class BcdStringCodec extends HexStringCodec {
+public class FixedBcdStringCodec extends FixedHexStringCodec {
   private static final Pattern BCD_PATTERN = Pattern.compile("^\\d+$");
   private static final String ERROR_MESSAGE = "invalid BCD string [%s]";
 
@@ -20,7 +20,7 @@ public class BcdStringCodec extends HexStringCodec {
    *
    * @param length the number of BCD digits (not bytes)
    */
-  public BcdStringCodec(int length) {
+  public FixedBcdStringCodec(int length) {
     super(length);
   }
 

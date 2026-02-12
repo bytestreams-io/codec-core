@@ -28,8 +28,9 @@ public abstract class BinaryNumberCodec<V extends Number> implements FixedLength
   }
 
   @Override
-  public void encode(V value, OutputStream output) throws IOException {
+  public EncodeResult encode(V value, OutputStream output) throws IOException {
     output.write(toBytes(value));
+    return EncodeResult.ofBytes(byteLength);
   }
 
   @Override

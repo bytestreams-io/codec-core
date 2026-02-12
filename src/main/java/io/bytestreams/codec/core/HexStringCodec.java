@@ -50,10 +50,12 @@ public class HexStringCodec implements FixedLengthCodec<String> {
    * @throws IllegalArgumentException if the value length exceeds the configured length
    */
   @Override
-  public void encode(String value, OutputStream output) throws IOException {
+  public EncodeResult encode(String value, OutputStream output) throws IOException {
     Preconditions.check(value.length() <= length, ERROR_MESSAGE, length, value.length());
     String padded = Strings.padStart(value, toByteSize(length) * 2, '0');
-    output.write(HEX_FORMAT.parseHex(padded));
+    byte[] bytes = HEX_FORMAT.parseHex(padded);
+    output.write(bytes);
+    return new EncodeResult(length, bytes.length);
   }
 
   /**

@@ -41,12 +41,12 @@ public class FormattedStringCodec implements Codec<String> {
   }
 
   @Override
-  public void encode(String value, OutputStream output) throws IOException {
+  public EncodeResult encode(String value, OutputStream output) throws IOException {
     String padded =
         padLeft
             ? Strings.padStart(value, delegate.getLength(), paddingChar)
             : Strings.padEnd(value, delegate.getLength(), paddingChar);
-    delegate.encode(padded, output);
+    return delegate.encode(padded, output);
   }
 
   @Override

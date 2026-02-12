@@ -66,14 +66,16 @@ public class CodePointStringCodec implements FixedLengthCodec<String> {
    * @throws IllegalArgumentException if the value does not have exactly {@code length} code points
    */
   @Override
-  public void encode(String value, OutputStream output) throws IOException {
+  public EncodeResult encode(String value, OutputStream output) throws IOException {
     int codePointCount = value.codePointCount(0, value.length());
     Preconditions.check(
         codePointCount == length,
         "value must have %d code points, but had [%d]",
         length,
         codePointCount);
-    output.write(value.getBytes(charset));
+    byte[] encoded = value.getBytes(charset);
+    output.write(encoded);
+    return new EncodeResult(length, encoded.length);
   }
 
   /**
@@ -85,7 +87,8 @@ public class CodePointStringCodec implements FixedLengthCodec<String> {
   public String decode(InputStream input) throws IOException {
     if (singleByteCharset) {
       return new String(InputStreams.readFully(input, length), charset);
+    } else {
+      return CodePointReader.create(input, decoder).read(length);
     }
-    return CodePointReader.create(input, decoder).read(length);
   }
 }

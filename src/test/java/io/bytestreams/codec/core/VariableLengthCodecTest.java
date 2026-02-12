@@ -10,9 +10,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,13 +26,22 @@ class VariableLengthCodecTest {
     return new UnsignedByteCodec();
   }
 
-  private static Function<Integer, Codec<String>> valueCodecProvider(Charset charset) {
-    return length -> new CodePointStringCodec(length, charset);
-  }
-
   private static VariableLengthCodec<String> variableLengthCodec(Charset charset) {
-    return new VariableLengthCodec<>(
-        lengthCodec(), valueCodecProvider(charset), value -> (int) value.codePoints().count());
+    Codec<String> stringCodec =
+        new Codec<>() {
+          @Override
+          public EncodeResult encode(String value, OutputStream output) throws IOException {
+            byte[] encoded = value.getBytes(charset);
+            output.write(encoded);
+            return new EncodeResult(value.codePointCount(0, value.length()), encoded.length);
+          }
+
+          @Override
+          public String decode(InputStream input) throws IOException {
+            return new String(input.readAllBytes(), charset);
+          }
+        };
+    return new VariableLengthCodec<>(lengthCodec(), stringCodec);
   }
 
   @ParameterizedTest
@@ -44,10 +54,12 @@ class VariableLengthCodecTest {
     for (int length = 0; length <= codePoints; length++) {
       String substring = value.substring(0, value.offsetByCodePoints(0, length));
       ByteArrayOutputStream output = new ByteArrayOutputStream();
-      codec.encode(substring, output);
+      EncodeResult returned = codec.encode(substring, output);
+      assertThat(returned.length()).isEqualTo(length);
+      assertThat(returned.bytes()).isEqualTo(1 + substring.getBytes(charset).length);
 
       byte[] bytes = output.toByteArray();
-      assertThat(bytes[0] & 0xFF).isEqualTo(length);
+      assertThat(bytes[0] & 0xFF).isEqualTo(substring.getBytes(charset).length);
       assertThat(Arrays.copyOfRange(bytes, 1, bytes.length)).isEqualTo(substring.getBytes(charset));
     }
   }
@@ -63,7 +75,7 @@ class VariableLengthCodecTest {
       String expected = value.substring(0, value.offsetByCodePoints(0, length));
       byte[] content = expected.getBytes(charset);
       byte[] inputBytes = new byte[content.length + 1];
-      inputBytes[0] = (byte) length;
+      inputBytes[0] = (byte) content.length;
       System.arraycopy(content, 0, inputBytes, 1, content.length);
 
       ByteArrayInputStream input = new ByteArrayInputStream(inputBytes);
@@ -109,31 +121,19 @@ class VariableLengthCodecTest {
 
   @Test
   void constructor_null_length_codec() {
-    assertThatThrownBy(
-            () ->
-                new VariableLengthCodec<>(
-                    null, length -> new CodePointStringCodec(length, UTF_8), v -> 0))
+    Codec<String> valueCodec = variableLengthCodec(UTF_8);
+
+    assertThatThrownBy(() -> new VariableLengthCodec<>(null, valueCodec))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("lengthCodec");
   }
 
   @Test
-  void constructor_null_value_codec_provider() {
+  void constructor_null_value_codec() {
     Codec<Integer> lengthCodec = new UnsignedByteCodec();
 
-    assertThatThrownBy(() -> new VariableLengthCodec<>(lengthCodec, null, v -> 0))
+    assertThatThrownBy(() -> new VariableLengthCodec<>(lengthCodec, null))
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("valueCodecProvider");
-  }
-
-  @Test
-  void constructor_null_length_provider() {
-    Codec<Integer> lengthCodec = new UnsignedByteCodec();
-    Function<Integer, Codec<String>> valueCodecProvider =
-        length -> new CodePointStringCodec(length, UTF_8);
-
-    assertThatThrownBy(() -> new VariableLengthCodec<>(lengthCodec, valueCodecProvider, null))
-        .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("lengthProvider");
+        .hasMessageContaining("valueCodec");
   }
 }

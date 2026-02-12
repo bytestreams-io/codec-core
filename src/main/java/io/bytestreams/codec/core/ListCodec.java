@@ -99,10 +99,12 @@ public class ListCodec<V> implements Codec<List<V>> {
    * <p>Encodes each item in the list sequentially using the item codec.
    */
   @Override
-  public void encode(List<V> values, OutputStream output) throws IOException {
+  public EncodeResult encode(List<V> values, OutputStream output) throws IOException {
+    int totalBytes = 0;
     for (V value : values) {
-      itemCodec.encode(value, output);
+      totalBytes += itemCodec.encode(value, output).bytes();
     }
+    return new EncodeResult(values.size(), totalBytes);
   }
 
   /**

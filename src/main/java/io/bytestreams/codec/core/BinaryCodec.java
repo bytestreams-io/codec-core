@@ -40,9 +40,10 @@ public class BinaryCodec implements FixedLengthCodec<byte[]> {
    * @throws IllegalArgumentException if the byte array length does not match the expected length
    */
   @Override
-  public void encode(byte[] value, OutputStream output) throws IOException {
+  public EncodeResult encode(byte[] value, OutputStream output) throws IOException {
     Preconditions.check(value.length == length, ERROR_MESSAGE, length, value.length);
     output.write(value);
+    return EncodeResult.ofBytes(length);
   }
 
   /**

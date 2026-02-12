@@ -10,7 +10,7 @@ import java.io.OutputStream;
  */
 public class NotImplementedCodec<V> implements Codec<V> {
   @Override
-  public void encode(V value, OutputStream output) {
+  public EncodeResult encode(V value, OutputStream output) {
     throw new CodecException("codec not implemented", null);
   }
 

@@ -62,13 +62,16 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
   }
 
   @Override
-  public void encode(T value, OutputStream output) throws IOException {
+  public EncodeResult encode(T value, OutputStream output) throws IOException {
+    int count = 0;
+    int totalBytes = 0;
     for (String tag : value.tags()) {
       for (Object item : value.getAll(tag)) {
         try {
-          tagCodec.encode(tag, output);
+          totalBytes += tagCodec.encode(tag, output).bytes();
           Codec<?> codec = fields.getOrDefault(tag, defaultCodec);
-          encodeValue(codec, item, output);
+          totalBytes += encodeValue(codec, item, output).bytes();
+          count++;
         } catch (CodecException e) {
           throw e.withField(tag);
         } catch (Exception e) {
@@ -76,12 +79,13 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
         }
       }
     }
+    return new EncodeResult(count, totalBytes);
   }
 
   @SuppressWarnings("unchecked")
-  private static void encodeValue(Codec<?> codec, Object value, OutputStream output)
+  private static EncodeResult encodeValue(Codec<?> codec, Object value, OutputStream output)
       throws IOException {
-    ((Codec<Object>) codec).encode(value, output);
+    return ((Codec<Object>) codec).encode(value, output);
   }
 
   @Override

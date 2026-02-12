@@ -477,7 +477,7 @@ class TaggedObjectCodecTest {
 
   static class AlwaysThrowsCodec<V> implements Codec<V> {
     @Override
-    public void encode(V value, OutputStream output) {
+    public EncodeResult encode(V value, OutputStream output) {
       throw new IllegalStateException("always fails");
     }
 

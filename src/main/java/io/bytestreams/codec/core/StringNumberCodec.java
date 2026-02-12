@@ -30,8 +30,8 @@ public abstract class StringNumberCodec<V extends Number> implements Codec<V> {
    *     codec
    */
   @Override
-  public void encode(V value, OutputStream output) throws IOException {
-    stringCodec.encode(fromNumber(value), output);
+  public EncodeResult encode(V value, OutputStream output) throws IOException {
+    return stringCodec.encode(fromNumber(value), output);
   }
 
   @Override

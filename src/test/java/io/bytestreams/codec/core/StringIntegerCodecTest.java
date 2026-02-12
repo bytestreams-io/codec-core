@@ -19,8 +19,8 @@ class StringIntegerCodecTest {
 
   @Test
   void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-    FixedBcdStringCodec bcdCodec = new FixedBcdStringCodec(2);
-    StringIntegerCodec codec = new StringIntegerCodec(bcdCodec);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+    StringIntegerCodec codec = new StringIntegerCodec(hexCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
     assertThat(HEX_FORMAT.formatHex(output.toByteArray())).isEqualTo(String.format("%02d", value));
@@ -33,7 +33,7 @@ class StringIntegerCodecTest {
       throws IOException {
     String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
     StringIntegerCodec codec = new StringIntegerCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
@@ -42,7 +42,7 @@ class StringIntegerCodecTest {
 
   @Test
   void encode_overflow() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
     StringIntegerCodec codec = new StringIntegerCodec(hexCodec, 16);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     int value = 0x1FF;
@@ -53,7 +53,7 @@ class StringIntegerCodecTest {
 
   @Test
   void invalid_radix_too_low() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
     assertThatThrownBy(() -> new StringIntegerCodec(hexCodec, 1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
@@ -63,7 +63,7 @@ class StringIntegerCodecTest {
 
   @Test
   void invalid_radix_too_high() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
     assertThatThrownBy(() -> new StringIntegerCodec(hexCodec, 37))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
@@ -79,7 +79,7 @@ class StringIntegerCodecTest {
     String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
     String padded = "0".repeat(length - string.length()) + string;
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
     StringIntegerCodec codec = new StringIntegerCodec(hexCodec, radix);
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
     assertThat(codec.decode(input)).isEqualTo(value);
@@ -87,7 +87,7 @@ class StringIntegerCodecTest {
 
   @Test
   void decode_overflow() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(16);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(16).build();
     StringIntegerCodec codec = new StringIntegerCodec(hexCodec, 16);
     // ffffffffffffffff exceeds Integer.MAX_VALUE
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("ffffffffffffffff"));
@@ -104,7 +104,7 @@ class StringIntegerCodecTest {
       throws IOException {
     String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
     StringIntegerCodec codec = new StringIntegerCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);

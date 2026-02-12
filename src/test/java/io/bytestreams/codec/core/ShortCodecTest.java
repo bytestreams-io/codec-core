@@ -23,8 +23,7 @@ class ShortCodecTest {
   }
 
   @Test
-  void encode(@Randomize int intValue) throws IOException {
-    short value = (short) intValue;
+  void encode(@Randomize short value) throws IOException {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
     assertThat(output.toByteArray())

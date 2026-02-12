@@ -36,6 +36,22 @@ result.bytes();  // number of bytes written to the stream
 int value = codec.decode(inputStream);
 ```
 
+### Hex/BCD Codecs with Configurable Padding
+
+```java
+// Fixed-length hex: default left-pad with '0'
+FixedHexStringCodec codec = FixedHexStringCodec.builder(4).build();
+
+// Right-pad with 'f'
+FixedHexStringCodec codec = FixedHexStringCodec.builder(4).padRight('f').build();
+
+// Variable-length variant
+StreamHexStringCodec codec = StreamHexStringCodec.builder().padRight('f').build();
+
+// FormattedStringCodec: default left-pad with space
+FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0').build();
+```
+
 ## Available Codecs
 
 | Codec | Type | Description |
@@ -43,19 +59,17 @@ int value = codec.decode(inputStream);
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
 | `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
 | `DoubleCodec` | `Double` | Double (IEEE 754 double-precision, 8 bytes) |
-| `FixedBcdStringCodec` | `String` | Fixed-length BCD (Binary-Coded Decimal) string |
 | `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
-| `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string |
+| `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string with configurable padding |
 | `FixedListCodec<V>` | `List<V>` | Fixed-length list that encodes/decodes exactly N items |
 | `FloatCodec` | `Float` | Float (IEEE 754 single-precision, 4 bytes) |
-| `FormattedStringCodec` | `String` | String with configurable left/right padding |
+| `FormattedStringCodec` | `String` | String with configurable padding, delegates to another codec |
 | `IntegerCodec` | `Integer` | Signed integer (-2147483648 to 2147483647) |
 | `LongCodec` | `Long` | Signed long (-2^63 to 2^63-1) |
 | `OrderedObjectCodec<T>` | `T` | Object with ordered fields, supports optional fields |
 | `ShortCodec` | `Short` | Signed short (-32768 to 32767) |
-| `StreamBcdStringCodec` | `String` | Variable-length BCD string (reads to EOF) |
 | `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
-| `StreamHexStringCodec` | `String` | Variable-length hexadecimal string (reads to EOF) |
+| `StreamHexStringCodec` | `String` | Variable-length hexadecimal string with configurable padding |
 | `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
 | `StringBigDecimalCodec` | `BigDecimal` | BigDecimal encoded as a string |
 | `StringBigIntegerCodec` | `BigInteger` | BigInteger encoded as a string with configurable radix |

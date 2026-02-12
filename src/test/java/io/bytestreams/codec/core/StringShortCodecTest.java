@@ -18,31 +18,30 @@ class StringShortCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of();
 
   @Test
-  void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-    FixedBcdStringCodec bcdCodec = new FixedBcdStringCodec(2);
-    StringShortCodec codec = new StringShortCodec(bcdCodec);
+  void encode_default_radix(@Randomize(shortMin = 0, shortMax = 100) short value)
+      throws IOException {
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+    StringShortCodec codec = new StringShortCodec(hexCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode((short) value, output);
+    codec.encode(value, output);
     assertThat(HEX_FORMAT.formatHex(output.toByteArray())).isEqualTo(String.format("%02d", value));
   }
 
   @Test
-  void encode(
-      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value,
-      @Randomize(intMin = 2, intMax = 17) int radix)
+  void encode(@Randomize(shortMin = 0) short value, @Randomize(intMin = 2, intMax = 17) int radix)
       throws IOException {
     String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
     StringShortCodec codec = new StringShortCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode((short) value, output);
+    codec.encode(value, output);
     assertThat(HEX_FORMAT.formatHex(output.toByteArray())).endsWith(string);
   }
 
   @Test
   void encode_overflow() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
     StringShortCodec codec = new StringShortCodec(hexCodec, 16);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     short value = 0x1FF;
@@ -53,7 +52,7 @@ class StringShortCodecTest {
 
   @Test
   void invalid_radix_too_low() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
     assertThatThrownBy(() -> new StringShortCodec(hexCodec, 1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
@@ -63,7 +62,7 @@ class StringShortCodecTest {
 
   @Test
   void invalid_radix_too_high() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
     assertThatThrownBy(() -> new StringShortCodec(hexCodec, 37))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
@@ -72,22 +71,20 @@ class StringShortCodecTest {
   }
 
   @Test
-  void decode(
-      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value,
-      @Randomize(intMin = 2, intMax = 17) int radix)
+  void decode(@Randomize(shortMin = 0) short value, @Randomize(intMin = 2, intMax = 17) int radix)
       throws IOException {
     String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
     String padded = "0".repeat(length - string.length()) + string;
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
     StringShortCodec codec = new StringShortCodec(hexCodec, radix);
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
-    assertThat(codec.decode(input)).isEqualTo((short) value);
+    assertThat(codec.decode(input)).isEqualTo(value);
   }
 
   @Test
   void decode_overflow() {
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(16);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(16).build();
     StringShortCodec codec = new StringShortCodec(hexCodec, 16);
     // ffffffffffffffff exceeds Short.MAX_VALUE
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("ffffffffffffffff"));
@@ -99,29 +96,28 @@ class StringShortCodecTest {
 
   @Test
   void roundtrip(
-      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value,
-      @Randomize(intMin = 2, intMax = 17) int radix)
+      @Randomize(shortMin = 0) short value, @Randomize(intMin = 2, intMax = 17) int radix)
       throws IOException {
     String string = Integer.toString(value, radix);
     int length = string.length() + (string.length() % 2);
-    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
     StringShortCodec codec = new StringShortCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode((short) value, output);
+    codec.encode(value, output);
     ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-    assertThat(codec.decode(input)).isEqualTo((short) value);
+    assertThat(codec.decode(input)).isEqualTo(value);
   }
 
   @Test
-  void roundtrip_with_code_point_string_codec(
-      @Randomize(intMin = 0, intMax = Short.MAX_VALUE) int value) throws IOException {
+  void roundtrip_with_code_point_string_codec(@Randomize(shortMin = 0) short value)
+      throws IOException {
     String string = Integer.toString(value);
     FixedCodePointStringCodec codePointCodec =
         new FixedCodePointStringCodec(string.length(), UTF_8);
     StringShortCodec codec = new StringShortCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode((short) value, output);
+    codec.encode(value, output);
     ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-    assertThat(codec.decode(input)).isEqualTo((short) value);
+    assertThat(codec.decode(input)).isEqualTo(value);
   }
 }

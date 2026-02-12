@@ -116,6 +116,54 @@ class VariableLengthCodecTest {
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
   }
 
+  private static Codec<EncodeResult> hexDigitCountLengthCodec() {
+    UnsignedByteCodec byteCodec = new UnsignedByteCodec();
+    return new Codec<>() {
+      @Override
+      public EncodeResult encode(EncodeResult value, OutputStream output) throws IOException {
+        return byteCodec.encode(value.length(), output);
+      }
+
+      @Override
+      public EncodeResult decode(InputStream input) throws IOException {
+        int digitCount = byteCodec.decode(input);
+        return new EncodeResult(digitCount, (digitCount + 1) / 2);
+      }
+    };
+  }
+
+  @Test
+  void encode_hex_with_odd_digit_count() throws IOException {
+    VariableLengthCodec<String> codec =
+        new VariableLengthCodec<>(
+            hexDigitCountLengthCodec(), StreamHexStringCodec.builder().build());
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    EncodeResult result = codec.encode("abc", output);
+
+    byte[] bytes = output.toByteArray();
+    // Length prefix encodes digit count (3), not byte count (2)
+    assertThat(bytes[0] & 0xFF).isEqualTo(3);
+    // Value bytes: "abc" left-padded to "0abc" → [0x0a, 0xbc]
+    assertThat(bytes[1]).isEqualTo((byte) 0x0a);
+    assertThat(bytes[2]).isEqualTo((byte) 0xbc);
+    assertThat(result.length()).isEqualTo(3);
+    assertThat(result.bytes()).isEqualTo(3);
+  }
+
+  @Test
+  void decode_hex_with_odd_digit_count() throws IOException {
+    VariableLengthCodec<String> codec =
+        new VariableLengthCodec<>(
+            hexDigitCountLengthCodec(), StreamHexStringCodec.builder().build());
+    // [digit count = 3] [0x0a, 0xbc] → (3+1)/2 = 2 bytes to read
+    byte[] inputBytes = new byte[] {3, 0x0a, (byte) 0xbc};
+
+    String decoded = codec.decode(new ByteArrayInputStream(inputBytes));
+
+    assertThat(decoded).isEqualTo("0abc");
+  }
+
   @Test
   void constructor_null_length_codec() {
     Codec<String> valueCodec = variableLengthCodec(UTF_8);

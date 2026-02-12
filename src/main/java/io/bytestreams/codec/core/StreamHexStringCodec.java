@@ -59,7 +59,7 @@ public class StreamHexStringCodec implements Codec<String> {
             : Strings.padEnd(value, paddedLength, padChar);
     byte[] bytes = HEX_FORMAT.parseHex(padded);
     output.write(bytes);
-    return new EncodeResult(padded.length(), bytes.length);
+    return new EncodeResult(value.length(), bytes.length);
   }
 
   @Override

@@ -28,7 +28,9 @@ Core codec library for encoding and decoding values to and from byte streams.
 ```java
 // Encode an unsigned byte
 UnsignedByteCodec codec = new UnsignedByteCodec();
-codec.encode(255, outputStream);
+EncodeResult result = codec.encode(255, outputStream);
+result.length(); // logical length in codec-specific units
+result.bytes();  // number of bytes written to the stream
 
 // Decode an unsigned byte
 int value = codec.decode(inputStream);

@@ -30,9 +30,9 @@ public class BcdStringCodec extends HexStringCodec {
    * @throws IllegalArgumentException if the value contains non-digit characters
    */
   @Override
-  public void encode(String value, OutputStream output) throws IOException {
+  public EncodeResult encode(String value, OutputStream output) throws IOException {
     Preconditions.check(BCD_PATTERN.matcher(value).matches(), ERROR_MESSAGE, value);
-    super.encode(value, output);
+    return super.encode(value, output);
   }
 
   /**

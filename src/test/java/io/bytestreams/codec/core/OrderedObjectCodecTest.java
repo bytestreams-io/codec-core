@@ -285,7 +285,7 @@ class OrderedObjectCodecTest {
     Codec<Integer> throwingCodec =
         new Codec<>() {
           @Override
-          public void encode(Integer value, OutputStream output) {
+          public EncodeResult encode(Integer value, OutputStream output) throws IOException {
             throw new CodecException("inner encode failed", null);
           }
 

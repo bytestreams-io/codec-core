@@ -20,10 +20,10 @@ public class UnsignedByteCodec extends BinaryNumberCodec<Integer> {
    * @throws IllegalArgumentException if the value is not between 0 and 255
    */
   @Override
-  public void encode(Integer value, OutputStream output) throws IOException {
+  public EncodeResult encode(Integer value, OutputStream output) throws IOException {
     Preconditions.check(value >= 0x00, ERROR_MESSAGE, value);
     Preconditions.check(value <= 0xFF, ERROR_MESSAGE, value);
-    super.encode(value, output);
+    return super.encode(value, output);
   }
 
   @Override

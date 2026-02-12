@@ -22,10 +22,10 @@ public class UnsignedIntegerCodec extends BinaryNumberCodec<Long> {
    * @throws IllegalArgumentException if the value is not between 0 and 4294967295
    */
   @Override
-  public void encode(Long value, OutputStream output) throws IOException {
+  public EncodeResult encode(Long value, OutputStream output) throws IOException {
     Preconditions.check(value >= 0x00000000L, ERROR_MESSAGE, value);
     Preconditions.check(value <= 0xFFFFFFFFL, ERROR_MESSAGE, value);
-    super.encode(value, output);
+    return super.encode(value, output);
   }
 
   @Override

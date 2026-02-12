@@ -21,10 +21,10 @@ public class UnsignedShortCodec extends BinaryNumberCodec<Integer> {
    * @throws IllegalArgumentException if the value is not between 0 and 65535
    */
   @Override
-  public void encode(Integer value, OutputStream output) throws IOException {
+  public EncodeResult encode(Integer value, OutputStream output) throws IOException {
     Preconditions.check(value >= 0x0000, ERROR_MESSAGE, value);
     Preconditions.check(value <= 0xFFFF, ERROR_MESSAGE, value);
-    super.encode(value, output);
+    return super.encode(value, output);
   }
 
   @Override

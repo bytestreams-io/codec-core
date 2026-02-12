@@ -16,9 +16,10 @@ public interface Codec<V> {
    *
    * @param value the value to encode
    * @param output the output stream to write the encoded bytes to
+   * @return the encode result containing logical length and bytes written
    * @throws IOException if an I/O error occurs during encoding
    */
-  void encode(V value, OutputStream output) throws IOException;
+  EncodeResult encode(V value, OutputStream output) throws IOException;
 
   /**
    * Decodes a value from the input stream.

@@ -19,8 +19,9 @@ public class BooleanCodec implements FixedLengthCodec<Boolean> {
   }
 
   @Override
-  public void encode(Boolean value, OutputStream output) throws IOException {
+  public EncodeResult encode(Boolean value, OutputStream output) throws IOException {
     output.write(Boolean.TRUE.equals(value) ? 0x01 : 0x00);
+    return EncodeResult.ofBytes(1);
   }
 
   @Override

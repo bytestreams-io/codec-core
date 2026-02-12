@@ -1,75 +1,76 @@
 package io.bytestreams.codec.core;
 
+import io.bytestreams.codec.core.util.InputStreams;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * A codec for variable-length values where the length is encoded as a prefix.
  *
- * <p>This codec first encodes/decodes a length value using the length codec, then uses that length
- * to obtain the appropriate value codec from the provider. This enables encoding values of varying
- * sizes where the length is not known until runtime.
+ * <p>The {@code lengthCodec} handles the length prefix: on decode it decodes the length prefix into
+ * the corresponding byte size; on encode it receives the byte size and encodes the corresponding
+ * length prefix. The {@code valueCodec} handles both encoding and decoding the value. On decode,
+ * the value bytes are read into a bounded byte array and passed to the {@code valueCodec}.
  *
  * <p>Example usage with a string codec:
  *
  * <pre>{@code
  * VariableLengthCodec<String> codec = new VariableLengthCodec<>(
  *     new UnsignedByteCodec(),
- *     length -> new CodePointStringCodec(length, UTF_8),
- *     value -> (int) value.codePoints().count());
+ *     myStringCodec);
  * }</pre>
  *
  * @param <V> the type of value this codec handles
  */
 public class VariableLengthCodec<V> implements Codec<V> {
   private final Codec<Integer> lengthCodec;
-  private final Function<Integer, Codec<V>> valueCodecProvider;
-  private final Function<V, Integer> lengthProvider;
+  private final Codec<V> valueCodec;
 
   /**
    * Creates a new variable-length codec.
    *
-   * @param lengthCodec the codec for encoding/decoding the length prefix
-   * @param valueCodecProvider a function that provides the value codec based on the length
-   * @param lengthProvider a function that calculates the length of a value for encoding
+   * @param lengthCodec the codec for the length prefix; {@code decode} decodes the length prefix
+   *     into the corresponding byte size, {@code encode} receives the byte size and encodes the
+   *     corresponding length prefix
+   * @param valueCodec the codec for encoding and decoding the value
    * @throws NullPointerException if any argument is null
    */
-  public VariableLengthCodec(
-      Codec<Integer> lengthCodec,
-      Function<Integer, Codec<V>> valueCodecProvider,
-      Function<V, Integer> lengthProvider) {
+  public VariableLengthCodec(Codec<Integer> lengthCodec, Codec<V> valueCodec) {
     this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
-    this.valueCodecProvider = Objects.requireNonNull(valueCodecProvider, "valueCodecProvider");
-    this.lengthProvider = Objects.requireNonNull(lengthProvider, "lengthProvider");
+    this.valueCodec = Objects.requireNonNull(valueCodec, "valueCodec");
   }
 
   /**
    * {@inheritDoc}
    *
-   * <p>First encodes the length (computed via the length provider), then encodes the value using a
-   * codec obtained from the value codec provider.
+   * <p>Encodes the value to a buffer first, then passes the buffer size to the {@code lengthCodec}
+   * to write the length prefix, followed by the buffered value bytes.
    */
   @Override
-  public void encode(V value, OutputStream output) throws IOException {
-    int length = lengthProvider.apply(value);
-    lengthCodec.encode(length, output);
-    valueCodecProvider.apply(length).encode(value, output);
+  public EncodeResult encode(V value, OutputStream output) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    EncodeResult valueResult = valueCodec.encode(value, buffer);
+    EncodeResult prefixResult = lengthCodec.encode(buffer.size(), output);
+    buffer.writeTo(output);
+    return new EncodeResult(valueResult.length(), prefixResult.bytes() + valueResult.bytes());
   }
 
   /**
    * {@inheritDoc}
    *
-   * <p>First decodes the length prefix, then decodes the value using a codec obtained from the
-   * value codec provider.
+   * <p>First decodes the length prefix, then reads that many bytes from the input and decodes the
+   * value from the bounded byte array.
    *
    * @throws java.io.EOFException if the stream ends before the length or value is fully read
    */
   @Override
   public V decode(InputStream input) throws IOException {
-    int length = lengthCodec.decode(input);
-    return valueCodecProvider.apply(length).decode(input);
+    int byteSize = lengthCodec.decode(input);
+    byte[] data = InputStreams.readFully(input, byteSize);
+    return valueCodec.decode(new ByteArrayInputStream(data));
   }
 }

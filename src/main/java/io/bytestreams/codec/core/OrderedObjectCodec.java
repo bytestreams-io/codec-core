@@ -55,10 +55,17 @@ public class OrderedObjectCodec<T> implements Codec<T> {
   }
 
   @Override
-  public void encode(T value, OutputStream output) throws IOException {
+  public EncodeResult encode(T value, OutputStream output) throws IOException {
+    int fieldCount = 0;
+    int totalBytes = 0;
     for (FieldCodec<T, ?> field : fields) {
-      field.encode(value, output);
+      EncodeResult result = field.encode(value, output);
+      totalBytes += result.bytes();
+      if (result.bytes() > 0) {
+        fieldCount++;
+      }
     }
+    return new EncodeResult(fieldCount, totalBytes);
   }
 
   @Override
@@ -166,15 +173,17 @@ public class OrderedObjectCodec<T> implements Codec<T> {
       this.presence = presence;
     }
 
-    void encode(T object, OutputStream output) {
+    EncodeResult encode(T object, OutputStream output) {
       if (presence.test(object)) {
         try {
-          codec.encode(getter.apply(object), output);
+          return codec.encode(getter.apply(object), output);
         } catch (CodecException e) {
           throw e.withField(name);
         } catch (Exception e) {
           throw new CodecException(e.getMessage(), e).withField(name);
         }
+      } else {
+        return EncodeResult.EMPTY;
       }
     }
 

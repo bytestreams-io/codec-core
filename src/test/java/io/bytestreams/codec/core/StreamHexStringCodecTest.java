@@ -1,6 +1,6 @@
 package io.bytestreams.codec.core;
 
-import static io.github.lyang.randomparamsresolver.RandomParametersExtension.*;
+import static io.github.lyang.randomparamsresolver.RandomParametersExtension.Randomize;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.lyang.randomparamsresolver.RandomParametersExtension;

@@ -18,7 +18,7 @@ import java.nio.charset.CharsetDecoder;
  * (e.g., UTF-8, UTF-16), decoding uses {@link CodePointReader} to read exactly the required number
  * of code points.
  */
-public class CodePointStringCodec implements FixedLengthCodec<String> {
+public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
   private final int length;
   private final Charset charset;
   private final CharsetDecoder decoder;
@@ -31,7 +31,7 @@ public class CodePointStringCodec implements FixedLengthCodec<String> {
    * @param charset the charset to use for encoding and decoding
    * @throws IllegalArgumentException if length is negative
    */
-  public CodePointStringCodec(int length, Charset charset) {
+  public FixedCodePointStringCodec(int length, Charset charset) {
     this(length, charset.newDecoder());
   }
 
@@ -42,7 +42,7 @@ public class CodePointStringCodec implements FixedLengthCodec<String> {
    * @param decoder the decoder to use for decoding (charset is derived from decoder)
    * @throws IllegalArgumentException if length is negative
    */
-  public CodePointStringCodec(int length, CharsetDecoder decoder) {
+  public FixedCodePointStringCodec(int length, CharsetDecoder decoder) {
     Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
     this.charset = decoder.charset();

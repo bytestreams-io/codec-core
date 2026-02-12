@@ -14,7 +14,7 @@ package io.bytestreams.codec.core;
  *
  * // Tagged object codec
  * Codec<MyObject> tagged = ObjectCodec.<MyObject>tagged()
- *     .tagCodec(new CodePointStringCodec(4, UTF_8))
+ *     .tagCodec(new FixedCodePointStringCodec(4, UTF_8))
  *     .field("code", new UnsignedShortCodec())
  *     .factory(MyObject::new)
  *     .build();

@@ -14,18 +14,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(RandomParametersExtension.class)
-class BcdStringCodecTest {
+class FixedBcdStringCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of();
 
   @Test
   void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
-    BcdStringCodec codec = new BcdStringCodec(length);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(length);
     assertThat(codec.getLength()).isEqualTo(length);
   }
 
   @Test
   void encode(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-    BcdStringCodec codec = new BcdStringCodec(2);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     String bcdString = String.format("%02d", value);
     codec.encode(bcdString, output);
@@ -34,7 +34,7 @@ class BcdStringCodecTest {
 
   @Test
   void encode_odd_length(@Randomize(intMin = 0, intMax = 1000) int value) throws IOException {
-    BcdStringCodec codec = new BcdStringCodec(3);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(3);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(String.format("%03d", value), output);
     assertThat(output.toByteArray()).isEqualTo(HEX_FORMAT.parseHex(String.format("%04d", value)));
@@ -42,7 +42,7 @@ class BcdStringCodecTest {
 
   @Test
   void encode_overflow(@Randomize(intMin = 0, intMax = 1000) int value) {
-    BcdStringCodec codec = new BcdStringCodec(2);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     String data = String.format("%03d", value);
     assertThatThrownBy(() -> codec.encode(data, output))
@@ -52,7 +52,7 @@ class BcdStringCodecTest {
 
   @Test
   void encode_invalid_bcd_string() {
-    BcdStringCodec codec = new BcdStringCodec(3);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(3);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     assertThatThrownBy(() -> codec.encode("abc", output))
         .isInstanceOf(IllegalArgumentException.class)
@@ -61,7 +61,7 @@ class BcdStringCodecTest {
 
   @Test
   void decode(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-    BcdStringCodec codec = new BcdStringCodec(2);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(2);
     String bcdString = String.format("%02d", value);
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(bcdString));
     assertThat(codec.decode(input)).isEqualTo(bcdString);
@@ -69,7 +69,7 @@ class BcdStringCodecTest {
 
   @Test
   void decode_odd_length(@Randomize(intMin = 0, intMax = 1000) int value) throws IOException {
-    BcdStringCodec codec = new BcdStringCodec(3);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(3);
     String expected = String.format("%03d", value);
     ByteArrayInputStream input =
         new ByteArrayInputStream(HEX_FORMAT.parseHex(String.format("%04d", value)));
@@ -78,7 +78,7 @@ class BcdStringCodecTest {
 
   @Test
   void decode_insufficient_data(@Randomize(intMin = 0, intMax = 100) int value) {
-    BcdStringCodec codec = new BcdStringCodec(3);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(3);
     String bcdString = String.format("%02d", value);
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(bcdString));
     assertThatThrownBy(() -> codec.decode(input))
@@ -88,7 +88,7 @@ class BcdStringCodecTest {
 
   @Test
   void decode_invalid_bcd_string() {
-    BcdStringCodec codec = new BcdStringCodec(3);
+    FixedBcdStringCodec codec = new FixedBcdStringCodec(3);
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("0abc"));
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(IllegalArgumentException.class)

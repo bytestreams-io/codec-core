@@ -14,7 +14,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_left_padding() throws IOException {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0');
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -23,7 +23,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_left_padding_explicit() throws IOException {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0', true);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -32,7 +32,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_right_padding() throws IOException {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0', false);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -41,7 +41,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_already_at_length() throws IOException {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0');
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abcdef", output);
@@ -50,7 +50,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_exceeds_length() {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0');
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     // When value exceeds length, padStart/padEnd returns original value
@@ -62,7 +62,7 @@ class FormattedStringCodecTest {
 
   @Test
   void decode() throws IOException {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0');
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("000abc"));
     assertThat(codec.decode(input)).isEqualTo("000abc");
@@ -70,7 +70,7 @@ class FormattedStringCodecTest {
 
   @Test
   void roundtrip_left_padding() throws IOException {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0');
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -81,7 +81,7 @@ class FormattedStringCodecTest {
 
   @Test
   void roundtrip_right_padding() throws IOException {
-    HexStringCodec hexCodec = new HexStringCodec(6);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(6);
     FormattedStringCodec codec = new FormattedStringCodec(hexCodec, '0', false);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);

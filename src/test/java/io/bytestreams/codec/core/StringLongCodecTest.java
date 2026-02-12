@@ -19,7 +19,7 @@ class StringLongCodecTest {
 
   @Test
   void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-    BcdStringCodec bcdCodec = new BcdStringCodec(2);
+    FixedBcdStringCodec bcdCodec = new FixedBcdStringCodec(2);
     StringLongCodec codec = new StringLongCodec(bcdCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode((long) value, output);
@@ -33,7 +33,7 @@ class StringLongCodecTest {
       throws IOException {
     String string = Long.toString(value, radix);
     int length = string.length() + (string.length() % 2);
-    HexStringCodec hexCodec = new HexStringCodec(length);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
     StringLongCodec codec = new StringLongCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
@@ -42,7 +42,7 @@ class StringLongCodecTest {
 
   @Test
   void encode_overflow() {
-    HexStringCodec hexCodec = new HexStringCodec(2);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
     StringLongCodec codec = new StringLongCodec(hexCodec, 16);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     long value = 0x1FFL;
@@ -53,7 +53,7 @@ class StringLongCodecTest {
 
   @Test
   void invalid_radix_too_low() {
-    HexStringCodec hexCodec = new HexStringCodec(2);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
     assertThatThrownBy(() -> new StringLongCodec(hexCodec, 1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
@@ -63,7 +63,7 @@ class StringLongCodecTest {
 
   @Test
   void invalid_radix_too_high() {
-    HexStringCodec hexCodec = new HexStringCodec(2);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(2);
     assertThatThrownBy(() -> new StringLongCodec(hexCodec, 37))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
@@ -79,7 +79,7 @@ class StringLongCodecTest {
     String string = Long.toString(value, radix);
     int length = string.length() + (string.length() % 2);
     String padded = "0".repeat(length - string.length()) + string;
-    HexStringCodec hexCodec = new HexStringCodec(length);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
     StringLongCodec codec = new StringLongCodec(hexCodec, radix);
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
     assertThat(codec.decode(input)).isEqualTo(value);
@@ -87,7 +87,7 @@ class StringLongCodecTest {
 
   @Test
   void decode_overflow() {
-    HexStringCodec hexCodec = new HexStringCodec(20);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(20);
     StringLongCodec codec = new StringLongCodec(hexCodec, 16);
     // 20 hex digits exceeds Long.MAX_VALUE
     ByteArrayInputStream input =
@@ -105,7 +105,7 @@ class StringLongCodecTest {
       throws IOException {
     String string = Long.toString(value, radix);
     int length = string.length() + (string.length() % 2);
-    HexStringCodec hexCodec = new HexStringCodec(length);
+    FixedHexStringCodec hexCodec = new FixedHexStringCodec(length);
     StringLongCodec codec = new StringLongCodec(hexCodec, radix);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
@@ -117,7 +117,8 @@ class StringLongCodecTest {
   void roundtrip_with_code_point_string_codec(
       @Randomize(longMin = 0, longMax = Long.MAX_VALUE) long value) throws IOException {
     String string = Long.toString(value);
-    CodePointStringCodec codePointCodec = new CodePointStringCodec(string.length(), UTF_8);
+    FixedCodePointStringCodec codePointCodec =
+        new FixedCodePointStringCodec(string.length(), UTF_8);
     StringLongCodec codec = new StringLongCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);

@@ -89,13 +89,7 @@ FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0'
 | `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
 | `StreamHexStringCodec` | `String` | Variable-length hexadecimal string with configurable padding |
 | `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
-| `StringBigDecimalCodec` | `BigDecimal` | BigDecimal encoded as a string |
-| `StringBigIntegerCodec` | `BigInteger` | BigInteger encoded as a string with configurable radix |
-| `StringDoubleCodec` | `Double` | Double encoded as a string |
-| `StringFloatCodec` | `Float` | Float encoded as a string |
-| `StringIntegerCodec` | `Integer` | Integer encoded as a string with configurable radix |
-| `StringLongCodec` | `Long` | Long encoded as a string with configurable radix |
-| `StringShortCodec` | `Short` | Short encoded as a string with configurable radix |
+| `StringNumberCodec<V>` | `V extends Number` | Number encoded as a string, with configurable radix for integer types |
 | `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
 | `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
 | `UnsignedIntegerCodec` | `Long` | Unsigned integer (0 - 4294967295) |

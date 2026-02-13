@@ -25,7 +25,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -46,7 +46,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .field("name", FixedCodePointStringCodec.builder(5).build())
             .factory(TestTagged::new)
             .build();
@@ -70,7 +70,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -115,7 +115,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .defaultCodec(new BinaryCodec(3))
             .factory(TestTagged::new)
             .build();
@@ -165,7 +165,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -186,7 +186,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -246,7 +246,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -260,7 +260,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .maxFields(0)
             .factory(TestTagged::new)
             .build();
@@ -279,7 +279,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .maxFields(1)
             .factory(TestTagged::new)
             .build();
@@ -300,7 +300,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -321,7 +321,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -340,7 +340,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(new NotImplementedCodec<>())
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -356,7 +356,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(new AlwaysThrowsCodec<>())
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(TestTagged::new)
             .build();
 
@@ -380,7 +380,7 @@ class TaggedObjectCodecTest {
   void builder_null_tag() {
     TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder();
 
-    Codec<Integer> codec = new UnsignedShortCodec();
+    Codec<Integer> codec = BinaryNumberCodec.ofUnsignedShort();
 
     assertThatThrownBy(() -> builder.field(null, codec))
         .isInstanceOf(NullPointerException.class)
@@ -448,7 +448,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder()
             .tagCodec(TAG_CODEC)
-            .field("code", new UnsignedShortCodec())
+            .field("code", BinaryNumberCodec.ofUnsignedShort())
             .factory(() -> null)
             .build();
 

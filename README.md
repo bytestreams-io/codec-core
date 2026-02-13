@@ -36,6 +36,24 @@ result.bytes();  // number of bytes written to the stream
 int value = codec.decode(inputStream);
 ```
 
+### Code Point String Codecs
+
+```java
+// Fixed-length: default platform charset
+FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).build();
+
+// Fixed-length with explicit charset
+FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).charset(UTF_8).build();
+
+// Fixed-length with custom decoder
+FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5)
+    .decoder(UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE))
+    .build();
+
+// Variable-length (reads to EOF)
+StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().charset(UTF_8).build();
+```
+
 ### Hex/BCD Codecs with Configurable Padding
 
 ```java

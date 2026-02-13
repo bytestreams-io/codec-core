@@ -20,7 +20,7 @@ import java.util.function.Supplier;
  * <pre>{@code
  * // Decode exactly 3 items
  * FixedListCodec<String> codec = new FixedListCodec<>(
- *     new FixedCodePointStringCodec(5, UTF_8), 3);
+ *     FixedCodePointStringCodec.builder(5).build(), 3);
  * codec.encode(List.of("hello", "world", "abcde"), output);
  * List<String> values = codec.decode(input);
  * }</pre>

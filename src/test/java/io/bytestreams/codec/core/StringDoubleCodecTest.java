@@ -20,7 +20,7 @@ class StringDoubleCodecTest {
       throws IOException {
     String string = Double.toString(value);
     FixedCodePointStringCodec codePointCodec =
-        new FixedCodePointStringCodec(string.length(), UTF_8);
+        FixedCodePointStringCodec.builder(string.length()).build();
     StringDoubleCodec codec = new StringDoubleCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
@@ -29,7 +29,7 @@ class StringDoubleCodecTest {
 
   @Test
   void encode_overflow() {
-    FixedCodePointStringCodec codePointCodec = new FixedCodePointStringCodec(3, UTF_8);
+    FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
     StringDoubleCodec codec = new StringDoubleCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     double value = 1234.5;
@@ -41,7 +41,7 @@ class StringDoubleCodecTest {
   void decode() throws IOException {
     String string = "3.14";
     FixedCodePointStringCodec codePointCodec =
-        new FixedCodePointStringCodec(string.length(), UTF_8);
+        FixedCodePointStringCodec.builder(string.length()).build();
     StringDoubleCodec codec = new StringDoubleCodec(codePointCodec);
     ByteArrayInputStream input = new ByteArrayInputStream(string.getBytes(UTF_8));
     assertThat(codec.decode(input)).isEqualTo(3.14);
@@ -49,7 +49,7 @@ class StringDoubleCodecTest {
 
   @Test
   void decode_invalid() {
-    FixedCodePointStringCodec codePointCodec = new FixedCodePointStringCodec(3, UTF_8);
+    FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
     StringDoubleCodec codec = new StringDoubleCodec(codePointCodec);
     ByteArrayInputStream input = new ByteArrayInputStream("abc".getBytes(UTF_8));
     assertThatThrownBy(() -> codec.decode(input))
@@ -63,7 +63,7 @@ class StringDoubleCodecTest {
       throws IOException {
     String string = Double.toString(value);
     FixedCodePointStringCodec codePointCodec =
-        new FixedCodePointStringCodec(string.length(), UTF_8);
+        FixedCodePointStringCodec.builder(string.length()).build();
     StringDoubleCodec codec = new StringDoubleCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);

@@ -1,7 +1,6 @@
 package io.bytestreams.codec.core;
 
 import static io.github.lyang.randomparamsresolver.RandomParametersExtension.Randomize;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -113,7 +112,7 @@ class StringShortCodecTest {
       throws IOException {
     String string = Integer.toString(value);
     FixedCodePointStringCodec codePointCodec =
-        new FixedCodePointStringCodec(string.length(), UTF_8);
+        FixedCodePointStringCodec.builder(string.length()).build();
     StringShortCodec codec = new StringShortCodec(codePointCodec);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);

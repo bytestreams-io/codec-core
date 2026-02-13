@@ -24,7 +24,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class FixedListCodecTest {
 
   private static FixedListCodec<String> listCodec(Charset charset, int codePoints, int length) {
-    return new FixedListCodec<>(new FixedCodePointStringCodec(codePoints, charset), length);
+    return new FixedListCodec<>(
+        FixedCodePointStringCodec.builder(codePoints).charset(charset).build(), length);
   }
 
   @ParameterizedTest
@@ -180,7 +181,7 @@ class FixedListCodecTest {
   void decode_with_custom_list_factory(@Randomize String value1, @Randomize String value2)
       throws IOException {
     FixedListCodec<String> codec =
-        new FixedListCodec<>(new FixedCodePointStringCodec(5, UTF_8), 2, LinkedList::new);
+        new FixedListCodec<>(FixedCodePointStringCodec.builder(5).build(), 2, LinkedList::new);
     ByteArrayInputStream input = new ByteArrayInputStream((value1 + value2).getBytes(UTF_8));
 
     List<String> decoded = codec.decode(input);
@@ -197,7 +198,7 @@ class FixedListCodecTest {
 
   @Test
   void constructor_null_list_factory() {
-    Codec<String> itemCodec = new FixedCodePointStringCodec(5, UTF_8);
+    Codec<String> itemCodec = FixedCodePointStringCodec.builder(5).build();
 
     assertThatThrownBy(() -> new FixedListCodec<>(itemCodec, 1, null))
         .isInstanceOf(NullPointerException.class)
@@ -206,7 +207,7 @@ class FixedListCodecTest {
 
   @Test
   void constructor_negative_length() {
-    Codec<String> itemCodec = new FixedCodePointStringCodec(5, UTF_8);
+    Codec<String> itemCodec = FixedCodePointStringCodec.builder(5).build();
 
     assertThatThrownBy(() -> new FixedListCodec<>(itemCodec, -1))
         .isInstanceOf(IllegalArgumentException.class);
@@ -215,7 +216,7 @@ class FixedListCodecTest {
   @Test
   void decode_list_factory_returns_null() {
     FixedListCodec<String> codec =
-        new FixedListCodec<>(new FixedCodePointStringCodec(5, UTF_8), 1, () -> null);
+        new FixedListCodec<>(FixedCodePointStringCodec.builder(5).build(), 1, () -> null);
     ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(UTF_8));
 
     assertThatThrownBy(() -> codec.decode(input))

@@ -24,7 +24,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class StreamListCodecTest {
 
   private static StreamListCodec<String> listCodec(Charset charset, int length) {
-    return new StreamListCodec<>(new FixedCodePointStringCodec(length, charset));
+    return new StreamListCodec<>(
+        FixedCodePointStringCodec.builder(length).charset(charset).build());
   }
 
   @ParameterizedTest
@@ -163,7 +164,7 @@ class StreamListCodecTest {
   void decode_with_custom_list_factory(@Randomize String value1, @Randomize String value2)
       throws IOException {
     StreamListCodec<String> codec =
-        new StreamListCodec<>(new FixedCodePointStringCodec(5, UTF_8), LinkedList::new);
+        new StreamListCodec<>(FixedCodePointStringCodec.builder(5).build(), LinkedList::new);
     ByteArrayInputStream input = new ByteArrayInputStream((value1 + value2).getBytes(UTF_8));
 
     List<String> decoded = codec.decode(input);
@@ -180,7 +181,7 @@ class StreamListCodecTest {
 
   @Test
   void constructor_null_list_factory() {
-    Codec<String> itemCodec = new FixedCodePointStringCodec(5, UTF_8);
+    Codec<String> itemCodec = FixedCodePointStringCodec.builder(5).build();
 
     assertThatThrownBy(() -> new StreamListCodec<>(itemCodec, null))
         .isInstanceOf(NullPointerException.class)
@@ -190,7 +191,7 @@ class StreamListCodecTest {
   @Test
   void decode_list_factory_returns_null() {
     StreamListCodec<String> codec =
-        new StreamListCodec<>(new FixedCodePointStringCodec(5, UTF_8), () -> null);
+        new StreamListCodec<>(FixedCodePointStringCodec.builder(5).build(), () -> null);
     ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(UTF_8));
 
     assertThatThrownBy(() -> codec.decode(input))

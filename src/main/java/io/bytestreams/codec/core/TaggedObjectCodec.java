@@ -20,7 +20,7 @@ import java.util.function.Supplier;
  * <pre>{@code
  * TaggedObjectCodec<MyObject> codec = TaggedObjectCodec.<MyObject>builder()
  *     .tagCodec(FixedCodePointStringCodec.builder(4).build())
- *     .field("code", new UnsignedShortCodec())
+ *     .field("code", BinaryNumberCodec.ofUnsignedShort())
  *     .field("name", FixedCodePointStringCodec.builder(10).build())
  *     .defaultCodec(new BinaryCodec(8))
  *     .maxFields(100)

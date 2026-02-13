@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class VariableLengthCodecTest {
 
   private static Codec<EncodeResult> lengthCodec() {
-    UnsignedByteCodec byteCodec = new UnsignedByteCodec();
+    BinaryNumberCodec<Integer> byteCodec = BinaryNumberCodec.ofUnsignedByte();
     return new Codec<>() {
       @Override
       public EncodeResult encode(EncodeResult value, OutputStream output) throws IOException {
@@ -118,7 +118,7 @@ class VariableLengthCodecTest {
   }
 
   private static Codec<EncodeResult> hexDigitCountLengthCodec() {
-    UnsignedByteCodec byteCodec = new UnsignedByteCodec();
+    BinaryNumberCodec<Integer> byteCodec = BinaryNumberCodec.ofUnsignedByte();
     return new Codec<>() {
       @Override
       public EncodeResult encode(EncodeResult value, OutputStream output) throws IOException {

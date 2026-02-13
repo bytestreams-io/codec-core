@@ -27,7 +27,7 @@ Core codec library for encoding and decoding values to and from byte streams.
 
 ```java
 // Encode an unsigned byte
-UnsignedByteCodec codec = new UnsignedByteCodec();
+BinaryNumberCodec<Integer> codec = BinaryNumberCodec.ofUnsignedByte();
 EncodeResult result = codec.encode(255, outputStream);
 result.length(); // logical length in codec-specific units
 result.bytes();  // number of bytes written to the stream
@@ -76,24 +76,17 @@ FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0'
 |-------|------|-------------|
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
 | `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
-| `DoubleCodec` | `Double` | Double (IEEE 754 double-precision, 8 bytes) |
+| `BinaryNumberCodec<V>` | `V extends Number` | Signed/unsigned number as fixed-length big-endian binary (int, long, short, double, float, unsigned byte/short/int) |
 | `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string with configurable padding |
 | `FixedListCodec<V>` | `List<V>` | Fixed-length list that encodes/decodes exactly N items |
-| `FloatCodec` | `Float` | Float (IEEE 754 single-precision, 4 bytes) |
 | `FormattedStringCodec` | `String` | String with configurable padding, delegates to another codec |
-| `IntegerCodec` | `Integer` | Signed integer (-2147483648 to 2147483647) |
-| `LongCodec` | `Long` | Signed long (-2^63 to 2^63-1) |
 | `OrderedObjectCodec<T>` | `T` | Object with ordered fields, supports optional fields |
-| `ShortCodec` | `Short` | Signed short (-32768 to 32767) |
 | `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
 | `StreamHexStringCodec` | `String` | Variable-length hexadecimal string with configurable padding |
 | `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
 | `StringNumberCodec<V>` | `V extends Number` | Number encoded as a string, with configurable radix for integer types |
 | `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
-| `UnsignedByteCodec` | `Integer` | Unsigned byte (0 - 255) |
-| `UnsignedIntegerCodec` | `Long` | Unsigned integer (0 - 4294967295) |
-| `UnsignedShortCodec` | `Integer` | Unsigned short (0 - 65535) |
 | `VariableLengthCodec<V>` | `V` | Variable-length value with length prefix |
 
 ## License

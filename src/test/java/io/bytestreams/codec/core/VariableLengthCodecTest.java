@@ -38,7 +38,8 @@ class VariableLengthCodecTest {
   }
 
   private static VariableLengthCodec<String> variableLengthCodec(Charset charset) {
-    return new VariableLengthCodec<>(lengthCodec(), new StreamCodePointStringCodec(charset));
+    return new VariableLengthCodec<>(
+        lengthCodec(), StreamCodePointStringCodec.builder().charset(charset).build());
   }
 
   @ParameterizedTest

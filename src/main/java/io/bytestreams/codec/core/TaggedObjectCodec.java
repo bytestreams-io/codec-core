@@ -19,9 +19,9 @@ import java.util.function.Supplier;
  *
  * <pre>{@code
  * TaggedObjectCodec<MyObject> codec = TaggedObjectCodec.<MyObject>builder()
- *     .tagCodec(new FixedCodePointStringCodec(4, UTF_8))
+ *     .tagCodec(FixedCodePointStringCodec.builder(4).build())
  *     .field("code", new UnsignedShortCodec())
- *     .field("name", new FixedCodePointStringCodec(10, UTF_8))
+ *     .field("name", FixedCodePointStringCodec.builder(10).build())
  *     .defaultCodec(new BinaryCodec(8))
  *     .maxFields(100)
  *     .factory(MyObject::new)

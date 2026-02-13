@@ -23,7 +23,8 @@ class StreamCodePointStringCodecTest {
   void encode(String charsetName, @Randomize(unicodeBlocks = "BASIC_LATIN") String value)
       throws IOException {
     Charset charset = Charset.forName(charsetName);
-    StreamCodePointStringCodec codec = new StreamCodePointStringCodec(charset);
+    StreamCodePointStringCodec codec =
+        StreamCodePointStringCodec.builder().charset(charset).build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     codec.encode(value, output);
@@ -34,7 +35,7 @@ class StreamCodePointStringCodecTest {
   @Test
   void encode_result(@Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
       throws IOException {
-    StreamCodePointStringCodec codec = new StreamCodePointStringCodec(UTF_8);
+    StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     EncodeResult result = codec.encode(value, output);
@@ -45,7 +46,7 @@ class StreamCodePointStringCodecTest {
 
   @Test
   void encode_empty_string() throws IOException {
-    StreamCodePointStringCodec codec = new StreamCodePointStringCodec(UTF_8);
+    StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     EncodeResult result = codec.encode("", output);
@@ -59,7 +60,8 @@ class StreamCodePointStringCodecTest {
   void decode(String charsetName, @Randomize(unicodeBlocks = "BASIC_LATIN") String value)
       throws IOException {
     Charset charset = Charset.forName(charsetName);
-    StreamCodePointStringCodec codec = new StreamCodePointStringCodec(charset);
+    StreamCodePointStringCodec codec =
+        StreamCodePointStringCodec.builder().charset(charset).build();
     ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(charset));
 
     assertThat(codec.decode(input)).isEqualTo(value);
@@ -69,7 +71,7 @@ class StreamCodePointStringCodecTest {
   @Test
   void decode_multi_byte(@Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
       throws IOException {
-    StreamCodePointStringCodec codec = new StreamCodePointStringCodec(UTF_8);
+    StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().build();
     ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(UTF_8));
 
     assertThat(codec.decode(input)).isEqualTo(value);
@@ -77,7 +79,7 @@ class StreamCodePointStringCodecTest {
 
   @Test
   void decode_empty_stream() throws IOException {
-    StreamCodePointStringCodec codec = new StreamCodePointStringCodec(UTF_8);
+    StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().build();
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 
     assertThat(codec.decode(input)).isEmpty();
@@ -88,7 +90,8 @@ class StreamCodePointStringCodecTest {
   void roundtrip(String charsetName, @Randomize(unicodeBlocks = "BASIC_LATIN") String value)
       throws IOException {
     Charset charset = Charset.forName(charsetName);
-    StreamCodePointStringCodec codec = new StreamCodePointStringCodec(charset);
+    StreamCodePointStringCodec codec =
+        StreamCodePointStringCodec.builder().charset(charset).build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(value, output);
 
@@ -96,8 +99,18 @@ class StreamCodePointStringCodecTest {
   }
 
   @Test
-  void constructor_charset_null() {
-    assertThatThrownBy(() -> new StreamCodePointStringCodec(null))
-        .isInstanceOf(NullPointerException.class);
+  void builder_default_charset() throws IOException {
+    StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().build();
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    codec.encode("hello", output);
+
+    assertThat(output.toByteArray()).isEqualTo("hello".getBytes(Charset.defaultCharset()));
+  }
+
+  @Test
+  void builder_charset_null() {
+    StreamCodePointStringCodec.Builder builder = StreamCodePointStringCodec.builder();
+    assertThatThrownBy(() -> builder.charset(null)).isInstanceOf(NullPointerException.class);
   }
 }

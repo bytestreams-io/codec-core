@@ -84,7 +84,8 @@ class FormattedStringCodecTest {
 
   @Test
   void builder_default_left_pads_with_space() throws IOException {
-    FixedCodePointStringCodec delegate = new FixedCodePointStringCodec(6, US_ASCII);
+    FixedCodePointStringCodec delegate =
+        FixedCodePointStringCodec.builder(6).charset(US_ASCII).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(delegate).build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);

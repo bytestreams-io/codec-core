@@ -61,6 +61,40 @@ class FormattedStringCodecTest {
   }
 
   @Test
+  void decode_trim_left() throws IOException {
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').trim().build();
+    ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("000abc"));
+    assertThat(codec.decode(input)).isEqualTo("abc");
+  }
+
+  @Test
+  void decode_trim_right() throws IOException {
+    FixedCodePointStringCodec delegate =
+        FixedCodePointStringCodec.builder(6).charset(US_ASCII).build();
+    FormattedStringCodec codec =
+        FormattedStringCodec.builder(delegate).padRight(' ').trim().build();
+    ByteArrayInputStream input = new ByteArrayInputStream("abc   ".getBytes(US_ASCII));
+    assertThat(codec.decode(input)).isEqualTo("abc");
+  }
+
+  @Test
+  void decode_trim_all_padding() throws IOException {
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').trim().build();
+    ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("000000"));
+    assertThat(codec.decode(input)).isEmpty();
+  }
+
+  @Test
+  void decode_trim_no_padding_present() throws IOException {
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').trim().build();
+    ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("abcdef"));
+    assertThat(codec.decode(input)).isEqualTo("abcdef");
+  }
+
+  @Test
   void roundtrip_left_padding() throws IOException {
     FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').build();
@@ -80,6 +114,26 @@ class FormattedStringCodecTest {
     ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
     // Note: decode returns padded value, not original
     assertThat(codec.decode(input)).isEqualTo("abc000");
+  }
+
+  @Test
+  void roundtrip_left_padding_with_trim() throws IOException {
+    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').trim().build();
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode("abc", output);
+    assertThat(codec.decode(new ByteArrayInputStream(output.toByteArray()))).isEqualTo("abc");
+  }
+
+  @Test
+  void roundtrip_right_padding_with_trim() throws IOException {
+    FixedCodePointStringCodec delegate =
+        FixedCodePointStringCodec.builder(6).charset(US_ASCII).build();
+    FormattedStringCodec codec =
+        FormattedStringCodec.builder(delegate).padRight(' ').trim().build();
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode("abc", output);
+    assertThat(codec.decode(new ByteArrayInputStream(output.toByteArray()))).isEqualTo("abc");
   }
 
   @Test

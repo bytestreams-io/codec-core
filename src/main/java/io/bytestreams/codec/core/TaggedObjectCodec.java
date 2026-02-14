@@ -18,13 +18,12 @@ import java.util.function.Supplier;
  * <p>Example usage:
  *
  * <pre>{@code
- * TaggedObjectCodec<MyObject> codec = TaggedObjectCodec.<MyObject>builder()
+ * TaggedObjectCodec<MyObject> codec = TaggedObjectCodec.<MyObject>builder(MyObject::new)
  *     .tagCodec(FixedCodePointStringCodec.builder(4).build())
  *     .field("code", BinaryNumberCodec.ofUnsignedShort())
  *     .field("name", FixedCodePointStringCodec.builder(10).build())
  *     .defaultCodec(new BinaryCodec(8))
  *     .maxFields(100)
- *     .factory(MyObject::new)
  *     .build();
  * }</pre>
  *
@@ -54,11 +53,12 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
   /**
    * Creates a new builder for constructing a TaggedObjectCodec.
    *
+   * @param factory factory that creates new instances during decoding
    * @param <T> the type of object to encode/decode
    * @return a new builder
    */
-  public static <T extends Tagged<T>> Builder<T> builder() {
-    return new Builder<>();
+  public static <T extends Tagged<T>> Builder<T> builder(Supplier<T> factory) {
+    return new Builder<>(factory);
   }
 
   @Override
@@ -118,8 +118,12 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
     private Codec<String> tagCodec;
     private final Map<String, Codec<?>> fields = new HashMap<>();
     private Codec<?> defaultCodec;
-    private Supplier<T> factory;
+    private final Supplier<T> factory;
     private int maxFields = Integer.MAX_VALUE;
+
+    Builder(Supplier<T> factory) {
+      this.factory = Objects.requireNonNull(factory, "factory");
+    }
 
     /**
      * Sets the codec used to read and write tag strings.
@@ -174,25 +178,13 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
     }
 
     /**
-     * Sets the factory for creating new instances during decoding.
-     *
-     * @param factory factory that creates new instances
-     * @return this builder
-     */
-    public Builder<T> factory(Supplier<T> factory) {
-      this.factory = Objects.requireNonNull(factory, "factory");
-      return this;
-    }
-
-    /**
      * Builds the TaggedObjectCodec.
      *
      * @return the constructed codec
-     * @throws NullPointerException if tagCodec or factory was not set
+     * @throws NullPointerException if tagCodec was not set
      */
     public TaggedObjectCodec<T> build() {
       Objects.requireNonNull(tagCodec, "tagCodec must be set");
-      Objects.requireNonNull(factory, "factory must be set");
       Codec<?> effectiveDefault = defaultCodec != null ? defaultCodec : new NotImplementedCodec<>();
       return new TaggedObjectCodec<>(tagCodec, fields, effectiveDefault, factory, maxFields);
     }

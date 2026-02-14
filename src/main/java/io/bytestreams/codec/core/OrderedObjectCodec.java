@@ -23,12 +23,11 @@ import java.util.function.Supplier;
  * <p>Example usage:
  *
  * <pre>{@code
- * OrderedObjectCodec<Message> codec = OrderedObjectCodec.<Message>builder()
+ * OrderedObjectCodec<Message> codec = OrderedObjectCodec.<Message>builder(Message::new)
  *     .field("id", idCodec, Message::getId, Message::setId)
  *     .field("content", contentCodec, Message::getContent, Message::setContent)
  *     .field("tag", tagCodec, Message::getTag, Message::setTag,
  *            msg -> msg.getId() > 0)  // optional, based on earlier field
- *     .factory(Message::new)
  *     .build();
  * }</pre>
  *
@@ -47,11 +46,12 @@ public class OrderedObjectCodec<T> implements Codec<T> {
   /**
    * Creates a new builder for constructing an OrderedObjectCodec.
    *
+   * @param factory factory that creates new instances during decoding
    * @param <T> the type of object to encode/decode
    * @return a new builder
    */
-  public static <T> Builder<T> builder() {
-    return new Builder<>();
+  public static <T> Builder<T> builder(Supplier<T> factory) {
+    return new Builder<>(factory);
   }
 
   @Override
@@ -80,7 +80,11 @@ public class OrderedObjectCodec<T> implements Codec<T> {
   /** Builder for constructing an OrderedObjectCodec. */
   public static class Builder<T> {
     private final List<FieldCodec<T, ?>> fields = new ArrayList<>();
-    private Supplier<T> factory;
+    private final Supplier<T> factory;
+
+    Builder(Supplier<T> factory) {
+      this.factory = Objects.requireNonNull(factory, "factory");
+    }
 
     /**
      * Adds a required field to the codec.
@@ -128,25 +132,12 @@ public class OrderedObjectCodec<T> implements Codec<T> {
     }
 
     /**
-     * Sets the factory for creating new instances during decoding.
-     *
-     * @param factory factory that creates new instances
-     * @return this builder
-     */
-    public Builder<T> factory(Supplier<T> factory) {
-      this.factory = Objects.requireNonNull(factory, "factory");
-      return this;
-    }
-
-    /**
      * Builds the OrderedObjectCodec.
      *
      * @return the constructed codec
-     * @throws NullPointerException if factory was not set
      * @throws IllegalArgumentException if no fields were added
      */
     public OrderedObjectCodec<T> build() {
-      Objects.requireNonNull(factory, "factory must be set");
       Preconditions.check(!fields.isEmpty(), "at least one field is required");
       return new OrderedObjectCodec<>(fields, factory);
     }

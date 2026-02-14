@@ -94,6 +94,7 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
     if (singleByteCharset) {
       return new String(InputStreams.readFully(input, length), charset);
     } else {
+      decoder.reset();
       return CodePointReader.create(input, decoder).read(length);
     }
   }

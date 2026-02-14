@@ -27,7 +27,7 @@ Core codec library for encoding and decoding values to and from byte streams.
 
 ```java
 // Encode an unsigned byte
-BinaryNumberCodec<Integer> codec = BinaryNumberCodec.ofUnsignedByte();
+Codec<Integer> codec = NumberCodecs.ofUnsignedByte();
 EncodeResult result = codec.encode(255, outputStream);
 result.length(); // logical length in codec-specific units
 result.bytes();  // number of bytes written to the stream
@@ -36,47 +36,90 @@ result.bytes();  // number of bytes written to the stream
 int value = codec.decode(inputStream);
 ```
 
-### Code Point String Codecs
+### Number Codecs
 
 ```java
-// Fixed-length: default platform charset
-FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).build();
+// Binary integer codec (4 bytes big-endian)
+Codec<Integer> intCodec = NumberCodecs.ofInt();
 
-// Fixed-length with explicit charset
-FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).charset(UTF_8).build();
+// String integer codec (radix 10)
+Codec<Integer> decimalCodec = NumberCodecs.ofInt(stringCodec);
 
-// Fixed-length with custom decoder
-FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5)
-    .decoder(UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE))
-    .build();
+// String integer codec (radix 16)
+Codec<Integer> hexCodec = NumberCodecs.ofInt(stringCodec, 16);
 
-// Variable-length (reads to EOF)
-StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().charset(UTF_8).build();
+// Unsigned byte codec
+Codec<Integer> unsignedByteCodec = NumberCodecs.ofUnsignedByte();
 ```
 
-### Hex/BCD Codecs with Configurable Padding
+### String Codecs
 
 ```java
+// Fixed-length code point string
+Codec<String> fixed = StringCodecs.ofCodePoint(5).build();
+
+// Fixed-length with explicit charset
+Codec<String> fixedUtf8 = StringCodecs.ofCodePoint(5).charset(UTF_8).build();
+
+// Variable-length (reads to EOF)
+Codec<String> stream = StringCodecs.ofCodePoint().charset(UTF_8).build();
+
 // Fixed-length hex: default left-pad with '0'
-FixedHexStringCodec codec = FixedHexStringCodec.builder(4).build();
+Codec<String> hex = StringCodecs.ofHex(4).build();
 
 // Right-pad with 'f'
-FixedHexStringCodec codec = FixedHexStringCodec.builder(4).padRight('f').build();
+Codec<String> hexPadded = StringCodecs.ofHex(4).padRight('f').build();
 
-// Variable-length variant
-StreamHexStringCodec codec = StreamHexStringCodec.builder().padRight('f').build();
+// Variable-length hex
+Codec<String> hexStream = StringCodecs.ofHex().padRight('f').build();
 
-// FormattedStringCodec: default left-pad with space
-FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0').build();
+// Formatted string with delegate
+Codec<String> formatted = StringCodecs.ofFormatted(delegate).padRight('0').build();
+```
+
+### Object Codecs
+
+```java
+// Ordered object codec
+Codec<Message> ordered = ObjectCodecs.<Message>ofOrdered(Message::new)
+    .field("name", nameCodec, Message::getName, Message::setName)
+    .build();
+
+// Tagged object codec
+Codec<MyObject> tagged = ObjectCodecs.<MyObject>ofTagged(MyObject::new)
+    .tagCodec(StringCodecs.ofCodePoint(4).build())
+    .field("code", NumberCodecs.ofUnsignedShort())
+    .build();
+```
+
+### Variable-Length Codecs
+
+```java
+// Variable-length by byte count
+VariableByteLengthCodec.Builder llvar = VariableLengthCodecs.ofByteLength(NumberCodecs.ofUnsignedShort());
+Codec<String> varString = llvar.of(stringCodec);
+
+// Variable-length by item count
+Codec<String> varItems = VariableLengthCodecs.ofItemLength(NumberCodecs.ofUnsignedByte())
+    .of(Strings::codePointCount,
+        length -> StringCodecs.ofCodePoint(length).build());
 ```
 
 ## Available Codecs
+
+| Facade | Description |
+|--------|-------------|
+| `NumberCodecs` | Number codecs: binary (`ofInt()`) and string-encoded (`ofInt(stringCodec)`) |
+| `StringCodecs` | String codecs: code point, hex, and formatted |
+| `ObjectCodecs` | Object codecs: ordered and tagged |
+| `ListCodecs` | List codecs: stream (`of(codec)`) and fixed-length (`of(codec, length)`) |
+| `VariableLengthCodecs` | Variable-length codecs with byte count or item count prefix |
 
 | Codec | Type | Description |
 |-------|------|-------------|
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
 | `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
-| `BinaryNumberCodec<V>` | `V extends Number` | Signed/unsigned number as fixed-length big-endian binary (int, long, short, double, float, unsigned byte/short/int) |
+| `BinaryNumberCodec<V>` | `V extends Number` | Signed/unsigned number as fixed-length big-endian binary |
 | `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string with configurable padding |
 | `FixedListCodec<V>` | `List<V>` | Fixed-length list that encodes/decodes exactly N items |
@@ -85,7 +128,7 @@ FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0'
 | `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
 | `StreamHexStringCodec` | `String` | Variable-length hexadecimal string with configurable padding |
 | `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
-| `StringNumberCodec<V>` | `V extends Number` | Number encoded as a string, with configurable radix for integer types |
+| `StringNumberCodec<V>` | `V extends Number` | Number encoded as a string, with configurable radix |
 | `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
 | `VariableByteLengthCodec<V>` | `V` | Variable-length value with byte count prefix |
 | `VariableItemLengthCodec<V>` | `V` | Variable-length value with item count prefix |

@@ -19,10 +19,10 @@ import java.util.HexFormat;
  *
  * <pre>{@code
  * // Default: left-pad with '0'
- * StreamHexStringCodec codec = StreamHexStringCodec.builder().build();
+ * Codec<String> codec = StringCodecs.ofHex().build();
  *
  * // Right-pad with 'f'
- * StreamHexStringCodec codec = StreamHexStringCodec.builder().padRight('f').build();
+ * Codec<String> codec = StringCodecs.ofHex().padRight('f').build();
  * }</pre>
  */
 public class StreamHexStringCodec implements Codec<String> {
@@ -75,7 +75,7 @@ public class StreamHexStringCodec implements Codec<String> {
     /**
      * Creates a new builder.
      */
-    private Builder() {
+    Builder() {
       this.padChar = '0';
       this.padLeft = true;
     }

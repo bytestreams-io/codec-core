@@ -9,19 +9,19 @@ import java.util.function.Supplier;
  *
  * <pre>{@code
  * // Ordered object codec
- * Codec<Message> ordered = ObjectCodec.<Message>ordered(Message::new)
+ * Codec<Message> ordered = ObjectCodecs.<Message>ofOrdered(Message::new)
  *     .field("name", nameCodec, Message::getName, Message::setName)
  *     .build();
  *
  * // Tagged object codec
- * Codec<MyObject> tagged = ObjectCodec.<MyObject>tagged(MyObject::new)
- *     .tagCodec(FixedCodePointStringCodec.builder(4).build())
- *     .field("code", BinaryNumberCodec.ofUnsignedShort())
+ * Codec<MyObject> tagged = ObjectCodecs.<MyObject>ofTagged(MyObject::new)
+ *     .tagCodec(StringCodecs.ofCodePoint(4).build())
+ *     .field("code", NumberCodecs.ofUnsignedShort())
  *     .build();
  * }</pre>
  */
-public class ObjectCodec {
-  private ObjectCodec() {}
+public class ObjectCodecs {
+  private ObjectCodecs() {}
 
   /**
    * Creates a new builder for an ordered object codec.
@@ -30,7 +30,7 @@ public class ObjectCodec {
    * @param <T> the type of object to encode/decode
    * @return a new ordered object codec builder
    */
-  public static <T> OrderedObjectCodec.Builder<T> ordered(Supplier<T> factory) {
+  public static <T> OrderedObjectCodec.Builder<T> ofOrdered(Supplier<T> factory) {
     return OrderedObjectCodec.builder(factory);
   }
 
@@ -41,7 +41,7 @@ public class ObjectCodec {
    * @param <T> the type of object to encode/decode
    * @return a new tagged object codec builder
    */
-  public static <T extends Tagged<T>> TaggedObjectCodec.Builder<T> tagged(Supplier<T> factory) {
+  public static <T extends Tagged<T>> TaggedObjectCodec.Builder<T> ofTagged(Supplier<T> factory) {
     return TaggedObjectCodec.builder(factory);
   }
 }

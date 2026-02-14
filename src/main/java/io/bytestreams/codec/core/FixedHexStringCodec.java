@@ -15,10 +15,10 @@ import java.util.HexFormat;
  *
  * <pre>{@code
  * // Default: left-pad with '0'
- * FixedHexStringCodec codec = FixedHexStringCodec.builder(4).build();
+ * Codec<String> codec = StringCodecs.ofHex(4).build();
  *
  * // Right-pad with 'f'
- * FixedHexStringCodec codec = FixedHexStringCodec.builder(4).padRight('f').build();
+ * Codec<String> codec = StringCodecs.ofHex(4).padRight('f').build();
  * }</pre>
  */
 public class FixedHexStringCodec implements FixedLengthCodec<String> {
@@ -114,7 +114,7 @@ public class FixedHexStringCodec implements FixedLengthCodec<String> {
      * @param length the number of hex digits (must be non-negative)
      * @throws IllegalArgumentException if length is negative
      */
-    private Builder(int length) {
+    Builder(int length) {
       Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
       this.length = length;
       this.padChar = '0';

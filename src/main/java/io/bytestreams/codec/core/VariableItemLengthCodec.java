@@ -19,16 +19,16 @@ import java.util.function.ToIntFunction;
  *
  * <pre>{@code
  * // String with code point count prefix
- * VariableItemLengthCodec<String> codec = VariableItemLengthCodec
- *     .builder(BinaryNumberCodec.ofUnsignedByte())
+ * Codec<String> codec = VariableLengthCodecs
+ *     .ofItemLength(NumberCodecs.ofUnsignedByte())
  *     .of(Strings::codePointCount,
- *         length -> FixedCodePointStringCodec.builder(length).build());
+ *         length -> StringCodecs.ofCodePoint(length).build());
  *
  * // List with item count prefix
- * VariableItemLengthCodec<List<Foo>> codec = VariableItemLengthCodec
- *     .builder(BinaryNumberCodec.ofUnsignedShort())
+ * Codec<List<Foo>> codec = VariableLengthCodecs
+ *     .ofItemLength(NumberCodecs.ofUnsignedShort())
  *     .of(List::size,
- *         length -> new FixedListCodec<>(fooCodec, length));
+ *         length -> ListCodecs.of(fooCodec, length));
  * }</pre>
  *
  * @param <V> the type of value this codec handles
@@ -89,7 +89,7 @@ public class VariableItemLengthCodec<V> implements Codec<V> {
   public static class Builder {
     private final Codec<Integer> lengthCodec;
 
-    private Builder(Codec<Integer> lengthCodec) {
+    Builder(Codec<Integer> lengthCodec) {
       this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
     }
 

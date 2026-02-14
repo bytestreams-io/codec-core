@@ -21,10 +21,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 class VariableItemLengthCodecTest {
 
   private static VariableItemLengthCodec<String> codePointCodec(Charset charset) {
-    return VariableItemLengthCodec.builder(BinaryNumberCodec.ofUnsignedByte())
+    return VariableItemLengthCodec.builder(NumberCodecs.ofUnsignedByte())
         .of(
             Strings::codePointCount,
-            length -> FixedCodePointStringCodec.builder(length).charset(charset).build());
+            length -> StringCodecs.ofCodePoint(length).charset(charset).build());
   }
 
   @ParameterizedTest
@@ -85,8 +85,8 @@ class VariableItemLengthCodecTest {
   }
 
   private static VariableItemLengthCodec<String> hexDigitCodec() {
-    return VariableItemLengthCodec.builder(BinaryNumberCodec.ofUnsignedByte())
-        .of(String::length, length -> FixedHexStringCodec.builder(length).build());
+    return VariableItemLengthCodec.builder(NumberCodecs.ofUnsignedByte())
+        .of(String::length, length -> StringCodecs.ofHex(length).build());
   }
 
   @Test
@@ -144,9 +144,8 @@ class VariableItemLengthCodecTest {
   @Test
   void builder_null_length_of() {
     VariableItemLengthCodec.Builder builder =
-        VariableItemLengthCodec.builder(BinaryNumberCodec.ofUnsignedByte());
-    assertThatThrownBy(
-            () -> builder.of(null, length -> FixedCodePointStringCodec.builder(length).build()))
+        VariableItemLengthCodec.builder(NumberCodecs.ofUnsignedByte());
+    assertThatThrownBy(() -> builder.of(null, length -> StringCodecs.ofCodePoint(length).build()))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("lengthOf");
   }
@@ -154,7 +153,7 @@ class VariableItemLengthCodecTest {
   @Test
   void builder_null_codec_factory() {
     VariableItemLengthCodec.Builder builder =
-        VariableItemLengthCodec.builder(BinaryNumberCodec.ofUnsignedByte());
+        VariableItemLengthCodec.builder(NumberCodecs.ofUnsignedByte());
     assertThatThrownBy(() -> builder.of(Strings::codePointCount, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("codecFactory");

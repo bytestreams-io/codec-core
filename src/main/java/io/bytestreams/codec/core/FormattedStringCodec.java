@@ -15,10 +15,10 @@ import java.util.Objects;
  *
  * <pre>{@code
  * // Default: left-pad with space, no trim
- * FormattedStringCodec codec = FormattedStringCodec.builder(delegate).build();
+ * Codec<String> codec = StringCodecs.ofFormatted(delegate).build();
  *
  * // Right-pad with '0', trim on decode
- * FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0').trim().build();
+ * Codec<String> codec = StringCodecs.ofFormatted(delegate).padRight('0').trim().build();
  * }</pre>
  */
 public class FormattedStringCodec implements Codec<String> {
@@ -88,7 +88,7 @@ public class FormattedStringCodec implements Codec<String> {
      * @param delegate the underlying codec to delegate to
      * @throws NullPointerException if delegate is null
      */
-    private Builder(FixedLengthCodec<String> delegate) {
+    Builder(FixedLengthCodec<String> delegate) {
       this.delegate = Objects.requireNonNull(delegate, "delegate");
       this.padChar = ' ';
       this.padLeft = true;

@@ -19,9 +19,9 @@ import java.util.Objects;
  * <p>The builder can be reused to create multiple codecs with different value codecs:
  *
  * <pre>{@code
- * VariableByteLengthCodec.Builder llvar = VariableByteLengthCodec.builder(twoDigitLengthCodec);
- * VariableByteLengthCodec<String> stringCodec = llvar.of(stringCodec);
- * VariableByteLengthCodec<byte[]> binaryCodec = llvar.of(binaryCodec);
+ * VariableByteLengthCodec.Builder llvar = VariableLengthCodecs.ofByteLength(NumberCodecs.ofUnsignedShort());
+ * Codec<String> varString = llvar.of(stringCodec);
+ * Codec<byte[]> varBinary = llvar.of(binaryCodec);
  * }</pre>
  *
  * @param <V> the type of value this codec handles
@@ -81,7 +81,7 @@ public class VariableByteLengthCodec<V> implements Codec<V> {
   public static class Builder {
     private final Codec<Integer> lengthCodec;
 
-    private Builder(Codec<Integer> lengthCodec) {
+    Builder(Codec<Integer> lengthCodec) {
       this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
     }
 

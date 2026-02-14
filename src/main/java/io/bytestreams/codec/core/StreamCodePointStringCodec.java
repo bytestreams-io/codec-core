@@ -16,7 +16,7 @@ import java.util.Objects;
  * <p>Example usage:
  *
  * <pre>{@code
- * StreamCodePointStringCodec codec = StreamCodePointStringCodec.builder().build();
+ * Codec<String> codec = StringCodecs.ofCodePoint().build();
  * }</pre>
  */
 public class StreamCodePointStringCodec implements Codec<String> {
@@ -51,7 +51,7 @@ public class StreamCodePointStringCodec implements Codec<String> {
   public static class Builder {
     private Charset charset = Charset.defaultCharset();
 
-    private Builder() {}
+    Builder() {}
 
     /**
      * Sets the charset to use for encoding and decoding.

@@ -15,7 +15,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_left_padding() throws IOException {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -24,7 +24,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_right_padding() throws IOException {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padRight('0').build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -33,7 +33,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_already_at_length() throws IOException {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abcdef", output);
@@ -42,7 +42,7 @@ class FormattedStringCodecTest {
 
   @Test
   void encode_exceeds_length() {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     // When value exceeds length, padStart/padEnd returns original value
@@ -54,7 +54,7 @@ class FormattedStringCodecTest {
 
   @Test
   void decode() throws IOException {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').build();
     ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("000abc"));
     assertThat(codec.decode(input)).isEqualTo("000abc");
@@ -96,7 +96,7 @@ class FormattedStringCodecTest {
 
   @Test
   void roundtrip_left_padding() throws IOException {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padLeft('0').build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -107,7 +107,7 @@ class FormattedStringCodecTest {
 
   @Test
   void roundtrip_right_padding() throws IOException {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(hexCodec).padRight('0').build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -138,8 +138,7 @@ class FormattedStringCodecTest {
 
   @Test
   void builder_default_left_pads_with_space() throws IOException {
-    FixedCodePointStringCodec delegate =
-        FixedCodePointStringCodec.builder(6).charset(US_ASCII).build();
+    FixedCodePointStringCodec delegate = StringCodecs.ofCodePoint(6).charset(US_ASCII).build();
     FormattedStringCodec codec = FormattedStringCodec.builder(delegate).build();
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("abc", output);
@@ -148,7 +147,7 @@ class FormattedStringCodecTest {
 
   @Test
   void builder_invalid_pad_char_control() {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec.Builder builder = FormattedStringCodec.builder(hexCodec);
     assertThatThrownBy(() -> builder.padLeft('\t'))
         .isInstanceOf(IllegalArgumentException.class)
@@ -157,7 +156,7 @@ class FormattedStringCodecTest {
 
   @Test
   void builder_invalid_pad_char_delete() {
-    FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(6).build();
+    FixedHexStringCodec hexCodec = StringCodecs.ofHex(6).build();
     FormattedStringCodec.Builder builder = FormattedStringCodec.builder(hexCodec);
     assertThatThrownBy(() -> builder.padRight('\u007F'))
         .isInstanceOf(IllegalArgumentException.class);

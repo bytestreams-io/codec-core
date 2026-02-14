@@ -168,6 +168,21 @@ class FixedCodePointStringCodecTest {
   }
 
   @Test
+  void decode_after_failed_decode() throws IOException {
+    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(3).charset(UTF_8).build();
+
+    // First decode fails: truncated 3-byte UTF-8 sequence (only 2 bytes of \u4e16)
+    byte[] truncated = {(byte) 0xE4, (byte) 0xB8};
+    ByteArrayInputStream failInput = new ByteArrayInputStream(truncated);
+    assertThatThrownBy(() -> codec.decode(failInput)).isInstanceOf(EOFException.class);
+
+    // Second decode should succeed despite the previous failure leaving decoder dirty
+    String expected = "\u4e16\u754c\u4eba";
+    ByteArrayInputStream goodInput = new ByteArrayInputStream(expected.getBytes(UTF_8));
+    assertThat(codec.decode(goodInput)).isEqualTo(expected);
+  }
+
+  @Test
   void builder_default_charset() {
     FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).build();
     assertThat(codec.getLength()).isEqualTo(5);

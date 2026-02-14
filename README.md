@@ -133,6 +133,18 @@ Codec<String> varItems = VariableLengthCodecs.ofItemLength(NumberCodecs.ofUnsign
 | `VariableByteLengthCodec<V>` | `V` | Variable-length value with byte count prefix |
 | `VariableItemLengthCodec<V>` | `V` | Variable-length value with item count prefix |
 
+## Utilities
+
+The `io.bytestreams.codec.core.util` package provides the following utility classes:
+
+| Class | Key Methods | Description |
+|-------|-------------|-------------|
+| `Strings` | `padStart`, `padEnd`, `trimStart`, `trimEnd`, `codePointCount`, `hexByteCount` | String padding, trimming, and counting |
+| `InputStreams` | `readFully` | Read exactly N bytes from an input stream |
+| `Preconditions` | `check` | Validate conditions, throwing `IllegalArgumentException` on failure |
+| `Predicates` | `alwaysTrue`, `alwaysFalse` | Common predicate factories |
+| `CodePointReader` | `create`, `read` | Read Unicode code points from an input stream using a charset decoder |
+
 ## License
 
 [Apache-2.0](LICENSE)

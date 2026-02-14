@@ -52,7 +52,7 @@ public class StreamHexStringCodec implements Codec<String> {
 
   @Override
   public EncodeResult encode(String value, OutputStream output) throws IOException {
-    int paddedLength = value.length() + (value.length() % 2);
+    int paddedLength = Strings.hexByteCount(value) * 2;
     String padded =
         padLeft
             ? Strings.padStart(value, paddedLength, padChar)

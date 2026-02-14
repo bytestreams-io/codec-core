@@ -30,6 +30,36 @@ public final class Strings {
    * @param padding the character to use for padding
    * @return the padded string, or the original string if already at or above the target length
    */
+  /**
+   * Strips the specified character from the start of a string.
+   *
+   * @param value the string to strip
+   * @param ch the character to remove
+   * @return the stripped string
+   */
+  public static String trimStart(String value, char ch) {
+    int start = 0;
+    while (start < value.length() && value.charAt(start) == ch) {
+      start++;
+    }
+    return value.substring(start);
+  }
+
+  /**
+   * Strips the specified character from the end of a string.
+   *
+   * @param value the string to strip
+   * @param ch the character to remove
+   * @return the stripped string
+   */
+  public static String trimEnd(String value, char ch) {
+    int end = value.length();
+    while (end > 0 && value.charAt(end - 1) == ch) {
+      end--;
+    }
+    return value.substring(0, end);
+  }
+
   public static String padEnd(String value, int length, char padding) {
     if (value.length() >= length) {
       return value;

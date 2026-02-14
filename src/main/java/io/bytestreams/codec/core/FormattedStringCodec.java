@@ -10,21 +10,22 @@ import java.util.Objects;
 /**
  * A codec that formats strings with padding before delegating to an underlying codec.
  *
- * <p>On encode, the value is padded to the delegate's length. On decode, the value is returned
- * as-is from the delegate (padding is not stripped).
+ * <p>On encode, the value is padded to the delegate's length. On decode, padding is stripped if
+ * {@code trim} is enabled; otherwise the value is returned as-is from the delegate.
  *
  * <pre>{@code
- * // Default: left-pad with space
+ * // Default: left-pad with space, no trim
  * FormattedStringCodec codec = FormattedStringCodec.builder(delegate).build();
  *
- * // Right-pad with '0'
- * FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0').build();
+ * // Right-pad with '0', trim on decode
+ * FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0').trim().build();
  * }</pre>
  */
 public class FormattedStringCodec implements Codec<String> {
   private final FixedLengthCodec<String> delegate;
   private final char paddingChar;
   private final boolean padLeft;
+  private final boolean trim;
 
   /**
    * Creates a new formatted string codec.
@@ -32,11 +33,14 @@ public class FormattedStringCodec implements Codec<String> {
    * @param delegate the underlying codec to delegate to
    * @param paddingChar the character to use for padding
    * @param padLeft true to pad on the left, false to pad on the right
+   * @param trim true to strip the padding character on decode
    */
-  FormattedStringCodec(FixedLengthCodec<String> delegate, char paddingChar, boolean padLeft) {
+  FormattedStringCodec(
+      FixedLengthCodec<String> delegate, char paddingChar, boolean padLeft, boolean trim) {
     this.delegate = delegate;
     this.paddingChar = paddingChar;
     this.padLeft = padLeft;
+    this.trim = trim;
   }
 
   @Override
@@ -50,7 +54,11 @@ public class FormattedStringCodec implements Codec<String> {
 
   @Override
   public String decode(InputStream input) throws IOException {
-    return delegate.decode(input);
+    String value = delegate.decode(input);
+    if (trim) {
+      return padLeft ? Strings.trimStart(value, paddingChar) : Strings.trimEnd(value, paddingChar);
+    }
+    return value;
   }
 
   /**
@@ -72,6 +80,7 @@ public class FormattedStringCodec implements Codec<String> {
     private static final char PRINTABLE_ASCII_MIN = ' ';
     private static final char PRINTABLE_ASCII_MAX = '~';
     private final FixedLengthCodec<String> delegate;
+    private boolean trim;
 
     /**
      * Creates a new builder with the specified delegate codec.
@@ -83,6 +92,17 @@ public class FormattedStringCodec implements Codec<String> {
       this.delegate = Objects.requireNonNull(delegate, "delegate");
       this.padChar = ' ';
       this.padLeft = true;
+    }
+
+    /**
+     * Enables stripping the padding character on decode. Left-padded codecs strip from the start;
+     * right-padded codecs strip from the end.
+     *
+     * @return this builder
+     */
+    public Builder trim() {
+      this.trim = true;
+      return this;
     }
 
     @Override
@@ -99,7 +119,7 @@ public class FormattedStringCodec implements Codec<String> {
      * @return a new codec instance
      */
     public FormattedStringCodec build() {
-      return new FormattedStringCodec(delegate, padChar, padLeft);
+      return new FormattedStringCodec(delegate, padChar, padLeft, trim);
     }
   }
 }

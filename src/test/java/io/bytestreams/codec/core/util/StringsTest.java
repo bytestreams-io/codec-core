@@ -32,6 +32,46 @@ class StringsTest {
   }
 
   @Test
+  void trimStart() {
+    assertThat(Strings.trimStart("000abc", '0')).isEqualTo("abc");
+  }
+
+  @Test
+  void trimStart_empty_string() {
+    assertThat(Strings.trimStart("", '0')).isEmpty();
+  }
+
+  @Test
+  void trimStart_all_padding() {
+    assertThat(Strings.trimStart("000", '0')).isEmpty();
+  }
+
+  @Test
+  void trimStart_no_padding() {
+    assertThat(Strings.trimStart("abc", '0')).isEqualTo("abc");
+  }
+
+  @Test
+  void trimEnd() {
+    assertThat(Strings.trimEnd("abc   ", ' ')).isEqualTo("abc");
+  }
+
+  @Test
+  void trimEnd_empty_string() {
+    assertThat(Strings.trimEnd("", ' ')).isEmpty();
+  }
+
+  @Test
+  void trimEnd_all_padding() {
+    assertThat(Strings.trimEnd("   ", ' ')).isEmpty();
+  }
+
+  @Test
+  void trimEnd_no_padding() {
+    assertThat(Strings.trimEnd("abc", ' ')).isEqualTo("abc");
+  }
+
+  @Test
   void padEnd() {
     assertThat(Strings.padEnd("abc", 5, '0')).isEqualTo("abc00");
   }

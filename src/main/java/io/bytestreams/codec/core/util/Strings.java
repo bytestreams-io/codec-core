@@ -77,4 +77,25 @@ public final class Strings {
   public static int codePointCount(String value) {
     return value.codePointCount(0, value.length());
   }
+
+  /**
+   * Returns the number of bytes represented by the hex string (two hex digits per byte).
+   *
+   * @param value the hex string to count bytes in
+   * @return the number of bytes
+   */
+  public static int hexByteCount(String value) {
+    return hexByteCount(value.length());
+  }
+
+  /**
+   * Returns the number of bytes represented by the given number of hex digits (two digits per
+   * byte).
+   *
+   * @param digits the number of hex digits
+   * @return the number of bytes
+   */
+  public static int hexByteCount(int digits) {
+    return (digits + 1) / 2;
+  }
 }

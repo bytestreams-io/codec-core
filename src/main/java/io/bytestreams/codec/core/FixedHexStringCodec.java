@@ -63,10 +63,6 @@ public class FixedHexStringCodec implements FixedLengthCodec<String> {
     return length;
   }
 
-  static int toByteSize(int digits) {
-    return (digits + 1) / 2;
-  }
-
   /**
    * {@inheritDoc}
    *
@@ -77,7 +73,7 @@ public class FixedHexStringCodec implements FixedLengthCodec<String> {
   @Override
   public EncodeResult encode(String value, OutputStream output) throws IOException {
     Preconditions.check(value.length() <= length, ERROR_MESSAGE, length, value.length());
-    int paddedLength = toByteSize(length) * 2;
+    int paddedLength = Strings.hexByteCount(length) * 2;
     String padded =
         padLeft
             ? Strings.padStart(value, paddedLength, padChar)
@@ -94,7 +90,8 @@ public class FixedHexStringCodec implements FixedLengthCodec<String> {
    */
   @Override
   public String decode(InputStream input) throws IOException {
-    String parsed = HEX_FORMAT.formatHex(InputStreams.readFully(input, toByteSize(length)));
+    String parsed =
+        HEX_FORMAT.formatHex(InputStreams.readFully(input, Strings.hexByteCount(length)));
     if (padLeft) {
       return parsed.substring(parsed.length() - length);
     } else {

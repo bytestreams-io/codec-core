@@ -110,4 +110,34 @@ class StringsTest {
   void codePointCount_surrogate_pair() {
     assertThat(Strings.codePointCount("a\uD83D\uDE00b")).isEqualTo(3);
   }
+
+  @Test
+  void hexByteCount_string() {
+    assertThat(Strings.hexByteCount("AABBCC")).isEqualTo(3);
+  }
+
+  @Test
+  void hexByteCount_string_empty() {
+    assertThat(Strings.hexByteCount("")).isZero();
+  }
+
+  @Test
+  void hexByteCount_string_odd_length() {
+    assertThat(Strings.hexByteCount("ABC")).isEqualTo(2);
+  }
+
+  @Test
+  void hexByteCount_digits() {
+    assertThat(Strings.hexByteCount(6)).isEqualTo(3);
+  }
+
+  @Test
+  void hexByteCount_digits_zero() {
+    assertThat(Strings.hexByteCount(0)).isZero();
+  }
+
+  @Test
+  void hexByteCount_digits_odd() {
+    assertThat(Strings.hexByteCount(3)).isEqualTo(2);
+  }
 }

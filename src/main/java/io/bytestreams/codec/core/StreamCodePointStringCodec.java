@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * <p>Unlike {@link FixedCodePointStringCodec}, which reads a fixed number of code points, this
  * codec reads all bytes until EOF. This makes it suitable for use as a value codec inside {@link
- * VariableLengthCodec}, where the stream is bounded by the length prefix.
+ * VariableByteLengthCodec}, where the stream is bounded by the length prefix.
  *
  * <p>Example usage:
  *

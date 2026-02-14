@@ -12,7 +12,7 @@ import java.util.HexFormat;
  *
  * <p>Unlike {@link FixedHexStringCodec}, which reads a fixed number of hex digits, this codec reads
  * all bytes until EOF. This makes it suitable for use as a value codec inside {@link
- * VariableLengthCodec}, where the stream is bounded by the length prefix.
+ * VariableByteLengthCodec}, where the stream is bounded by the length prefix.
  *
  * <p>Encode pads odd-length values to even according to the configured padding direction and
  * character. Decode always returns an even-length hex string.

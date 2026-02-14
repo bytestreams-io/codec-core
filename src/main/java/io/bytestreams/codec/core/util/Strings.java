@@ -37,4 +37,14 @@ public final class Strings {
       return value + String.valueOf(padding).repeat(length - value.length());
     }
   }
+
+  /**
+   * Returns the number of Unicode code points in the string.
+   *
+   * @param value the string to count code points in
+   * @return the number of code points
+   */
+  public static int codePointCount(String value) {
+    return value.codePointCount(0, value.length());
+  }
 }

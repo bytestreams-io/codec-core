@@ -55,4 +55,19 @@ class StringsTest {
   void padEnd_exceeds_length() {
     assertThat(Strings.padEnd("abcde", 3, '0')).isEqualTo("abcde");
   }
+
+  @Test
+  void codePointCount() {
+    assertThat(Strings.codePointCount("hello")).isEqualTo(5);
+  }
+
+  @Test
+  void codePointCount_empty() {
+    assertThat(Strings.codePointCount("")).isZero();
+  }
+
+  @Test
+  void codePointCount_surrogate_pair() {
+    assertThat(Strings.codePointCount("a\uD83D\uDE00b")).isEqualTo(3);
+  }
 }

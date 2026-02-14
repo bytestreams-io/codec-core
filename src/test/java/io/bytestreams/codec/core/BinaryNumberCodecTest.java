@@ -149,6 +149,7 @@ class BinaryNumberCodecTest {
     void decode(@Randomize(length = 10) byte[] value) throws IOException {
       ByteArrayInputStream input = new ByteArrayInputStream(value);
       assertThat(codec.decode(input))
+          .usingComparator(Double::compare)
           .isEqualTo(ByteBuffer.wrap(value, 0, Double.BYTES).getDouble());
       assertThat(input.available()).isEqualTo(value.length - Double.BYTES);
     }
@@ -186,7 +187,9 @@ class BinaryNumberCodecTest {
     @Test
     void decode(@Randomize byte[] value) throws IOException {
       ByteArrayInputStream input = new ByteArrayInputStream(value);
-      assertThat(codec.decode(input)).isEqualTo(ByteBuffer.wrap(value, 0, Float.BYTES).getFloat());
+      assertThat(codec.decode(input))
+          .usingComparator(Float::compare)
+          .isEqualTo(ByteBuffer.wrap(value, 0, Float.BYTES).getFloat());
       assertThat(input.available()).isEqualTo(value.length - Float.BYTES);
     }
 

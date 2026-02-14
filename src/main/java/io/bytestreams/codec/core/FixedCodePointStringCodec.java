@@ -23,10 +23,10 @@ import java.util.Objects;
  *
  * <pre>{@code
  * // Using default charset
- * FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).build();
+ * Codec<String> codec = StringCodecs.ofCodePoint(5).build();
  *
  * // Using a custom decoder
- * FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5)
+ * Codec<String> codec = StringCodecs.ofCodePoint(5)
  *     .decoder(UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE))
  *     .build();
  * }</pre>
@@ -104,7 +104,7 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
     private final int length;
     private CharsetDecoder decoder = Charset.defaultCharset().newDecoder();
 
-    private Builder(int length) {
+    Builder(int length) {
       Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
       this.length = length;
     }

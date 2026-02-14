@@ -21,8 +21,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class VariableByteLengthCodecTest {
 
   private static VariableByteLengthCodec<String> variableByteLengthCodec(Charset charset) {
-    return VariableByteLengthCodec.builder(BinaryNumberCodec.ofUnsignedByte())
-        .of(StreamCodePointStringCodec.builder().charset(charset).build());
+    return VariableByteLengthCodec.builder(NumberCodecs.ofUnsignedByte())
+        .of(StringCodecs.ofCodePoint().charset(charset).build());
   }
 
   @ParameterizedTest
@@ -111,7 +111,7 @@ class VariableByteLengthCodecTest {
   @Test
   void builder_null_value_codec() {
     VariableByteLengthCodec.Builder builder =
-        VariableByteLengthCodec.builder(BinaryNumberCodec.ofUnsignedByte());
+        VariableByteLengthCodec.builder(NumberCodecs.ofUnsignedByte());
     assertThatThrownBy(() -> builder.of(null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("valueCodec");

@@ -18,14 +18,14 @@ import org.junit.jupiter.api.Test;
 
 class TaggedObjectCodecTest {
 
-  private static final Codec<String> TAG_CODEC = FixedCodePointStringCodec.builder(4).build();
+  private static final Codec<String> TAG_CODEC = StringCodecs.ofCodePoint(4).build();
 
   @Test
   void roundtrip_single_field() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     TestTagged original = new TestTagged();
@@ -45,8 +45,8 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .field("name", FixedCodePointStringCodec.builder(5).build())
+            .field("code", NumberCodecs.ofUnsignedShort())
+            .field("name", StringCodecs.ofCodePoint(5).build())
             .build();
 
     TestTagged original = new TestTagged();
@@ -68,7 +68,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     TestTagged original = new TestTagged();
@@ -111,7 +111,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .defaultCodec(new BinaryCodec(3))
             .build();
 
@@ -159,7 +159,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     TestTagged original = new TestTagged();
@@ -179,7 +179,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     TestTagged obj = new TestTagged();
@@ -236,7 +236,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     TestTagged decoded = codec.decode(new ByteArrayInputStream(new byte[0]));
@@ -249,7 +249,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .maxFields(0)
             .build();
 
@@ -267,7 +267,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .maxFields(1)
             .build();
 
@@ -287,7 +287,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -307,7 +307,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -325,7 +325,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(new NotImplementedCodec<>())
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {1, 2, 3, 4, 5, 6});
@@ -340,7 +340,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(new AlwaysThrowsCodec<>())
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {1, 2, 3, 4, 5, 6});
@@ -363,7 +363,7 @@ class TaggedObjectCodecTest {
   void builder_null_tag() {
     TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder(TestTagged::new);
 
-    Codec<Integer> codec = BinaryNumberCodec.ofUnsignedShort();
+    Codec<Integer> codec = NumberCodecs.ofUnsignedShort();
 
     assertThatThrownBy(() -> builder.field(null, codec))
         .isInstanceOf(NullPointerException.class)
@@ -418,7 +418,7 @@ class TaggedObjectCodecTest {
     TaggedObjectCodec<TestTagged> codec =
         TaggedObjectCodec.<TestTagged>builder(() -> null)
             .tagCodec(TAG_CODEC)
-            .field("code", BinaryNumberCodec.ofUnsignedShort())
+            .field("code", NumberCodecs.ofUnsignedShort())
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);

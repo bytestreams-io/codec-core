@@ -24,7 +24,7 @@ class StringNumberCodecTest {
   class IntegerTests {
     @Test
     void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<Integer> codec = StringNumberCodec.builder(hexCodec).ofInt();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -39,7 +39,7 @@ class StringNumberCodecTest {
         throws IOException {
       String string = Integer.toString(value, radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Integer> codec = StringNumberCodec.builder(hexCodec).ofInt(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -48,7 +48,7 @@ class StringNumberCodecTest {
 
     @Test
     void encode_overflow() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<Integer> codec = StringNumberCodec.builder(hexCodec).ofInt(16);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       int value = 0x1FF;
@@ -65,7 +65,7 @@ class StringNumberCodecTest {
       String string = Integer.toString(value, radix);
       int length = string.length() + (string.length() % 2);
       String padded = "0".repeat(length - string.length()) + string;
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Integer> codec = StringNumberCodec.builder(hexCodec).ofInt(radix);
       ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
       assertThat(codec.decode(input)).isEqualTo(value);
@@ -73,7 +73,7 @@ class StringNumberCodecTest {
 
     @Test
     void decode_overflow() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(16).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(16).build();
       StringNumberCodec<Integer> codec = StringNumberCodec.builder(hexCodec).ofInt(16);
       // ffffffffffffffff exceeds Integer.MAX_VALUE
       ByteArrayInputStream input =
@@ -91,7 +91,7 @@ class StringNumberCodecTest {
         throws IOException {
       String string = Integer.toString(value, radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Integer> codec = StringNumberCodec.builder(hexCodec).ofInt(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -103,8 +103,7 @@ class StringNumberCodecTest {
     void roundtrip_with_code_point_string_codec(
         @Randomize(intMin = 0, intMax = Integer.MAX_VALUE) int value) throws IOException {
       String string = Integer.toString(value);
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Integer> codec = StringNumberCodec.builder(codePointCodec).ofInt();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -117,7 +116,7 @@ class StringNumberCodecTest {
   class LongTests {
     @Test
     void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<Long> codec = StringNumberCodec.builder(hexCodec).ofLong();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode((long) value, output);
@@ -132,7 +131,7 @@ class StringNumberCodecTest {
         throws IOException {
       String string = Long.toString(value, radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Long> codec = StringNumberCodec.builder(hexCodec).ofLong(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -141,7 +140,7 @@ class StringNumberCodecTest {
 
     @Test
     void encode_overflow() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<Long> codec = StringNumberCodec.builder(hexCodec).ofLong(16);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       long value = 0x1FFL;
@@ -158,7 +157,7 @@ class StringNumberCodecTest {
       String string = Long.toString(value, radix);
       int length = string.length() + (string.length() % 2);
       String padded = "0".repeat(length - string.length()) + string;
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Long> codec = StringNumberCodec.builder(hexCodec).ofLong(radix);
       ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
       assertThat(codec.decode(input)).isEqualTo(value);
@@ -166,7 +165,7 @@ class StringNumberCodecTest {
 
     @Test
     void decode_overflow() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(20).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(20).build();
       StringNumberCodec<Long> codec = StringNumberCodec.builder(hexCodec).ofLong(16);
       // 20 hex digits exceeds Long.MAX_VALUE
       ByteArrayInputStream input =
@@ -184,7 +183,7 @@ class StringNumberCodecTest {
         throws IOException {
       String string = Long.toString(value, radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Long> codec = StringNumberCodec.builder(hexCodec).ofLong(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -196,8 +195,7 @@ class StringNumberCodecTest {
     void roundtrip_with_code_point_string_codec(
         @Randomize(longMin = 0, longMax = Long.MAX_VALUE) long value) throws IOException {
       String string = Long.toString(value);
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Long> codec = StringNumberCodec.builder(codePointCodec).ofLong();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -211,7 +209,7 @@ class StringNumberCodecTest {
     @Test
     void encode_default_radix(@Randomize(shortMin = 0, shortMax = 100) short value)
         throws IOException {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<Short> codec = StringNumberCodec.builder(hexCodec).ofShort();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -224,7 +222,7 @@ class StringNumberCodecTest {
         throws IOException {
       String string = Integer.toString(value, radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Short> codec = StringNumberCodec.builder(hexCodec).ofShort(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -233,7 +231,7 @@ class StringNumberCodecTest {
 
     @Test
     void encode_overflow() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<Short> codec = StringNumberCodec.builder(hexCodec).ofShort(16);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       short value = 0x1FF;
@@ -248,7 +246,7 @@ class StringNumberCodecTest {
       String string = Integer.toString(value, radix);
       int length = string.length() + (string.length() % 2);
       String padded = "0".repeat(length - string.length()) + string;
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Short> codec = StringNumberCodec.builder(hexCodec).ofShort(radix);
       ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
       assertThat(codec.decode(input)).isEqualTo(value);
@@ -256,7 +254,7 @@ class StringNumberCodecTest {
 
     @Test
     void decode_overflow() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(16).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(16).build();
       StringNumberCodec<Short> codec = StringNumberCodec.builder(hexCodec).ofShort(16);
       // ffffffffffffffff exceeds Short.MAX_VALUE
       ByteArrayInputStream input =
@@ -273,7 +271,7 @@ class StringNumberCodecTest {
         throws IOException {
       String string = Integer.toString(value, radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<Short> codec = StringNumberCodec.builder(hexCodec).ofShort(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -285,8 +283,7 @@ class StringNumberCodecTest {
     void roundtrip_with_code_point_string_codec(@Randomize(shortMin = 0) short value)
         throws IOException {
       String string = Integer.toString(value);
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Short> codec = StringNumberCodec.builder(codePointCodec).ofShort();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -299,7 +296,7 @@ class StringNumberCodecTest {
   class BigIntegerTests {
     @Test
     void encode_default_radix(@Randomize(intMin = 0, intMax = 100) int value) throws IOException {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<BigInteger> codec = StringNumberCodec.builder(hexCodec).ofBigInt();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(BigInteger.valueOf(value), output);
@@ -313,7 +310,7 @@ class StringNumberCodecTest {
       BigInteger absValue = value.abs();
       String string = absValue.toString(radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<BigInteger> codec = StringNumberCodec.builder(hexCodec).ofBigInt(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(absValue, output);
@@ -322,7 +319,7 @@ class StringNumberCodecTest {
 
     @Test
     void encode_overflow() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<BigInteger> codec = StringNumberCodec.builder(hexCodec).ofBigInt(16);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       BigInteger value = BigInteger.valueOf(0x1FF);
@@ -338,7 +335,7 @@ class StringNumberCodecTest {
       String string = absValue.toString(radix);
       int length = string.length() + (string.length() % 2);
       String padded = "0".repeat(length - string.length()) + string;
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<BigInteger> codec = StringNumberCodec.builder(hexCodec).ofBigInt(radix);
       ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex(padded));
       assertThat(codec.decode(input)).isEqualTo(absValue);
@@ -346,7 +343,7 @@ class StringNumberCodecTest {
 
     @Test
     void decode_invalid() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec<BigInteger> codec = StringNumberCodec.builder(hexCodec).ofBigInt(10);
       // "zz" is not a valid decimal number
       ByteArrayInputStream input = new ByteArrayInputStream(HEX_FORMAT.parseHex("7a7a"));
@@ -362,7 +359,7 @@ class StringNumberCodecTest {
       BigInteger absValue = value.abs();
       String string = absValue.toString(radix);
       int length = string.length() + (string.length() % 2);
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(length).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(length).build();
       StringNumberCodec<BigInteger> codec = StringNumberCodec.builder(hexCodec).ofBigInt(radix);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(absValue, output);
@@ -374,8 +371,7 @@ class StringNumberCodecTest {
     void roundtrip_with_code_point_string_codec(@Randomize BigInteger value) throws IOException {
       BigInteger absValue = value.abs();
       String string = absValue.toString();
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<BigInteger> codec = StringNumberCodec.builder(codePointCodec).ofBigInt();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(absValue, output);
@@ -390,8 +386,7 @@ class StringNumberCodecTest {
     void encode(@Randomize(doubleMin = 0, doubleMax = Double.MAX_VALUE) double value)
         throws IOException {
       String string = Double.toString(value);
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Double> codec = StringNumberCodec.builder(codePointCodec).ofDouble();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -400,7 +395,7 @@ class StringNumberCodecTest {
 
     @Test
     void encode_overflow() {
-      FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(3).build();
       StringNumberCodec<Double> codec = StringNumberCodec.builder(codePointCodec).ofDouble();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       double value = 1234.5;
@@ -411,8 +406,7 @@ class StringNumberCodecTest {
     @Test
     void decode() throws IOException {
       String string = "3.14";
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Double> codec = StringNumberCodec.builder(codePointCodec).ofDouble();
       ByteArrayInputStream input = new ByteArrayInputStream(string.getBytes(UTF_8));
       assertThat(codec.decode(input)).isEqualTo(3.14);
@@ -420,7 +414,7 @@ class StringNumberCodecTest {
 
     @Test
     void decode_invalid() {
-      FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(3).build();
       StringNumberCodec<Double> codec = StringNumberCodec.builder(codePointCodec).ofDouble();
       ByteArrayInputStream input = new ByteArrayInputStream("abc".getBytes(UTF_8));
       assertThatThrownBy(() -> codec.decode(input))
@@ -433,8 +427,7 @@ class StringNumberCodecTest {
     void roundtrip(@Randomize(doubleMin = 0, doubleMax = Double.MAX_VALUE) double value)
         throws IOException {
       String string = Double.toString(value);
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Double> codec = StringNumberCodec.builder(codePointCodec).ofDouble();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -449,8 +442,7 @@ class StringNumberCodecTest {
     void encode(@Randomize(floatMin = 0, floatMax = Float.MAX_VALUE) float value)
         throws IOException {
       String string = Float.toString(value);
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Float> codec = StringNumberCodec.builder(codePointCodec).ofFloat();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -459,7 +451,7 @@ class StringNumberCodecTest {
 
     @Test
     void encode_overflow() {
-      FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(3).build();
       StringNumberCodec<Float> codec = StringNumberCodec.builder(codePointCodec).ofFloat();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       float value = 1234.5f;
@@ -470,8 +462,7 @@ class StringNumberCodecTest {
     @Test
     void decode() throws IOException {
       String string = "3.14";
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Float> codec = StringNumberCodec.builder(codePointCodec).ofFloat();
       ByteArrayInputStream input = new ByteArrayInputStream(string.getBytes(UTF_8));
       assertThat(codec.decode(input)).isEqualTo(3.14f);
@@ -479,7 +470,7 @@ class StringNumberCodecTest {
 
     @Test
     void decode_invalid() {
-      FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(3).build();
       StringNumberCodec<Float> codec = StringNumberCodec.builder(codePointCodec).ofFloat();
       ByteArrayInputStream input = new ByteArrayInputStream("abc".getBytes(UTF_8));
       assertThatThrownBy(() -> codec.decode(input))
@@ -492,8 +483,7 @@ class StringNumberCodecTest {
     void roundtrip(@Randomize(floatMin = 0, floatMax = Float.MAX_VALUE) float value)
         throws IOException {
       String string = Float.toString(value);
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<Float> codec = StringNumberCodec.builder(codePointCodec).ofFloat();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -507,8 +497,7 @@ class StringNumberCodecTest {
     @Test
     void encode(@Randomize BigDecimal value) throws IOException {
       String string = value.toPlainString();
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<BigDecimal> codec =
           StringNumberCodec.builder(codePointCodec).ofBigDecimal();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -518,7 +507,7 @@ class StringNumberCodecTest {
 
     @Test
     void encode_overflow() {
-      FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(3).build();
       StringNumberCodec<BigDecimal> codec =
           StringNumberCodec.builder(codePointCodec).ofBigDecimal();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -530,8 +519,7 @@ class StringNumberCodecTest {
     @Test
     void decode() throws IOException {
       String string = "3.14";
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<BigDecimal> codec =
           StringNumberCodec.builder(codePointCodec).ofBigDecimal();
       ByteArrayInputStream input = new ByteArrayInputStream(string.getBytes(UTF_8));
@@ -540,7 +528,7 @@ class StringNumberCodecTest {
 
     @Test
     void decode_invalid() {
-      FixedCodePointStringCodec codePointCodec = FixedCodePointStringCodec.builder(3).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(3).build();
       StringNumberCodec<BigDecimal> codec =
           StringNumberCodec.builder(codePointCodec).ofBigDecimal();
       ByteArrayInputStream input = new ByteArrayInputStream("abc".getBytes(UTF_8));
@@ -553,8 +541,7 @@ class StringNumberCodecTest {
     @Test
     void roundtrip(@Randomize BigDecimal value) throws IOException {
       String string = value.toPlainString();
-      FixedCodePointStringCodec codePointCodec =
-          FixedCodePointStringCodec.builder(string.length()).build();
+      FixedCodePointStringCodec codePointCodec = StringCodecs.ofCodePoint(string.length()).build();
       StringNumberCodec<BigDecimal> codec =
           StringNumberCodec.builder(codePointCodec).ofBigDecimal();
       ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -575,7 +562,7 @@ class StringNumberCodecTest {
 
     @Test
     void builder_invalid_radix_too_low() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec.Builder builder = StringNumberCodec.builder(hexCodec);
       assertThatThrownBy(() -> builder.ofInt(1))
           .isInstanceOf(IllegalArgumentException.class)
@@ -586,7 +573,7 @@ class StringNumberCodecTest {
 
     @Test
     void builder_invalid_radix_too_high() {
-      FixedHexStringCodec hexCodec = FixedHexStringCodec.builder(2).build();
+      FixedHexStringCodec hexCodec = StringCodecs.ofHex(2).build();
       StringNumberCodec.Builder builder = StringNumberCodec.builder(hexCodec);
       assertThatThrownBy(() -> builder.ofInt(37))
           .isInstanceOf(IllegalArgumentException.class)

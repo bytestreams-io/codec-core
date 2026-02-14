@@ -18,10 +18,10 @@ import java.util.function.Supplier;
  * <p>Example usage:
  *
  * <pre>{@code
- * TaggedObjectCodec<MyObject> codec = TaggedObjectCodec.<MyObject>builder(MyObject::new)
- *     .tagCodec(FixedCodePointStringCodec.builder(4).build())
- *     .field("code", BinaryNumberCodec.ofUnsignedShort())
- *     .field("name", FixedCodePointStringCodec.builder(10).build())
+ * TaggedObjectCodec<MyObject> codec = ObjectCodecs.<MyObject>ofTagged(MyObject::new)
+ *     .tagCodec(StringCodecs.ofCodePoint(4).build())
+ *     .field("code", NumberCodecs.ofUnsignedShort())
+ *     .field("name", StringCodecs.ofCodePoint(10).build())
  *     .defaultCodec(new BinaryCodec(8))
  *     .maxFields(100)
  *     .build();

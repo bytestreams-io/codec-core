@@ -23,15 +23,10 @@ import java.util.function.Supplier;
  *
  * <pre>{@code
  * // Using default ArrayList
- * StreamListCodec<String> codec = new StreamListCodec<>(
- *     FixedCodePointStringCodec.builder(5).build());
+ * Codec<List<String>> codec = ListCodecs.of(
+ *     StringCodecs.ofCodePoint(5).build());
  * codec.encode(List.of("hello", "world"), output);
  * List<String> values = codec.decode(input);
- *
- * // Using custom list factory
- * StreamListCodec<String> linkedCodec = new StreamListCodec<>(
- *     FixedCodePointStringCodec.builder(5).build(),
- *     LinkedList::new);
  * }</pre>
  *
  * @param <V> the type of values in the list

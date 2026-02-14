@@ -17,7 +17,7 @@ import java.util.function.Function;
  * <p>Example usage:
  *
  * <pre>{@code
- * StringNumberCodec<Integer> codec = StringNumberCodec.builder(stringCodec).ofInt(16);
+ * Codec<Integer> codec = NumberCodecs.ofInt(stringCodec, 16);
  * }</pre>
  *
  * @param <V> the {@link Number} type this codec handles
@@ -70,7 +70,7 @@ public class StringNumberCodec<V extends Number> implements Codec<V> {
   public static class Builder {
     private final Codec<String> stringCodec;
 
-    private Builder(Codec<String> stringCodec) {
+    Builder(Codec<String> stringCodec) {
       this.stringCodec = Objects.requireNonNull(stringCodec, "stringCodec");
     }
 

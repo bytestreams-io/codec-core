@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  * <p>Example usage:
  *
  * <pre>{@code
- * OrderedObjectCodec<Message> codec = OrderedObjectCodec.<Message>builder(Message::new)
+ * OrderedObjectCodec<Message> codec = ObjectCodecs.<Message>ofOrdered(Message::new)
  *     .field("id", idCodec, Message::getId, Message::setId)
  *     .field("content", contentCodec, Message::getContent, Message::setContent)
  *     .field("tag", tagCodec, Message::getTag, Message::setTag,

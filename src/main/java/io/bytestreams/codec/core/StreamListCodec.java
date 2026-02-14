@@ -17,7 +17,7 @@ import java.util.function.Supplier;
  *
  * <p>Unlike {@link FixedListCodec}, which decodes a fixed number of items, this codec reads all
  * available items. This makes it suitable for use as a value codec inside {@link
- * VariableLengthCodec}, where the stream is bounded by the length prefix.
+ * VariableByteLengthCodec}, where the stream is bounded by the length prefix.
  *
  * <p>Example usage:
  *

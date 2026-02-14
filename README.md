@@ -87,7 +87,8 @@ FormattedStringCodec codec = FormattedStringCodec.builder(delegate).padRight('0'
 | `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
 | `StringNumberCodec<V>` | `V extends Number` | Number encoded as a string, with configurable radix for integer types |
 | `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
-| `VariableLengthCodec<V>` | `V` | Variable-length value with length prefix |
+| `VariableByteLengthCodec<V>` | `V` | Variable-length value with byte count prefix |
+| `VariableItemLengthCodec<V>` | `V` | Variable-length value with item count prefix |
 
 ## License
 

@@ -16,14 +16,13 @@ class OrderedObjectCodecTest {
   @Test
   void roundtrip_required_fields_only() throws IOException {
     OrderedObjectCodec<TestObject> codec =
-        OrderedObjectCodec.<TestObject>builder()
+        OrderedObjectCodec.<TestObject>builder(TestObject::new)
             .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId)
             .field(
                 "name",
                 FixedCodePointStringCodec.builder(5).build(),
                 TestObject::getName,
                 TestObject::setName)
-            .factory(TestObject::new)
             .build();
 
     TestObject original = new TestObject();
@@ -44,7 +43,7 @@ class OrderedObjectCodecTest {
     // Presence predicate must check an EARLIER field, not the optional field itself
     // Here, id > 0 indicates tag is present
     OrderedObjectCodec<TestObject> codec =
-        OrderedObjectCodec.<TestObject>builder()
+        OrderedObjectCodec.<TestObject>builder(TestObject::new)
             .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId)
             .field(
                 "tag",
@@ -52,7 +51,6 @@ class OrderedObjectCodecTest {
                 TestObject::getTag,
                 TestObject::setTag,
                 obj -> obj.getId() > 0)
-            .factory(TestObject::new)
             .build();
 
     TestObject original = new TestObject();
@@ -73,7 +71,7 @@ class OrderedObjectCodecTest {
     // Presence predicate must check an EARLIER field, not the optional field itself
     // Here, id = 0 indicates tag is absent
     OrderedObjectCodec<TestObject> codec =
-        OrderedObjectCodec.<TestObject>builder()
+        OrderedObjectCodec.<TestObject>builder(TestObject::new)
             .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId)
             .field(
                 "tag",
@@ -81,7 +79,6 @@ class OrderedObjectCodecTest {
                 TestObject::getTag,
                 TestObject::setTag,
                 obj -> obj.getId() > 0)
-            .factory(TestObject::new)
             .build();
 
     TestObject original = new TestObject();
@@ -104,10 +101,9 @@ class OrderedObjectCodecTest {
   void encode_error_includes_field_name() {
     // BinaryCodec throws IllegalArgumentException when length doesn't match
     OrderedObjectCodec<TestObject> codec =
-        OrderedObjectCodec.<TestObject>builder()
+        OrderedObjectCodec.<TestObject>builder(TestObject::new)
             .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId)
             .field("data", new BinaryCodec(5), obj -> new byte[3], (obj, v) -> {})
-            .factory(TestObject::new)
             .build();
 
     TestObject obj = new TestObject();
@@ -123,9 +119,8 @@ class OrderedObjectCodecTest {
   @Test
   void decode_empty_stream() {
     OrderedObjectCodec<TestObject> codec =
-        OrderedObjectCodec.<TestObject>builder()
+        OrderedObjectCodec.<TestObject>builder(TestObject::new)
             .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId)
-            .factory(TestObject::new)
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
@@ -139,14 +134,13 @@ class OrderedObjectCodecTest {
   @Test
   void decode_insufficient_data() {
     OrderedObjectCodec<TestObject> codec =
-        OrderedObjectCodec.<TestObject>builder()
+        OrderedObjectCodec.<TestObject>builder(TestObject::new)
             .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId)
             .field(
                 "name",
                 FixedCodePointStringCodec.builder(5).build(),
                 TestObject::getName,
                 TestObject::setName)
-            .factory(TestObject::new)
             .build();
 
     // Only 2 bytes for id, missing name
@@ -160,7 +154,7 @@ class OrderedObjectCodecTest {
 
   @Test
   void builder_null_name() {
-    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder(TestObject::new);
     Codec<Integer> codec = BinaryNumberCodec.ofUnsignedShort();
 
     assertThatThrownBy(() -> builder.field(null, codec, TestObject::getId, TestObject::setId))
@@ -170,7 +164,7 @@ class OrderedObjectCodecTest {
 
   @Test
   void builder_null_codec() {
-    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder(TestObject::new);
 
     assertThatThrownBy(() -> builder.field("id", null, TestObject::getId, TestObject::setId))
         .isInstanceOf(NullPointerException.class)
@@ -179,7 +173,7 @@ class OrderedObjectCodecTest {
 
   @Test
   void builder_null_getter() {
-    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder(TestObject::new);
     Codec<Integer> codec = BinaryNumberCodec.ofUnsignedShort();
 
     assertThatThrownBy(() -> builder.field("id", codec, null, TestObject::setId))
@@ -189,7 +183,7 @@ class OrderedObjectCodecTest {
 
   @Test
   void builder_null_setter() {
-    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder(TestObject::new);
     Codec<Integer> codec = BinaryNumberCodec.ofUnsignedShort();
 
     assertThatThrownBy(() -> builder.field("id", codec, TestObject::getId, null))
@@ -199,7 +193,7 @@ class OrderedObjectCodecTest {
 
   @Test
   void builder_null_presence() {
-    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder();
+    OrderedObjectCodec.Builder<TestObject> builder = OrderedObjectCodec.builder(TestObject::new);
     Codec<Integer> codec = BinaryNumberCodec.ofUnsignedShort();
 
     assertThatThrownBy(() -> builder.field("id", codec, TestObject::getId, TestObject::setId, null))
@@ -209,22 +203,7 @@ class OrderedObjectCodecTest {
 
   @Test
   void builder_null_factory() {
-    OrderedObjectCodec.Builder<TestObject> builder =
-        OrderedObjectCodec.<TestObject>builder()
-            .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId);
-
-    assertThatThrownBy(() -> builder.factory(null))
-        .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("factory");
-  }
-
-  @Test
-  void builder_missing_factory() {
-    OrderedObjectCodec.Builder<TestObject> builder =
-        OrderedObjectCodec.<TestObject>builder()
-            .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId);
-
-    assertThatThrownBy(builder::build)
+    assertThatThrownBy(() -> OrderedObjectCodec.builder(null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("factory");
   }
@@ -232,7 +211,7 @@ class OrderedObjectCodecTest {
   @Test
   void builder_no_fields() {
     OrderedObjectCodec.Builder<TestObject> builder =
-        OrderedObjectCodec.<TestObject>builder().factory(TestObject::new);
+        OrderedObjectCodec.<TestObject>builder(TestObject::new);
 
     assertThatThrownBy(builder::build)
         .isInstanceOf(IllegalArgumentException.class)
@@ -242,9 +221,8 @@ class OrderedObjectCodecTest {
   @Test
   void factory_returns_null() {
     OrderedObjectCodec<TestObject> codec =
-        OrderedObjectCodec.<TestObject>builder()
+        OrderedObjectCodec.<TestObject>builder(() -> null)
             .field("id", BinaryNumberCodec.ofUnsignedShort(), TestObject::getId, TestObject::setId)
-            .factory(() -> null)
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0, 1});
@@ -257,21 +235,19 @@ class OrderedObjectCodecTest {
   @Test
   void decode_nested_codec_error_includes_full_field_path() {
     OrderedObjectCodec<InnerObject> innerCodec =
-        OrderedObjectCodec.<InnerObject>builder()
+        OrderedObjectCodec.<InnerObject>builder(InnerObject::new)
             .field(
                 "value",
                 BinaryNumberCodec.ofUnsignedByte(),
                 InnerObject::getValue,
                 InnerObject::setValue)
-            .factory(InnerObject::new)
             .build();
 
     OrderedObjectCodec<OuterObject> outerCodec =
-        OrderedObjectCodec.<OuterObject>builder()
+        OrderedObjectCodec.<OuterObject>builder(OuterObject::new)
             .field(
                 "id", BinaryNumberCodec.ofUnsignedShort(), OuterObject::getId, OuterObject::setId)
             .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
-            .factory(OuterObject::new)
             .build();
 
     // Only provide id bytes, not inner.value
@@ -300,17 +276,15 @@ class OrderedObjectCodecTest {
         };
 
     OrderedObjectCodec<InnerObject> innerCodec =
-        OrderedObjectCodec.<InnerObject>builder()
+        OrderedObjectCodec.<InnerObject>builder(InnerObject::new)
             .field("value", throwingCodec, InnerObject::getValue, InnerObject::setValue)
-            .factory(InnerObject::new)
             .build();
 
     OrderedObjectCodec<OuterObject> outerCodec =
-        OrderedObjectCodec.<OuterObject>builder()
+        OrderedObjectCodec.<OuterObject>builder(OuterObject::new)
             .field(
                 "id", BinaryNumberCodec.ofUnsignedShort(), OuterObject::getId, OuterObject::setId)
             .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
-            .factory(OuterObject::new)
             .build();
 
     OuterObject obj = new OuterObject();
@@ -327,21 +301,19 @@ class OrderedObjectCodecTest {
   @Test
   void nested_object_codec() throws IOException {
     OrderedObjectCodec<InnerObject> innerCodec =
-        OrderedObjectCodec.<InnerObject>builder()
+        OrderedObjectCodec.<InnerObject>builder(InnerObject::new)
             .field(
                 "value",
                 BinaryNumberCodec.ofUnsignedByte(),
                 InnerObject::getValue,
                 InnerObject::setValue)
-            .factory(InnerObject::new)
             .build();
 
     OrderedObjectCodec<OuterObject> outerCodec =
-        OrderedObjectCodec.<OuterObject>builder()
+        OrderedObjectCodec.<OuterObject>builder(OuterObject::new)
             .field(
                 "id", BinaryNumberCodec.ofUnsignedShort(), OuterObject::getId, OuterObject::setId)
             .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
-            .factory(OuterObject::new)
             .build();
 
     OuterObject original = new OuterObject();

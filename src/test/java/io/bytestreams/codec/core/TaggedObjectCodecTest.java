@@ -23,10 +23,9 @@ class TaggedObjectCodecTest {
   @Test
   void roundtrip_single_field() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged original = new TestTagged();
@@ -44,11 +43,10 @@ class TaggedObjectCodecTest {
   @Test
   void roundtrip_multiple_different_tags() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
             .field("name", FixedCodePointStringCodec.builder(5).build())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged original = new TestTagged();
@@ -68,10 +66,9 @@ class TaggedObjectCodecTest {
   @Test
   void roundtrip_duplicate_tags() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged original = new TestTagged();
@@ -91,10 +88,9 @@ class TaggedObjectCodecTest {
   @Test
   void roundtrip_with_default_codec() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .defaultCodec(new BinaryCodec(2))
-            .factory(TestTagged::new)
             .build();
 
     TestTagged original = new TestTagged();
@@ -113,11 +109,10 @@ class TaggedObjectCodecTest {
   @Test
   void roundtrip_mixed_registered_and_default() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
             .defaultCodec(new BinaryCodec(3))
-            .factory(TestTagged::new)
             .build();
 
     TestTagged original = new TestTagged();
@@ -138,10 +133,9 @@ class TaggedObjectCodecTest {
   @Test
   void roundtrip_no_registered_codecs_all_go_to_default() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .defaultCodec(new BinaryCodec(2))
-            .factory(TestTagged::new)
             .build();
 
     TestTagged original = new TestTagged();
@@ -163,10 +157,9 @@ class TaggedObjectCodecTest {
   @Test
   void roundtrip_empty_fields() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged original = new TestTagged();
@@ -184,10 +177,9 @@ class TaggedObjectCodecTest {
   @Test
   void encode_unknown_tag_without_default_throws() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged obj = new TestTagged();
@@ -204,10 +196,9 @@ class TaggedObjectCodecTest {
   @Test
   void encode_error_includes_tag() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", new NotImplementedCodec<>())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged obj = new TestTagged();
@@ -224,10 +215,9 @@ class TaggedObjectCodecTest {
   @Test
   void encode_non_codec_exception_wraps_with_tag() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", new AlwaysThrowsCodec<>())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged obj = new TestTagged();
@@ -244,10 +234,9 @@ class TaggedObjectCodecTest {
   @Test
   void decode_empty_stream() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     TestTagged decoded = codec.decode(new ByteArrayInputStream(new byte[0]));
@@ -258,11 +247,10 @@ class TaggedObjectCodecTest {
   @Test
   void decode_max_fields_zero_decodes_nothing() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
             .maxFields(0)
-            .factory(TestTagged::new)
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -277,11 +265,10 @@ class TaggedObjectCodecTest {
   @Test
   void decode_respects_max_fields() throws IOException {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
             .maxFields(1)
-            .factory(TestTagged::new)
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -298,10 +285,9 @@ class TaggedObjectCodecTest {
   @Test
   void decode_unknown_tag_without_default_throws() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -319,10 +305,9 @@ class TaggedObjectCodecTest {
   @Test
   void decode_error_includes_tag() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -338,10 +323,9 @@ class TaggedObjectCodecTest {
   @Test
   void decode_tag_codec_throws_codec_exception() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(new NotImplementedCodec<>())
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {1, 2, 3, 4, 5, 6});
@@ -354,10 +338,9 @@ class TaggedObjectCodecTest {
   @Test
   void decode_tag_codec_throws_non_codec_exception() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(TestTagged::new)
             .tagCodec(new AlwaysThrowsCodec<>())
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(TestTagged::new)
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {1, 2, 3, 4, 5, 6});
@@ -369,7 +352,7 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_tag_codec() {
-    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder();
+    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder(TestTagged::new);
 
     assertThatThrownBy(() -> builder.tagCodec(null))
         .isInstanceOf(NullPointerException.class)
@@ -378,7 +361,7 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_tag() {
-    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder();
+    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder(TestTagged::new);
 
     Codec<Integer> codec = BinaryNumberCodec.ofUnsignedShort();
 
@@ -389,7 +372,7 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_codec() {
-    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder();
+    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder(TestTagged::new);
 
     assertThatThrownBy(() -> builder.field("code", null))
         .isInstanceOf(NullPointerException.class)
@@ -398,7 +381,7 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_default_codec() {
-    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder();
+    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder(TestTagged::new);
 
     assertThatThrownBy(() -> builder.defaultCodec(null))
         .isInstanceOf(NullPointerException.class)
@@ -407,16 +390,14 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_factory() {
-    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder();
-
-    assertThatThrownBy(() -> builder.factory(null))
+    assertThatThrownBy(() -> TaggedObjectCodec.builder(null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("factory");
   }
 
   @Test
   void builder_negative_max_fields() {
-    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder();
+    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder(TestTagged::new);
 
     assertThatThrownBy(() -> builder.maxFields(-1))
         .isInstanceOf(IllegalArgumentException.class)
@@ -425,8 +406,7 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_missing_tag_codec() {
-    TaggedObjectCodec.Builder<TestTagged> builder =
-        TaggedObjectCodec.<TestTagged>builder().factory(TestTagged::new);
+    TaggedObjectCodec.Builder<TestTagged> builder = TaggedObjectCodec.builder(TestTagged::new);
 
     assertThatThrownBy(builder::build)
         .isInstanceOf(NullPointerException.class)
@@ -434,22 +414,11 @@ class TaggedObjectCodecTest {
   }
 
   @Test
-  void builder_missing_factory() {
-    TaggedObjectCodec.Builder<TestTagged> builder =
-        TaggedObjectCodec.<TestTagged>builder().tagCodec(TAG_CODEC);
-
-    assertThatThrownBy(builder::build)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("factory");
-  }
-
-  @Test
   void factory_returns_null() {
     TaggedObjectCodec<TestTagged> codec =
-        TaggedObjectCodec.<TestTagged>builder()
+        TaggedObjectCodec.<TestTagged>builder(() -> null)
             .tagCodec(TAG_CODEC)
             .field("code", BinaryNumberCodec.ofUnsignedShort())
-            .factory(() -> null)
             .build();
 
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);

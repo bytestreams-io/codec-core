@@ -12,7 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.CodingErrorAction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -152,22 +151,6 @@ class FixedCodePointStringCodecTest {
   }
 
   @Test
-  void decode_with_custom_decoder(@Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
-      throws IOException {
-    FixedCodePointStringCodec codec =
-        FixedCodePointStringCodec.builder(5)
-            .decoder(
-                UTF_8
-                    .newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE))
-            .build();
-    ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(UTF_8));
-
-    assertThat(codec.decode(input)).isEqualTo(value);
-  }
-
-  @Test
   void decode_after_failed_decode() throws IOException {
     FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(3).charset(UTF_8).build();
 
@@ -176,7 +159,7 @@ class FixedCodePointStringCodecTest {
     ByteArrayInputStream failInput = new ByteArrayInputStream(truncated);
     assertThatThrownBy(() -> codec.decode(failInput)).isInstanceOf(EOFException.class);
 
-    // Second decode should succeed despite the previous failure leaving decoder dirty
+    // Second decode should succeed despite the previous failure
     String expected = "\u4e16\u754c\u4eba";
     ByteArrayInputStream goodInput = new ByteArrayInputStream(expected.getBytes(UTF_8));
     assertThat(codec.decode(goodInput)).isEqualTo(expected);
@@ -192,12 +175,6 @@ class FixedCodePointStringCodecTest {
   void builder_charset_null() {
     FixedCodePointStringCodec.Builder builder = FixedCodePointStringCodec.builder(5);
     assertThatThrownBy(() -> builder.charset(null)).isInstanceOf(NullPointerException.class);
-  }
-
-  @Test
-  void builder_decoder_null() {
-    FixedCodePointStringCodec.Builder builder = FixedCodePointStringCodec.builder(5);
-    assertThatThrownBy(() -> builder.decoder(null)).isInstanceOf(NullPointerException.class);
   }
 
   private void verifyEncode(String value, Charset charset) throws IOException {

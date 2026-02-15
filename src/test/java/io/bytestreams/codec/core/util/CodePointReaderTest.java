@@ -14,7 +14,7 @@ class CodePointReaderTest {
   @Test
   void create_returns_buffered_for_mark_supported_stream() throws IOException {
     try (InputStream input = new ByteArrayInputStream("test".getBytes(UTF_8))) {
-      CodePointReader reader = CodePointReader.create(input, UTF_8.newDecoder());
+      CodePointReader reader = CodePointReader.create(input, UTF_8);
       assertThat(reader).isInstanceOf(BufferedCodePointReader.class);
     }
   }
@@ -22,7 +22,7 @@ class CodePointReaderTest {
   @Test
   void create_returns_unbuffered_for_non_mark_supported_stream() throws IOException {
     try (InputStream input = new NonMarkSupportingInputStream("test".getBytes(UTF_8))) {
-      CodePointReader reader = CodePointReader.create(input, UTF_8.newDecoder());
+      CodePointReader reader = CodePointReader.create(input, UTF_8);
       assertThat(reader).isInstanceOf(UnbufferedCodePointReader.class);
     }
   }

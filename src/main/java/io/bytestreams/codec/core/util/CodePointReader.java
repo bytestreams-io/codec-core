@@ -3,13 +3,13 @@ package io.bytestreams.codec.core.util;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.CharsetDecoder;
+import java.nio.charset.Charset;
 
 /**
- * Reads code points from an input stream using a charset decoder.
+ * Reads code points from an input stream using a charset.
  *
- * <p>Use {@link #create(InputStream, CharsetDecoder)} to obtain an implementation optimized for
- * the stream's capabilities.
+ * <p>Use {@link #create(InputStream, Charset)} to obtain an implementation optimized for the
+ * stream's capabilities.
  */
 public interface CodePointReader {
 
@@ -20,14 +20,14 @@ public interface CodePointReader {
    * resets on over-read. Otherwise, returns a byte-by-byte implementation.
    *
    * @param input the input stream to read from
-   * @param decoder the charset decoder to use
+   * @param charset the charset to use for decoding
    * @return a code point reader
    */
-  static CodePointReader create(InputStream input, CharsetDecoder decoder) {
+  static CodePointReader create(InputStream input, Charset charset) {
     if (input.markSupported()) {
-      return new BufferedCodePointReader(input, decoder);
+      return new BufferedCodePointReader(input, charset);
     }
-    return new UnbufferedCodePointReader(input, decoder);
+    return new UnbufferedCodePointReader(input, charset);
   }
 
   /**

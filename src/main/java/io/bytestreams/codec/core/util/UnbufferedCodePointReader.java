@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.MalformedInputException;
@@ -17,15 +18,11 @@ import java.nio.charset.MalformedInputException;
  */
 class UnbufferedCodePointReader implements CodePointReader {
   private final InputStream input;
-  private final CharsetDecoder decoder;
-  private final ByteBuffer byteBuffer;
-  private final CharBuffer charBuffer;
+  private final Charset charset;
 
-  UnbufferedCodePointReader(InputStream input, CharsetDecoder decoder) {
+  UnbufferedCodePointReader(InputStream input, Charset charset) {
     this.input = input;
-    this.decoder = decoder;
-    this.byteBuffer = ByteBuffer.allocate(8);
-    this.charBuffer = CharBuffer.allocate(2);
+    this.charset = charset;
   }
 
   @Override
@@ -34,9 +31,12 @@ class UnbufferedCodePointReader implements CodePointReader {
     if (count == 0) {
       return "";
     }
+    CharsetDecoder decoder = charset.newDecoder();
+    ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+    CharBuffer charBuffer = CharBuffer.allocate(2);
     StringBuilder result = new StringBuilder(count);
     for (int i = 0; i < count; i++) {
-      int codePoint = readCodePoint();
+      int codePoint = readCodePoint(decoder, byteBuffer, charBuffer);
       if (codePoint == -1) {
         throw new EOFException("Read %d code point(s), expected %d".formatted(i, count));
       }
@@ -45,7 +45,8 @@ class UnbufferedCodePointReader implements CodePointReader {
     return result.toString();
   }
 
-  private int readCodePoint() throws IOException {
+  private int readCodePoint(CharsetDecoder decoder, ByteBuffer byteBuffer, CharBuffer charBuffer)
+      throws IOException {
     int bytesRead = 0;
     while (true) {
       int nextByte = input.read();
@@ -62,13 +63,13 @@ class UnbufferedCodePointReader implements CodePointReader {
 
       CoderResult coderResult = decoder.decode(byteBuffer, charBuffer, false);
       if (charBuffer.position() > 0) {
-        return toCodePoint();
+        return toCodePoint(charBuffer);
       }
       handleCoderResult(coderResult);
     }
   }
 
-  private int toCodePoint() {
+  private static int toCodePoint(CharBuffer charBuffer) {
     charBuffer.flip();
     char firstChar = charBuffer.get();
     if (Character.isHighSurrogate(firstChar)) {

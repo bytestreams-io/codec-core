@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.util.Objects;
 
 /**
@@ -25,22 +24,20 @@ import java.util.Objects;
  * // Using default charset
  * Codec<String> codec = StringCodecs.ofCodePoint(5).build();
  *
- * // Using a custom decoder
+ * // Using a custom charset
  * Codec<String> codec = StringCodecs.ofCodePoint(5)
- *     .decoder(UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE))
+ *     .charset(UTF_8)
  *     .build();
  * }</pre>
  */
 public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
   private final int length;
   private final Charset charset;
-  private final CharsetDecoder decoder;
   private final boolean singleByteCharset;
 
-  FixedCodePointStringCodec(int length, CharsetDecoder decoder) {
+  FixedCodePointStringCodec(int length, Charset charset) {
     this.length = length;
-    this.charset = decoder.charset();
-    this.decoder = decoder;
+    this.charset = charset;
     this.singleByteCharset = charset.newEncoder().maxBytesPerChar() <= 1.0f;
   }
 
@@ -94,15 +91,14 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
     if (singleByteCharset) {
       return new String(InputStreams.readFully(input, length), charset);
     } else {
-      decoder.reset();
-      return CodePointReader.create(input, decoder).read(length);
+      return CodePointReader.create(input, charset).read(length);
     }
   }
 
   /** A builder for creating {@link FixedCodePointStringCodec} instances. */
   public static class Builder {
     private final int length;
-    private CharsetDecoder decoder = Charset.defaultCharset().newDecoder();
+    private Charset charset = Charset.defaultCharset();
 
     Builder(int length) {
       Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
@@ -117,19 +113,7 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
      * @throws NullPointerException if charset is null
      */
     public Builder charset(Charset charset) {
-      this.decoder = Objects.requireNonNull(charset, "charset").newDecoder();
-      return this;
-    }
-
-    /**
-     * Sets a custom decoder for decoding. The charset is derived from the decoder.
-     *
-     * @param decoder the decoder
-     * @return this builder
-     * @throws NullPointerException if decoder is null
-     */
-    public Builder decoder(CharsetDecoder decoder) {
-      this.decoder = Objects.requireNonNull(decoder, "decoder");
+      this.charset = Objects.requireNonNull(charset, "charset");
       return this;
     }
 
@@ -139,7 +123,7 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
      * @return a new codec instance
      */
     public FixedCodePointStringCodec build() {
-      return new FixedCodePointStringCodec(length, decoder);
+      return new FixedCodePointStringCodec(length, charset);
     }
   }
 }

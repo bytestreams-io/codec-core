@@ -36,6 +36,16 @@ result.bytes();  // number of bytes written to the stream
 int value = codec.decode(inputStream);
 ```
 
+### Binary and Boolean Codecs
+
+```java
+// Fixed-length binary data
+Codec<byte[]> binary = new BinaryCodec(16);
+
+// Boolean (1 byte: 0x00 = false, 0x01 = true)
+Codec<Boolean> bool = new BooleanCodec();
+```
+
 ### Number Codecs
 
 ```java
@@ -92,6 +102,16 @@ Codec<MyObject> tagged = ObjectCodecs.<MyObject>ofTagged(MyObject::new)
     .build();
 ```
 
+### List Codecs
+
+```java
+// Fixed-length list (exactly 3 items)
+FixedLengthCodec<List<String>> fixed = ListCodecs.of(stringCodec, 3);
+
+// Stream list (reads items until EOF)
+Codec<List<String>> stream = ListCodecs.of(stringCodec);
+```
+
 ### Variable-Length Codecs
 
 ```java
@@ -103,6 +123,32 @@ Codec<String> varString = llvar.of(stringCodec);
 Codec<String> varItems = VariableLengthCodecs.ofItemLength(NumberCodecs.ofUnsignedByte())
     .of(Strings::codePointCount,
         length -> StringCodecs.ofCodePoint(length).build());
+```
+
+### Composition
+
+Codecs compose naturally — use any codec as a field in an object codec, or wrap it with
+a variable-length prefix.
+
+```java
+// Variable-length list inside an ordered object
+Codec<List<String>> nameListCodec = VariableLengthCodecs
+    .ofItemLength(NumberCodecs.ofUnsignedByte())
+    .of(Strings::codePointCount,
+        length -> StringCodecs.ofCodePoint(length).build());
+
+Codec<Team> teamCodec = ObjectCodecs.<Team>ofOrdered(Team::new)
+    .field("id", NumberCodecs.ofInt(), Team::getId, Team::setId)
+    .field("name", StringCodecs.ofCodePoint(20).build(), Team::getName, Team::setName)
+    .field("members", nameListCodec, Team::getMembers, Team::setMembers)
+    .build();
+
+// Optional field based on a previously decoded field
+Codec<Message> messageCodec = ObjectCodecs.<Message>ofOrdered(Message::new)
+    .field("type", NumberCodecs.ofUnsignedByte(), Message::getType, Message::setType)
+    .field("body", StringCodecs.ofCodePoint(100).build(), Message::getBody, Message::setBody,
+           msg -> msg.getType() > 0)  // only present when type > 0
+    .build();
 ```
 
 ## Available Codecs

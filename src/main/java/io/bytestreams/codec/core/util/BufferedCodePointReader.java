@@ -44,8 +44,8 @@ class BufferedCodePointReader implements CodePointReader {
     }
 
     int charOffset = decoded.offsetByCodePoints(0, count);
-    String resultString = decoded.substring(0, charOffset);
-    int bytesConsumed = resultString.getBytes(charset).length;
+    String result = decoded.substring(0, charOffset);
+    int bytesConsumed = result.getBytes(charset).length;
 
     if (bytesConsumed > buffer.length) {
       throw new EOFException(
@@ -59,6 +59,6 @@ class BufferedCodePointReader implements CodePointReader {
           "Failed to skip %d bytes, only skipped %d".formatted(bytesConsumed, skipped));
     }
 
-    return resultString;
+    return result;
   }
 }

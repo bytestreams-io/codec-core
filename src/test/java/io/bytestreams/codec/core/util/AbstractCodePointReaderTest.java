@@ -46,8 +46,9 @@ abstract class AbstractCodePointReaderTest {
   private void verifyReadOneCodePoint(String value, Charset charset) throws IOException {
     InputStream input = createInputStream(value.getBytes(charset));
     CodePointReader reader = createReader(input, charset);
-    assertThat(reader.read(1)).isEqualTo(value.substring(0, value.offsetByCodePoints(0, 1)));
-    String remaining = value.substring(value.offsetByCodePoints(0, 1));
+    int firstCodePointEnd = value.offsetByCodePoints(0, 1);
+    assertThat(reader.read(1)).isEqualTo(value.substring(0, firstCodePointEnd));
+    String remaining = value.substring(firstCodePointEnd);
     assertThat(input.available()).isEqualTo(remaining.getBytes(charset).length);
   }
 
@@ -56,26 +57,14 @@ abstract class AbstractCodePointReaderTest {
   void read_utf16_multi_byte(
       String charsetName, @Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
       throws IOException {
-    Charset charset = Charset.forName(charsetName);
-    InputStream input = createInputStream(value.getBytes(charset));
-    CodePointReader reader = createReader(input, charset);
-
-    assertThat(reader.read(1)).isEqualTo(value.substring(0, value.offsetByCodePoints(0, 1)));
-    String remaining = value.substring(value.offsetByCodePoints(0, 1));
-    assertThat(input.available()).isEqualTo(remaining.codePoints().count() * 2);
+    verifyReadOneCodePoint(value, Charset.forName(charsetName));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"UTF-16BE", "UTF-16LE"})
   void read_utf16_surrogate_pair(
       String charsetName, @Randomize(unicodeBlocks = "EMOTICONS") String value) throws IOException {
-    Charset charset = Charset.forName(charsetName);
-    InputStream input = createInputStream(value.getBytes(charset));
-    CodePointReader reader = createReader(input, charset);
-
-    assertThat(reader.read(1)).isEqualTo(value.substring(0, value.offsetByCodePoints(0, 1)));
-    String remaining = value.substring(value.offsetByCodePoints(0, 1));
-    assertThat(input.available()).isEqualTo(remaining.codePoints().count() * 4);
+    verifyReadOneCodePoint(value, Charset.forName(charsetName));
   }
 
   @ParameterizedTest

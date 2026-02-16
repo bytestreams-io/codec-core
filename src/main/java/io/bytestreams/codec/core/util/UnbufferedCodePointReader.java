@@ -32,7 +32,8 @@ class UnbufferedCodePointReader implements CodePointReader {
       return "";
     }
     CharsetDecoder decoder = charset.newDecoder();
-    ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+    // max 4 bytes per code point in any Unicode encoding
+    ByteBuffer byteBuffer = ByteBuffer.allocate(4);
     CharBuffer charBuffer = CharBuffer.allocate(2);
     StringBuilder result = new StringBuilder(count);
     for (int i = 0; i < count; i++) {
@@ -47,18 +48,19 @@ class UnbufferedCodePointReader implements CodePointReader {
 
   private int readCodePoint(CharsetDecoder decoder, ByteBuffer byteBuffer, CharBuffer charBuffer)
       throws IOException {
-    int bytesRead = 0;
+    byteBuffer.clear();
     while (true) {
       int nextByte = input.read();
       if (nextByte == -1) {
-        if (bytesRead == 0) {
+        if (byteBuffer.position() == 0) {
           return -1;
         }
-        throw new EOFException("Incomplete code point after %d byte(s)".formatted(bytesRead));
+        throw new EOFException(
+            "Incomplete code point after %d byte(s)".formatted(byteBuffer.position()));
       }
 
-      byteBuffer.array()[bytesRead++] = (byte) nextByte;
-      byteBuffer.position(0).limit(bytesRead);
+      byteBuffer.put((byte) nextByte);
+      byteBuffer.flip();
       charBuffer.clear();
 
       CoderResult coderResult = decoder.decode(byteBuffer, charBuffer, false);
@@ -66,6 +68,7 @@ class UnbufferedCodePointReader implements CodePointReader {
         return toCodePoint(charBuffer);
       }
       handleCoderResult(coderResult);
+      byteBuffer.compact();
     }
   }
 

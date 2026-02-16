@@ -5,9 +5,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.lyang.randomparamsresolver.RandomParametersExtension;
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
-import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
@@ -21,7 +19,7 @@ class UnbufferedCodePointReaderTest extends AbstractCodePointReaderTest {
 
   @Override
   InputStream createInputStream(byte[] data) {
-    return new NonMarkSupportingInputStream(data);
+    return new MarkNotSupportedInputStream(data);
   }
 
   @Override
@@ -64,16 +62,5 @@ class UnbufferedCodePointReaderTest extends AbstractCodePointReaderTest {
     CodePointReader reader = createReader(input, charset);
 
     assertThatThrownBy(() -> reader.read(1)).isInstanceOf(MalformedInputException.class);
-  }
-
-  private static class NonMarkSupportingInputStream extends FilterInputStream {
-    NonMarkSupportingInputStream(byte[] data) {
-      super(new ByteArrayInputStream(data));
-    }
-
-    @Override
-    public boolean markSupported() {
-      return false;
-    }
   }
 }

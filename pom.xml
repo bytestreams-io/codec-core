@@ -12,8 +12,7 @@
     <url>https://github.com/bytestreams-io/codec-core</url>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <revision>1.0.0-SNAPSHOT</revision>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>

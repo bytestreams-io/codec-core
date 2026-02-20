@@ -21,13 +21,11 @@ import java.util.Objects;
  * <p>Example usage:
  *
  * <pre>{@code
- * // Using default charset
- * Codec<String> codec = StringCodecs.ofCodePoint(5).build();
+ * // Fixed-length ASCII string
+ * Codec<String> ascii = Codecs.ascii(5);
  *
- * // Using a custom charset
- * Codec<String> codec = StringCodecs.ofCodePoint(5)
- *     .charset(UTF_8)
- *     .build();
+ * // Fixed-length UTF-8 string
+ * Codec<String> utf8 = Codecs.utf8(5);
  * }</pre>
  */
 public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
@@ -35,22 +33,19 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
   private final Charset charset;
   private final boolean singleByteCharset;
 
-  FixedCodePointStringCodec(int length, Charset charset) {
-    this.length = length;
-    this.charset = charset;
-    this.singleByteCharset = charset.newEncoder().maxBytesPerChar() <= 1.0f;
-  }
-
   /**
-   * Returns a new builder for creating a {@link FixedCodePointStringCodec} with the specified
-   * length.
+   * Creates a new fixed-length code point string codec.
    *
    * @param length the number of code points (must be non-negative)
-   * @return a new builder
+   * @param charset the charset for encoding and decoding
    * @throws IllegalArgumentException if length is negative
+   * @throws NullPointerException if charset is null
    */
-  public static Builder builder(int length) {
-    return new Builder(length);
+  FixedCodePointStringCodec(int length, Charset charset) {
+    Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
+    this.length = length;
+    this.charset = Objects.requireNonNull(charset, "charset");
+    this.singleByteCharset = charset.newEncoder().maxBytesPerChar() <= 1.0f;
   }
 
   /**
@@ -92,38 +87,6 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
       return new String(InputStreams.readFully(input, length), charset);
     } else {
       return CodePointReader.create(input, charset).read(length);
-    }
-  }
-
-  /** A builder for creating {@link FixedCodePointStringCodec} instances. */
-  public static class Builder {
-    private final int length;
-    private Charset charset = Charset.defaultCharset();
-
-    Builder(int length) {
-      Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
-      this.length = length;
-    }
-
-    /**
-     * Sets the charset to use for encoding and decoding.
-     *
-     * @param charset the charset
-     * @return this builder
-     * @throws NullPointerException if charset is null
-     */
-    public Builder charset(Charset charset) {
-      this.charset = Objects.requireNonNull(charset, "charset");
-      return this;
-    }
-
-    /**
-     * Builds a new {@link FixedCodePointStringCodec} with the configured settings.
-     *
-     * @return a new codec instance
-     */
-    public FixedCodePointStringCodec build() {
-      return new FixedCodePointStringCodec(length, charset);
     }
   }
 }

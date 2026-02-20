@@ -3,6 +3,7 @@ package io.bytestreams.codec.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.function.Function;
 
 /**
  * Interface for encoding and decoding values to and from byte streams.
@@ -29,4 +30,20 @@ public interface Codec<V> {
    * @throws IOException if an I/O error occurs during decoding
    */
   V decode(InputStream input) throws IOException;
+
+  /**
+   * Returns a new codec that applies bidirectional mapping functions to transform between value
+   * types.
+   *
+   * <p>The {@code decoder} function is applied after decoding (base type → mapped type), and the
+   * {@code encoder} function is applied before encoding (mapped type → base type).
+   *
+   * @param <U> the mapped value type
+   * @param decoder the function to apply after decoding
+   * @param encoder the function to apply before encoding
+   * @return a new codec that maps between {@code V} and {@code U}
+   */
+  default <U> Codec<U> xmap(Function<V, U> decoder, Function<U, V> encoder) {
+    return new MappedCodec<>(this, decoder, encoder);
+  }
 }

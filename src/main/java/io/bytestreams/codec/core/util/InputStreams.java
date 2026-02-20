@@ -7,7 +7,7 @@ import java.io.InputStream;
 /**
  * Utility methods for working with input streams.
  */
-public class InputStreams {
+public final class InputStreams {
   private static final String END_OF_BYTE_STREAM_REACHED =
       "End of stream reached after reading %d bytes, bytes expected [%d]";
 

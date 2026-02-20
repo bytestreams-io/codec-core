@@ -23,8 +23,7 @@ import java.util.function.Supplier;
  *
  * <pre>{@code
  * // Using default ArrayList
- * Codec<List<String>> codec = ListCodecs.of(
- *     StringCodecs.ofCodePoint(5).build());
+ * Codec<List<String>> codec = Codecs.listOf(Codecs.ascii(5));
  * codec.encode(List.of("hello", "world"), output);
  * List<String> values = codec.decode(input);
  * }</pre>

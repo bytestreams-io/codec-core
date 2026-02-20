@@ -12,70 +12,66 @@ import java.util.function.Supplier;
 /**
  * A codec for objects with tag-identified fields.
  *
- * <p>Each field in the stream is a tag-value pair, where the tag (a string) determines which codec
- * to use for the value. Supports duplicate tags and unknown tags via a configurable default codec.
+ * <p>Each field in the stream is a tag-value pair, where the tag determines which codec to use for
+ * the value. Supports duplicate tags and unknown tags via a configurable default codec.
  *
  * <p>Example usage:
  *
  * <pre>{@code
- * TaggedObjectCodec<MyObject> codec = ObjectCodecs.<MyObject>ofTagged(MyObject::new)
- *     .tagCodec(StringCodecs.ofCodePoint(4).build())
- *     .field("code", NumberCodecs.ofUnsignedShort())
- *     .field("name", StringCodecs.ofCodePoint(10).build())
- *     .defaultCodec(new BinaryCodec(8))
- *     .maxFields(100)
+ * TaggedObjectCodec<MyObject, String> codec = Codecs.<MyObject, String>tagged(MyObject::new, Codecs.ascii(4))
+ *     .tag("code", Codecs.uint16())
+ *     .tag("name", Codecs.ascii(10))
+ *     .defaultCodec(Codecs.binary(8))
  *     .build();
  * }</pre>
  *
  * @param <T> the type of object to encode/decode
+ * @param <K> the tag key type
  */
-public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
+public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T> {
 
-  private final Codec<String> tagCodec;
-  private final Map<String, Codec<?>> fields;
+  private final Codec<K> tagCodec;
+  private final Map<K, Codec<?>> codecs;
   private final Codec<?> defaultCodec;
   private final Supplier<T> factory;
-  private final int maxFields;
 
   TaggedObjectCodec(
-      Codec<String> tagCodec,
-      Map<String, Codec<?>> fields,
-      Codec<?> defaultCodec,
-      Supplier<T> factory,
-      int maxFields) {
+      Codec<K> tagCodec, Map<K, Codec<?>> codecs, Codec<?> defaultCodec, Supplier<T> factory) {
     this.tagCodec = tagCodec;
-    this.fields = Map.copyOf(fields);
+    this.codecs = Map.copyOf(codecs);
     this.defaultCodec = defaultCodec;
     this.factory = factory;
-    this.maxFields = maxFields;
   }
 
   /**
    * Creates a new builder for constructing a TaggedObjectCodec.
    *
    * @param factory factory that creates new instances during decoding
+   * @param tagCodec the codec used to read and write tags
    * @param <T> the type of object to encode/decode
+   * @param <K> the tag key type
    * @return a new builder
    */
-  public static <T extends Tagged<T>> Builder<T> builder(Supplier<T> factory) {
-    return new Builder<>(factory);
+  public static <T extends Tagged<T, K>, K> Builder<T, K> builder(
+      Supplier<T> factory, Codec<K> tagCodec) {
+    return new Builder<>(factory, tagCodec);
   }
 
   @Override
   public EncodeResult encode(T value, OutputStream output) throws IOException {
     int count = 0;
     int totalBytes = 0;
-    for (String tag : value.tags()) {
+    for (K tag : value.tags()) {
       for (Object item : value.getAll(tag)) {
         try {
           totalBytes += tagCodec.encode(tag, output).bytes();
-          Codec<?> codec = fields.getOrDefault(tag, defaultCodec);
+          Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
           totalBytes += encodeValue(codec, item, output).bytes();
           count++;
         } catch (CodecException e) {
-          throw e.withField(tag);
+          throw e.withField(String.valueOf(tag));
         } catch (Exception e) {
-          throw new CodecException(e.getMessage(), e).withField(tag);
+          throw new CodecException(e.getMessage(), e).withField(String.valueOf(tag));
         }
       }
     }
@@ -92,61 +88,53 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
   public T decode(InputStream input) throws IOException {
     T instance = Objects.requireNonNull(factory.get(), "factory.get() returned null");
     PushbackInputStream pushback = new PushbackInputStream(input);
-    int count = 0;
     int next;
-    while (count < maxFields && (next = pushback.read()) != -1) {
+    while ((next = pushback.read()) != -1) {
       pushback.unread(next);
-      String tag = null;
+      K tag = null;
       try {
         tag = tagCodec.decode(pushback);
-        Codec<?> codec = fields.getOrDefault(tag, defaultCodec);
+        Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
         Object value = codec.decode(pushback);
         instance.add(tag, value);
-        count++;
       } catch (CodecException e) {
-        throw tag != null ? e.withField(tag) : e;
+        throw tag != null ? e.withField(String.valueOf(tag)) : e;
       } catch (Exception e) {
         CodecException ce = new CodecException(e.getMessage(), e);
-        throw tag != null ? ce.withField(tag) : ce;
+        throw tag != null ? ce.withField(String.valueOf(tag)) : ce;
       }
     }
     return instance;
   }
 
-  /** Builder for constructing a TaggedObjectCodec. */
-  public static class Builder<T extends Tagged<T>> {
-    private Codec<String> tagCodec;
-    private final Map<String, Codec<?>> fields = new HashMap<>();
-    private Codec<?> defaultCodec;
+  /**
+   * Builder for constructing a TaggedObjectCodec.
+   *
+   * @param <T> the type of object to encode/decode
+   * @param <K> the tag key type
+   */
+  public static class Builder<T extends Tagged<T, K>, K> {
+    private final Codec<K> tagCodec;
+    private final Map<K, Codec<?>> codecs = new HashMap<>();
+    private Codec<?> defaultCodec = new NotImplementedCodec<>();
     private final Supplier<T> factory;
-    private int maxFields = Integer.MAX_VALUE;
 
-    Builder(Supplier<T> factory) {
+    Builder(Supplier<T> factory, Codec<K> tagCodec) {
       this.factory = Objects.requireNonNull(factory, "factory");
-    }
-
-    /**
-     * Sets the codec used to read and write tag strings.
-     *
-     * @param tagCodec the tag codec
-     * @return this builder
-     */
-    public Builder<T> tagCodec(Codec<String> tagCodec) {
       this.tagCodec = Objects.requireNonNull(tagCodec, "tagCodec");
-      return this;
     }
 
     /**
      * Registers a codec for a specific tag.
      *
-     * @param tag the tag name
+     * @param tag the tag
      * @param codec the codec for this tag's values
      * @return this builder
      */
-    public Builder<T> field(String tag, Codec<?> codec) {
+    public Builder<T, K> tag(K tag, Codec<?> codec) {
       Objects.requireNonNull(tag, "tag");
       Objects.requireNonNull(codec, "codec");
-      fields.put(tag, codec);
+      codecs.put(tag, codec);
       return this;
     }
 
@@ -156,24 +144,8 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
      * @param defaultCodec the default codec
      * @return this builder
      */
-    public Builder<T> defaultCodec(Codec<?> defaultCodec) {
+    public Builder<T, K> defaultCodec(Codec<?> defaultCodec) {
       this.defaultCodec = Objects.requireNonNull(defaultCodec, "defaultCodec");
-      return this;
-    }
-
-    /**
-     * Sets the maximum number of fields to decode.
-     *
-     * @param maxFields the maximum number of fields
-     * @return this builder
-     * @throws IllegalArgumentException if maxFields is negative
-     */
-    public Builder<T> maxFields(int maxFields) {
-      if (maxFields < 0) {
-        throw new IllegalArgumentException(
-            "maxFields must be non-negative, but was [%d]".formatted(maxFields));
-      }
-      this.maxFields = maxFields;
       return this;
     }
 
@@ -181,12 +153,9 @@ public class TaggedObjectCodec<T extends Tagged<T>> implements Codec<T> {
      * Builds the TaggedObjectCodec.
      *
      * @return the constructed codec
-     * @throws NullPointerException if tagCodec was not set
      */
-    public TaggedObjectCodec<T> build() {
-      Objects.requireNonNull(tagCodec, "tagCodec must be set");
-      Codec<?> effectiveDefault = defaultCodec != null ? defaultCodec : new NotImplementedCodec<>();
-      return new TaggedObjectCodec<>(tagCodec, fields, effectiveDefault, factory, maxFields);
+    public TaggedObjectCodec<T, K> build() {
+      return new TaggedObjectCodec<>(tagCodec, codecs, defaultCodec, factory);
     }
   }
 }

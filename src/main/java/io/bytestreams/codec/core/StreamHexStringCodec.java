@@ -1,6 +1,5 @@
 package io.bytestreams.codec.core;
 
-import io.bytestreams.codec.core.util.Preconditions;
 import io.bytestreams.codec.core.util.Strings;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,49 +13,24 @@ import java.util.HexFormat;
  * all bytes until EOF. This makes it suitable for use as a value codec inside {@link
  * VariableByteLengthCodec}, where the stream is bounded by the length prefix.
  *
- * <p>Encode pads odd-length values to even according to the configured padding direction and
- * character. Decode always returns an even-length hex string.
+ * <p>Encode pads odd-length values to even by left-padding with '0'. Decode always returns an
+ * even-length hex string. Encode accepts both uppercase and lowercase hex digits. Decode always
+ * returns uppercase.
  *
  * <pre>{@code
- * // Default: left-pad with '0'
- * Codec<String> codec = StringCodecs.ofHex().build();
- *
- * // Right-pad with 'f'
- * Codec<String> codec = StringCodecs.ofHex().padRight('f').build();
+ * Codec<String> codec = Codecs.hex();
  * }</pre>
  */
 public class StreamHexStringCodec implements Codec<String> {
-  private static final HexFormat HEX_FORMAT = HexFormat.of();
-  private final char padChar;
-  private final boolean padLeft;
+  private static final HexFormat HEX_FORMAT = HexFormat.of().withUpperCase();
 
-  /**
-   * Creates a new stream hex string codec with the specified padding configuration.
-   *
-   * @param padChar the character to use for padding
-   * @param padLeft true to pad on the left, false to pad on the right
-   */
-  StreamHexStringCodec(char padChar, boolean padLeft) {
-    this.padChar = padChar;
-    this.padLeft = padLeft;
-  }
-
-  /**
-   * Returns a new builder for creating a {@link StreamHexStringCodec} with configurable padding.
-   *
-   * @return a new builder
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
+  /** Creates a new stream hex string codec. */
+  StreamHexStringCodec() {}
 
   @Override
   public EncodeResult encode(String value, OutputStream output) throws IOException {
     int paddedLength = Strings.hexByteCount(value) * 2;
-    String padded =
-        padLeft
-            ? Strings.padStart(value, paddedLength, padChar)
-            : Strings.padEnd(value, paddedLength, padChar);
+    String padded = Strings.padStart(value, '0', paddedLength);
     byte[] bytes = HEX_FORMAT.parseHex(padded);
     output.write(bytes);
     return new EncodeResult(value.length(), bytes.length);
@@ -65,36 +39,5 @@ public class StreamHexStringCodec implements Codec<String> {
   @Override
   public String decode(InputStream input) throws IOException {
     return HEX_FORMAT.formatHex(input.readAllBytes());
-  }
-
-  /**
-   * A builder for creating {@link StreamHexStringCodec} instances with configurable padding.
-   */
-  public static class Builder extends PaddingBuilder<Builder> {
-
-    /**
-     * Creates a new builder.
-     */
-    Builder() {
-      this.padChar = '0';
-      this.padLeft = true;
-    }
-
-    @Override
-    void validatePadChar(char c) {
-      Preconditions.check(
-          Character.digit(c, 16) >= 0,
-          "padChar must be a valid hex character (0-9, a-f, A-F), but was [%s]",
-          c);
-    }
-
-    /**
-     * Builds a new {@link StreamHexStringCodec} with the configured settings.
-     *
-     * @return a new codec instance
-     */
-    public StreamHexStringCodec build() {
-      return new StreamHexStringCodec(padChar, padLeft);
-    }
   }
 }

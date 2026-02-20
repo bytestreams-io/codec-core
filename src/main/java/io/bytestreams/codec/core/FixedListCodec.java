@@ -19,8 +19,7 @@ import java.util.function.Supplier;
  *
  * <pre>{@code
  * // Decode exactly 3 items
- * Codec<List<String>> codec = ListCodecs.of(
- *     StringCodecs.ofCodePoint(5).build(), 3);
+ * Codec<List<String>> codec = Codecs.listOf(Codecs.ascii(5), 3);
  * codec.encode(List.of("hello", "world", "abcde"), output);
  * List<String> values = codec.decode(input);
  * }</pre>

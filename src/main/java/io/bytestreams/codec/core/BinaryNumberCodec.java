@@ -16,8 +16,8 @@ import java.util.function.Function;
  * <p>Example usage:
  *
  * <pre>{@code
- * FixedLengthCodec<Integer> codec = NumberCodecs.ofInt();
- * FixedLengthCodec<Long> codec = NumberCodecs.ofUnsignedInt();
+ * FixedLengthCodec<Integer> int32 = Codecs.int32();
+ * FixedLengthCodec<Long> uint32 = Codecs.uint32();
  * }</pre>
  *
  * @param <V> the {@link Number} type this codec handles

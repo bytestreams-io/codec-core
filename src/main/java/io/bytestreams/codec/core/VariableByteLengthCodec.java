@@ -16,12 +16,11 @@ import java.util.Objects;
  * followed by the buffered value bytes. On decode, the byte count prefix is decoded, that many
  * bytes are read into a bounded buffer, and the value is decoded from the buffer.
  *
- * <p>The builder can be reused to create multiple codecs with different value codecs:
+ * <p>Example usage:
  *
  * <pre>{@code
- * VariableByteLengthCodec.Builder llvar = VariableLengthCodecs.ofByteLength(NumberCodecs.ofUnsignedShort());
- * Codec<String> varString = llvar.of(stringCodec);
- * Codec<byte[]> varBinary = llvar.of(binaryCodec);
+ * Codec<String> varString = Codecs.prefixed(Codecs.uint16(), stringCodec);
+ * Codec<byte[]> varBinary = Codecs.prefixed(Codecs.uint16(), binaryCodec);
  * }</pre>
  *
  * @param <V> the type of value this codec handles
@@ -30,21 +29,16 @@ public class VariableByteLengthCodec<V> implements Codec<V> {
   private final Codec<Integer> lengthCodec;
   private final Codec<V> valueCodec;
 
-  VariableByteLengthCodec(Codec<Integer> lengthCodec, Codec<V> valueCodec) {
-    this.lengthCodec = lengthCodec;
-    this.valueCodec = valueCodec;
-  }
-
   /**
-   * Returns a new builder for creating {@link VariableByteLengthCodec} instances with the specified
-   * length codec. The builder can be reused to create multiple codecs with different value codecs.
+   * Creates a new variable byte-length codec.
    *
    * @param lengthCodec the codec for the byte count prefix
-   * @return a new builder
-   * @throws NullPointerException if lengthCodec is null
+   * @param valueCodec the codec for encoding and decoding the value
+   * @throws NullPointerException if any argument is null
    */
-  public static Builder builder(Codec<Integer> lengthCodec) {
-    return new Builder(lengthCodec);
+  VariableByteLengthCodec(Codec<Integer> lengthCodec, Codec<V> valueCodec) {
+    this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
+    this.valueCodec = Objects.requireNonNull(valueCodec, "valueCodec");
   }
 
   /**
@@ -75,27 +69,5 @@ public class VariableByteLengthCodec<V> implements Codec<V> {
     int length = lengthCodec.decode(input);
     byte[] data = InputStreams.readFully(input, length);
     return valueCodec.decode(new ByteArrayInputStream(data));
-  }
-
-  /** A builder for creating {@link VariableByteLengthCodec} instances. */
-  public static class Builder {
-    private final Codec<Integer> lengthCodec;
-
-    Builder(Codec<Integer> lengthCodec) {
-      this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
-    }
-
-    /**
-     * Builds a new {@link VariableByteLengthCodec} with the specified value codec.
-     *
-     * @param <V> the type of value the codec handles
-     * @param valueCodec the codec for encoding and decoding the value
-     * @return a new codec instance
-     * @throws NullPointerException if valueCodec is null
-     */
-    public <V> VariableByteLengthCodec<V> of(Codec<V> valueCodec) {
-      return new VariableByteLengthCodec<>(
-          lengthCodec, Objects.requireNonNull(valueCodec, "valueCodec"));
-    }
   }
 }

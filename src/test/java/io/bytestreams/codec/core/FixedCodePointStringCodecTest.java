@@ -22,13 +22,14 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(length).build();
+    FixedCodePointStringCodec codec =
+        new FixedCodePointStringCodec(length, Charset.defaultCharset());
     assertThat(codec.getLength()).isEqualTo(length);
   }
 
   @Test
-  void builder_negative_length() {
-    assertThatThrownBy(() -> FixedCodePointStringCodec.builder(-1))
+  void constructor_negative_length() {
+    assertThatThrownBy(() -> new FixedCodePointStringCodec(-1, UTF_8))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("-1");
   }
@@ -54,7 +55,7 @@ class FixedCodePointStringCodecTest {
   @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
   void encode_zero_length(String charsetName) throws IOException {
     Charset charset = Charset.forName(charsetName);
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(0).charset(charset).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(0, charset);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     codec.encode("", output);
@@ -64,7 +65,7 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void encode_wrong_code_point_count(@Randomize String value) {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(10).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(10, Charset.defaultCharset());
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     assertThatThrownBy(() -> codec.encode(value, output))
@@ -94,7 +95,7 @@ class FixedCodePointStringCodecTest {
   @ValueSource(strings = {"ISO-8859-1", "UTF-8"})
   void decode_zero_length(String charsetName) throws IOException {
     Charset charset = Charset.forName(charsetName);
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(0).charset(charset).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(0, charset);
     ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(charset));
 
     assertThat(codec.decode(input)).isEmpty();
@@ -107,7 +108,7 @@ class FixedCodePointStringCodecTest {
       String charsetName, @Randomize(unicodeBlocks = "CJK_UNIFIED_IDEOGRAPHS") String value)
       throws IOException {
     Charset charset = Charset.forName(charsetName);
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(1).charset(charset).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(1, charset);
     ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(charset));
 
     String result = codec.decode(input);
@@ -118,8 +119,7 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void decode_insufficient_data_single_byte() {
-    FixedCodePointStringCodec codec =
-        FixedCodePointStringCodec.builder(10).charset(ISO_8859_1).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(10, ISO_8859_1);
     ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(ISO_8859_1));
 
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
@@ -127,7 +127,7 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void decode_insufficient_data_multi_byte() {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(10).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(10, Charset.defaultCharset());
     ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(UTF_8));
 
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
@@ -135,8 +135,7 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void decode_empty_stream_single_byte() {
-    FixedCodePointStringCodec codec =
-        FixedCodePointStringCodec.builder(5).charset(ISO_8859_1).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(5, ISO_8859_1);
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
@@ -144,7 +143,7 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void decode_empty_stream_multi_byte() {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(5, Charset.defaultCharset());
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
@@ -152,7 +151,7 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void decode_after_failed_decode() throws IOException {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(3).charset(UTF_8).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(3, UTF_8);
 
     // First decode fails: truncated 3-byte UTF-8 sequence (only 2 bytes of \u4e16)
     byte[] truncated = {(byte) 0xE4, (byte) 0xB8};
@@ -166,19 +165,19 @@ class FixedCodePointStringCodecTest {
   }
 
   @Test
-  void builder_default_charset() {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).build();
+  void constructor_default_charset() {
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(5, Charset.defaultCharset());
     assertThat(codec.getLength()).isEqualTo(5);
   }
 
   @Test
-  void builder_charset_null() {
-    FixedCodePointStringCodec.Builder builder = FixedCodePointStringCodec.builder(5);
-    assertThatThrownBy(() -> builder.charset(null)).isInstanceOf(NullPointerException.class);
+  void constructor_charset_null() {
+    assertThatThrownBy(() -> new FixedCodePointStringCodec(5, null))
+        .isInstanceOf(NullPointerException.class);
   }
 
   private void verifyEncode(String value, Charset charset) throws IOException {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).charset(charset).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(5, charset);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     codec.encode(value, output);
@@ -187,7 +186,7 @@ class FixedCodePointStringCodecTest {
   }
 
   private void verifyDecode(String value, Charset charset) throws IOException {
-    FixedCodePointStringCodec codec = FixedCodePointStringCodec.builder(5).charset(charset).build();
+    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(5, charset);
     ByteArrayInputStream input = new ByteArrayInputStream(value.getBytes(charset));
 
     assertThat(codec.decode(input)).isEqualTo(value);

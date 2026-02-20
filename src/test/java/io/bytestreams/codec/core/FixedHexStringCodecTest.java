@@ -16,35 +16,35 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(RandomParametersExtension.class)
 class FixedHexStringCodecTest {
-  private static final HexFormat HEX_FORMAT = HexFormat.of();
+  private static final HexFormat HEX_FORMAT = HexFormat.of().withUpperCase();
 
   @Test
   void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(length).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(length);
     assertThat(codec.getLength()).isEqualTo(length);
   }
 
   @Test
   void encode(@Randomize(intMin = 0, intMax = 0xFF) int value) throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(2).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    String expected = String.format("%02x", value);
+    String expected = String.format("%02X", value);
     codec.encode(expected, output);
     assertThat(output.toByteArray()).isEqualTo(HEX_FORMAT.parseHex(expected));
   }
 
   @Test
   void encode_odd_length(@Randomize(intMin = 0, intMax = 0x0FFF) int value) throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(3).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(3);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    String expected = String.format("%03x", value);
+    String expected = String.format("%03X", value);
     codec.encode(expected, output);
-    assertThat(output.toByteArray()).isEqualTo(HEX_FORMAT.parseHex(String.format("%04x", value)));
+    assertThat(output.toByteArray()).isEqualTo(HEX_FORMAT.parseHex(String.format("%04X", value)));
   }
 
   @Test
   void encode_short_value() throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(4).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(4);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("f", output);
     assertThat(output.toByteArray()).isEqualTo(new byte[] {0x00, 0x0f});
@@ -52,9 +52,9 @@ class FixedHexStringCodecTest {
 
   @Test
   void encode_overflow(@Randomize(intMin = 0, intMax = 0x0FFF) int value) {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(2).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
-    String data = String.format("%03x", value);
+    String data = String.format("%03X", value);
     assertThatThrownBy(() -> codec.encode(data, output))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("value length must be less than or equal to %d, but was [%d]", 2, 3);
@@ -62,7 +62,7 @@ class FixedHexStringCodecTest {
 
   @Test
   void decode(@Randomize(length = 3) byte[] value) throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(2).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(2);
     ByteArrayInputStream input = new ByteArrayInputStream(value);
     assertThat(codec.decode(input))
         .isEqualTo(HEX_FORMAT.formatHex(Arrays.copyOfRange(value, 0, 1)));
@@ -71,7 +71,7 @@ class FixedHexStringCodecTest {
 
   @Test
   void decode_odd_length(@Randomize(length = 3) byte[] value) throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(3).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(3);
     ByteArrayInputStream input = new ByteArrayInputStream(value);
     String expected = HEX_FORMAT.formatHex(Arrays.copyOfRange(value, 0, 2)).substring(1, 4);
     assertThat(codec.decode(input)).isEqualTo(expected);
@@ -79,7 +79,7 @@ class FixedHexStringCodecTest {
 
   @Test
   void decode_insufficient_data(@Randomize(length = 1) byte[] value) {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(3).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(3);
     ByteArrayInputStream input = new ByteArrayInputStream(value);
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(EOFException.class)
@@ -89,7 +89,7 @@ class FixedHexStringCodecTest {
 
   @Test
   void encode_zero_length() throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(0).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(0);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("", output);
     assertThat(output.toByteArray()).isEmpty();
@@ -97,60 +97,15 @@ class FixedHexStringCodecTest {
 
   @Test
   void decode_zero_length() throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(0).build();
+    FixedHexStringCodec codec = new FixedHexStringCodec(0);
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0x12, 0x34});
     assertThat(codec.decode(input)).isEmpty();
     assertThat(input.available()).isEqualTo(2);
   }
 
   @Test
-  void builder_padRight_encode(@Randomize(charMin = '0', charMax = ':') char padChar)
-      throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(4).padRight(padChar).build();
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode("12", output);
-    assertThat(output.toByteArray()).isEqualTo(HEX_FORMAT.parseHex("12" + padChar + padChar));
-  }
-
-  @Test
-  void builder_padRight_decode(@Randomize(charMin = '0', charMax = ':') char padChar)
-      throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(3).padRight(padChar).build();
-    ByteArrayInputStream input =
-        new ByteArrayInputStream(HEX_FORMAT.parseHex("12" + padChar + padChar));
-    assertThat(codec.decode(input)).isEqualTo("12" + padChar);
-  }
-
-  @Test
-  void builder_padLeft_custom_char_encode(@Randomize(charMin = '0', charMax = ':') char padChar)
-      throws IOException {
-    FixedHexStringCodec codec = FixedHexStringCodec.builder(4).padLeft(padChar).build();
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    codec.encode("12", output);
-    assertThat(output.toByteArray()).isEqualTo(HEX_FORMAT.parseHex("" + padChar + padChar + "12"));
-  }
-
-  @Test
-  void builder_invalid_pad_char(@Randomize(charMin = 'g', charMax = 'z') char padChar) {
-    var builder = FixedHexStringCodec.builder(4);
-    assertThatThrownBy(() -> builder.padLeft(padChar))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("padChar must be a valid hex character (0-9, a-f, A-F), but was [%s]", padChar);
-  }
-
-  @Test
-  void builder_valid_pad_char_boundaries() {
-    assertThat(FixedHexStringCodec.builder(2).padLeft('0').build()).isNotNull();
-    assertThat(FixedHexStringCodec.builder(2).padLeft('9').build()).isNotNull();
-    assertThat(FixedHexStringCodec.builder(2).padLeft('a').build()).isNotNull();
-    assertThat(FixedHexStringCodec.builder(2).padRight('f').build()).isNotNull();
-    assertThat(FixedHexStringCodec.builder(2).padLeft('A').build()).isNotNull();
-    assertThat(FixedHexStringCodec.builder(2).padRight('F').build()).isNotNull();
-  }
-
-  @Test
-  void builder_negative_length() {
-    assertThatThrownBy(() -> FixedHexStringCodec.builder(-1))
+  void constructor_negative_length() {
+    assertThatThrownBy(() -> new FixedHexStringCodec(-1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("-1");
   }

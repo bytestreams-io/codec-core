@@ -20,16 +20,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ExtendWith(RandomParametersExtension.class)
 class VariableByteLengthCodecTest {
 
-  private static VariableByteLengthCodec<String> variableByteLengthCodec(Charset charset) {
-    return VariableByteLengthCodec.builder(NumberCodecs.ofUnsignedByte())
-        .of(StringCodecs.ofCodePoint().charset(charset).build());
+  private static Codec<String> variableByteLengthCodec(Charset charset) {
+    return Codecs.prefixed(Codecs.uint8(), Codecs.ofCharset(charset));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"US-ASCII", "ISO-8859-1", "UTF-8", "UTF-16BE", "UTF-16LE"})
   void encode_variable_lengths(String charsetName, @Randomize String value) throws IOException {
     Charset charset = Charset.forName(charsetName);
-    VariableByteLengthCodec<String> codec = variableByteLengthCodec(charset);
+    Codec<String> codec = variableByteLengthCodec(charset);
     int codePoints = (int) value.codePoints().count();
 
     for (int length = 0; length <= codePoints; length++) {
@@ -50,7 +49,7 @@ class VariableByteLengthCodecTest {
   @ValueSource(strings = {"US-ASCII", "ISO-8859-1", "UTF-8", "UTF-16BE", "UTF-16LE"})
   void decode_variable_lengths(String charsetName, @Randomize String value) throws IOException {
     Charset charset = Charset.forName(charsetName);
-    VariableByteLengthCodec<String> codec = variableByteLengthCodec(charset);
+    Codec<String> codec = variableByteLengthCodec(charset);
     int codePoints = (int) value.codePoints().count();
 
     for (int length = 0; length <= codePoints; length++) {
@@ -72,7 +71,7 @@ class VariableByteLengthCodecTest {
   @ValueSource(strings = {"US-ASCII", "ISO-8859-1", "UTF-8", "UTF-16BE", "UTF-16LE"})
   void roundtrip_variable_lengths(String charsetName, @Randomize String value) throws IOException {
     Charset charset = Charset.forName(charsetName);
-    VariableByteLengthCodec<String> codec = variableByteLengthCodec(charset);
+    Codec<String> codec = variableByteLengthCodec(charset);
     int codePoints = (int) value.codePoints().count();
 
     for (int length = 0; length <= codePoints; length++) {
@@ -86,7 +85,7 @@ class VariableByteLengthCodecTest {
 
   @Test
   void decode_insufficient_data() {
-    VariableByteLengthCodec<String> codec = variableByteLengthCodec(UTF_8);
+    Codec<String> codec = variableByteLengthCodec(UTF_8);
     byte[] inputBytes = new byte[] {5, 'a', 'b'}; // length=5 but only 2 bytes of content
     ByteArrayInputStream input = new ByteArrayInputStream(inputBytes);
 
@@ -95,24 +94,24 @@ class VariableByteLengthCodecTest {
 
   @Test
   void decode_empty_stream() {
-    VariableByteLengthCodec<String> codec = variableByteLengthCodec(UTF_8);
+    Codec<String> codec = variableByteLengthCodec(UTF_8);
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
   }
 
   @Test
-  void builder_null_length_codec() {
-    assertThatThrownBy(() -> VariableByteLengthCodec.builder(null))
+  void constructor_null_length_codec() {
+    Codec<String> ascii = Codecs.ascii();
+    assertThatThrownBy(() -> new VariableByteLengthCodec<>(null, ascii))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("lengthCodec");
   }
 
   @Test
-  void builder_null_value_codec() {
-    VariableByteLengthCodec.Builder builder =
-        VariableByteLengthCodec.builder(NumberCodecs.ofUnsignedByte());
-    assertThatThrownBy(() -> builder.of(null))
+  void constructor_null_value_codec() {
+    Codec<Integer> uint8 = Codecs.uint8();
+    assertThatThrownBy(() -> new VariableByteLengthCodec<>(uint8, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("valueCodec");
   }

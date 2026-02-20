@@ -3,7 +3,7 @@ package io.bytestreams.codec.core.util;
 /**
  * Utility methods for checking preconditions.
  */
-public class Preconditions {
+public final class Preconditions {
   private Preconditions() {}
 
   /**

@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * A codec for objects with ordered fields.
+ * A codec for objects with sequential fields.
  *
  * <p>Each field is encoded/decoded in the order it was added to the builder. Optional fields use a
  * predicate to determine presence - if the predicate returns false, the field is skipped during
@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  * <p>Example usage:
  *
  * <pre>{@code
- * OrderedObjectCodec<Message> codec = ObjectCodecs.<Message>ofOrdered(Message::new)
+ * SequentialObjectCodec<Message> codec = Codecs.<Message>sequential(Message::new)
  *     .field("id", idCodec, Message::getId, Message::setId)
  *     .field("content", contentCodec, Message::getContent, Message::setContent)
  *     .field("tag", tagCodec, Message::getTag, Message::setTag,
@@ -33,18 +33,18 @@ import java.util.function.Supplier;
  *
  * @param <T> the type of object to encode/decode
  */
-public class OrderedObjectCodec<T> implements Codec<T> {
+public class SequentialObjectCodec<T> implements Codec<T> {
 
   private final List<FieldCodec<T, ?>> fields;
   private final Supplier<T> factory;
 
-  OrderedObjectCodec(List<FieldCodec<T, ?>> fields, Supplier<T> factory) {
+  SequentialObjectCodec(List<FieldCodec<T, ?>> fields, Supplier<T> factory) {
     this.fields = List.copyOf(fields);
     this.factory = factory;
   }
 
   /**
-   * Creates a new builder for constructing an OrderedObjectCodec.
+   * Creates a new builder for constructing a SequentialObjectCodec.
    *
    * @param factory factory that creates new instances during decoding
    * @param <T> the type of object to encode/decode
@@ -77,7 +77,7 @@ public class OrderedObjectCodec<T> implements Codec<T> {
     return instance;
   }
 
-  /** Builder for constructing an OrderedObjectCodec. */
+  /** Builder for constructing a SequentialObjectCodec. */
   public static class Builder<T> {
     private final List<FieldCodec<T, ?>> fields = new ArrayList<>();
     private final Supplier<T> factory;
@@ -132,14 +132,14 @@ public class OrderedObjectCodec<T> implements Codec<T> {
     }
 
     /**
-     * Builds the OrderedObjectCodec.
+     * Builds the SequentialObjectCodec.
      *
      * @return the constructed codec
      * @throws IllegalArgumentException if no fields were added
      */
-    public OrderedObjectCodec<T> build() {
+    public SequentialObjectCodec<T> build() {
       Preconditions.check(!fields.isEmpty(), "at least one field is required");
-      return new OrderedObjectCodec<>(fields, factory);
+      return new SequentialObjectCodec<>(fields, factory);
     }
   }
 

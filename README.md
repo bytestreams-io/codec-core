@@ -26,8 +26,10 @@ Core codec library for encoding and decoding values to and from byte streams.
 ## Usage
 
 ```java
+import io.bytestreams.codec.core.Codecs;
+
 // Encode an unsigned byte
-Codec<Integer> codec = NumberCodecs.ofUnsignedByte();
+Codec<Integer> codec = Codecs.uint8();
 EncodeResult result = codec.encode(255, outputStream);
 result.length(); // logical length in codec-specific units
 result.bytes();  // number of bytes written to the stream
@@ -40,65 +42,89 @@ int value = codec.decode(inputStream);
 
 ```java
 // Fixed-length binary data
-Codec<byte[]> binary = new BinaryCodec(16);
+Codec<byte[]> binary = Codecs.binary(16);
 
 // Boolean (1 byte: 0x00 = false, 0x01 = true)
-Codec<Boolean> bool = new BooleanCodec();
+Codec<Boolean> bool = Codecs.bool();
 ```
 
 ### Number Codecs
 
 ```java
 // Binary integer codec (4 bytes big-endian)
-Codec<Integer> intCodec = NumberCodecs.ofInt();
+Codec<Integer> intCodec = Codecs.int32();
 
-// String integer codec (radix 10)
-Codec<Integer> decimalCodec = NumberCodecs.ofInt(stringCodec);
+// Unsigned byte codec (1 byte)
+Codec<Integer> unsignedByteCodec = Codecs.uint8();
 
-// String integer codec (radix 16)
-Codec<Integer> hexCodec = NumberCodecs.ofInt(stringCodec, 16);
+// Unsigned short codec (2 bytes big-endian)
+Codec<Integer> unsignedShortCodec = Codecs.uint16();
 
-// Unsigned byte codec
-Codec<Integer> unsignedByteCodec = NumberCodecs.ofUnsignedByte();
+// Unsigned integer codec (4 bytes big-endian)
+Codec<Long> unsignedIntCodec = Codecs.uint32();
+
+// Signed short codec (2 bytes big-endian)
+Codec<Short> shortCodec = Codecs.int16();
+
+// Signed long codec (8 bytes big-endian)
+Codec<Long> longCodec = Codecs.int64();
+
+// IEEE 754 float (4 bytes)
+Codec<Float> floatCodec = Codecs.float32();
+
+// IEEE 754 double (8 bytes)
+Codec<Double> doubleCodec = Codecs.float64();
 ```
 
 ### String Codecs
 
 ```java
-// Fixed-length code point string
-Codec<String> fixed = StringCodecs.ofCodePoint(5).build();
+// Fixed-length ASCII string (5 code points)
+Codec<String> ascii = Codecs.ascii(5);
 
-// Fixed-length with explicit charset
-Codec<String> fixedUtf8 = StringCodecs.ofCodePoint(5).charset(UTF_8).build();
+// Fixed-length UTF-8 string
+Codec<String> utf8 = Codecs.utf8(5);
 
 // Variable-length (reads to EOF)
-Codec<String> stream = StringCodecs.ofCodePoint().charset(UTF_8).build();
+Codec<String> stream = Codecs.utf8();
 
-// Fixed-length hex: default left-pad with '0'
-Codec<String> hex = StringCodecs.ofHex(4).build();
+// Fixed-length with explicit charset
+Codec<String> custom = Codecs.ofCharset(charset, 5);
 
-// Right-pad with 'f'
-Codec<String> hexPadded = StringCodecs.ofHex(4).padRight('f').build();
+// Fixed-length hex: left-padded with '0' for byte alignment
+Codec<String> hex = Codecs.hex(4);
 
 // Variable-length hex
-Codec<String> hexStream = StringCodecs.ofHex().padRight('f').build();
+Codec<String> hexStream = Codecs.hex();
+```
 
-// Formatted string with delegate
-Codec<String> formatted = StringCodecs.ofFormatted(delegate).padRight('0').build();
+### Type Mapping with xmap
+
+Any codec can be transformed into a codec for a different type using `xmap`.
+The first function maps the decoded value, and the second maps back for encoding.
+
+```java
+// UUID from a 36-character ASCII string
+Codec<UUID> uuidCodec = Codecs.ascii(36).xmap(UUID::fromString, UUID::toString);
+
+// LocalDate from a 10-character ASCII string (yyyy-MM-dd)
+Codec<LocalDate> dateCodec = Codecs.ascii(10).xmap(LocalDate::parse, LocalDate::toString);
+
+// String-encoded integer from a 4-character ASCII field
+Codec<Integer> numericCodec = Codecs.ascii(4).xmap(Integer::parseInt, String::valueOf);
 ```
 
 ### Object Codecs
 
 ```java
-// Ordered object codec
-Codec<Message> ordered = ObjectCodecs.<Message>ofOrdered(Message::new)
+// Sequence object codec
+Codec<Message> message = Codecs.<Message>sequential(Message::new)
     .field("name", nameCodec, Message::getName, Message::setName)
     .build();
 
 // Tagged object codec
-Codec<MyObject> tagged = ObjectCodecs.<MyObject>ofTagged(MyObject::new)
-    .tagCodec(StringCodecs.ofCodePoint(4).build())
-    .field("code", NumberCodecs.ofUnsignedShort())
+Codec<MyObject> tagged = Codecs.<MyObject, String>tagged(MyObject::new, Codecs.ascii(4))
+    .tag("code", Codecs.uint16())
     .build();
 ```
 
@@ -106,23 +132,22 @@ Codec<MyObject> tagged = ObjectCodecs.<MyObject>ofTagged(MyObject::new)
 
 ```java
 // Fixed-length list (exactly 3 items)
-FixedLengthCodec<List<String>> fixed = ListCodecs.of(stringCodec, 3);
+FixedLengthCodec<List<String>> fixed = Codecs.listOf(stringCodec, 3);
 
 // Stream list (reads items until EOF)
-Codec<List<String>> stream = ListCodecs.of(stringCodec);
+Codec<List<String>> stream = Codecs.listOf(stringCodec);
 ```
 
 ### Variable-Length Codecs
 
 ```java
 // Variable-length by byte count
-VariableByteLengthCodec.Builder llvar = VariableLengthCodecs.ofByteLength(NumberCodecs.ofUnsignedShort());
-Codec<String> varString = llvar.of(stringCodec);
+Codec<String> varString = Codecs.prefixed(Codecs.uint16(), stringCodec);
 
 // Variable-length by item count
-Codec<String> varItems = VariableLengthCodecs.ofItemLength(NumberCodecs.ofUnsignedByte())
-    .of(Strings::codePointCount,
-        length -> StringCodecs.ofCodePoint(length).build());
+Codec<String> varItems = Codecs.prefixed(Codecs.uint8(),
+    Strings::codePointCount,
+    Codecs::ascii);
 ```
 
 ### Composition
@@ -131,35 +156,50 @@ Codecs compose naturally — use any codec as a field in an object codec, or wra
 a variable-length prefix.
 
 ```java
-// Variable-length list inside an ordered object
-Codec<List<String>> nameListCodec = VariableLengthCodecs
-    .ofItemLength(NumberCodecs.ofUnsignedByte())
-    .of(Strings::codePointCount,
-        length -> StringCodecs.ofCodePoint(length).build());
+// Variable-length list inside a sequence object
+Codec<List<String>> memberListCodec = Codecs.prefixed(Codecs.uint8(),
+    Codecs.listOf(Codecs.ascii(20)));
 
-Codec<Team> teamCodec = ObjectCodecs.<Team>ofOrdered(Team::new)
-    .field("id", NumberCodecs.ofInt(), Team::getId, Team::setId)
-    .field("name", StringCodecs.ofCodePoint(20).build(), Team::getName, Team::setName)
-    .field("members", nameListCodec, Team::getMembers, Team::setMembers)
+Codec<Team> teamCodec = Codecs.<Team>sequential(Team::new)
+    .field("id", Codecs.int32(), Team::getId, Team::setId)
+    .field("name", Codecs.ascii(20), Team::getName, Team::setName)
+    .field("members", memberListCodec, Team::getMembers, Team::setMembers)
     .build();
 
 // Optional field based on a previously decoded field
-Codec<Message> messageCodec = ObjectCodecs.<Message>ofOrdered(Message::new)
-    .field("type", NumberCodecs.ofUnsignedByte(), Message::getType, Message::setType)
-    .field("body", StringCodecs.ofCodePoint(100).build(), Message::getBody, Message::setBody,
+Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
+    .field("type", Codecs.uint8(), Message::getType, Message::setType)
+    .field("body", Codecs.ascii(100), Message::getBody, Message::setBody,
            msg -> msg.getType() > 0)  // only present when type > 0
     .build();
 ```
 
 ## Available Codecs
 
-| Facade | Description |
+| Method | Description |
 |--------|-------------|
-| `NumberCodecs` | Number codecs: binary (`ofInt()`) and string-encoded (`ofInt(stringCodec)`) |
-| `StringCodecs` | String codecs: code point, hex, and formatted |
-| `ObjectCodecs` | Object codecs: ordered and tagged |
-| `ListCodecs` | List codecs: stream (`of(codec)`) and fixed-length (`of(codec, length)`) |
-| `VariableLengthCodecs` | Variable-length codecs with byte count or item count prefix |
+| `Codecs.uint8()` | Unsigned byte (1 byte) |
+| `Codecs.uint16()` | Unsigned short (2 bytes big-endian) |
+| `Codecs.uint32()` | Unsigned integer (4 bytes big-endian) |
+| `Codecs.int16()` | Signed short (2 bytes big-endian) |
+| `Codecs.int32()` | Signed integer (4 bytes big-endian) |
+| `Codecs.int64()` | Signed long (8 bytes big-endian) |
+| `Codecs.float32()` | IEEE 754 float (4 bytes) |
+| `Codecs.float64()` | IEEE 754 double (8 bytes) |
+| `Codecs.ascii(n)` / `Codecs.ascii()` | US-ASCII string (fixed or stream) |
+| `Codecs.utf8(n)` / `Codecs.utf8()` | UTF-8 string (fixed or stream) |
+| `Codecs.latin1(n)` / `Codecs.latin1()` | ISO-8859-1 string (fixed or stream) |
+| `Codecs.ebcdic(n)` / `Codecs.ebcdic()` | EBCDIC (IBM1047) string (fixed or stream) |
+| `Codecs.ofCharset(charset, n)` / `Codecs.ofCharset(charset)` | String with explicit charset |
+| `Codecs.hex(n)` / `Codecs.hex()` | Hexadecimal string (fixed or stream) |
+| `Codecs.binary(n)` | Fixed-length binary data |
+| `Codecs.bool()` | Boolean (1 byte: 0x00/0x01) |
+| `Codecs.listOf(codec, n)` / `Codecs.listOf(codec)` | List (fixed-length or stream) |
+| `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
+| `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
+| `Codecs.sequential(factory)` | Sequential object codec builder |
+| `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
+| `codec.xmap(decoder, encoder)` | Bidirectional type mapping |
 
 | Codec | Type | Description |
 |-------|------|-------------|
@@ -167,15 +207,13 @@ Codec<Message> messageCodec = ObjectCodecs.<Message>ofOrdered(Message::new)
 | `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
 | `BinaryNumberCodec<V>` | `V extends Number` | Signed/unsigned number as fixed-length big-endian binary |
 | `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
-| `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string with configurable padding |
+| `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string |
 | `FixedListCodec<V>` | `List<V>` | Fixed-length list that encodes/decodes exactly N items |
-| `FormattedStringCodec` | `String` | String with configurable padding, delegates to another codec |
-| `OrderedObjectCodec<T>` | `T` | Object with ordered fields, supports optional fields |
+| `SequentialObjectCodec<T>` | `T` | Object with sequential fields, supports optional fields |
 | `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
-| `StreamHexStringCodec` | `String` | Variable-length hexadecimal string with configurable padding |
+| `StreamHexStringCodec` | `String` | Variable-length hexadecimal string |
 | `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
-| `StringNumberCodec<V>` | `V extends Number` | Number encoded as a string, with configurable radix |
-| `TaggedObjectCodec<T>` | `T extends Tagged<T>` | Object with tag-identified fields |
+| `TaggedObjectCodec<T, K>` | `T extends Tagged<T, K>` | Object with tag-identified fields |
 | `VariableByteLengthCodec<V>` | `V` | Variable-length value with byte count prefix |
 | `VariableItemLengthCodec<V>` | `V` | Variable-length value with item count prefix |
 
@@ -185,7 +223,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 
 | Class | Key Methods | Description |
 |-------|-------------|-------------|
-| `Strings` | `padStart`, `padEnd`, `trimStart`, `trimEnd`, `codePointCount`, `hexByteCount` | String padding, trimming, and counting |
+| `Strings` | `padStart`, `padEnd`, `codePointCount`, `hexByteCount` | String padding and counting utilities |
 | `InputStreams` | `readFully` | Read exactly N bytes from an input stream |
 | `Preconditions` | `check` | Validate conditions, throwing `IllegalArgumentException` on failure |
 | `Predicates` | `alwaysTrue`, `alwaysFalse` | Common predicate factories |

@@ -19,16 +19,14 @@ import java.util.function.ToIntFunction;
  *
  * <pre>{@code
  * // String with code point count prefix
- * Codec<String> codec = VariableLengthCodecs
- *     .ofItemLength(NumberCodecs.ofUnsignedByte())
- *     .of(Strings::codePointCount,
- *         length -> StringCodecs.ofCodePoint(length).build());
+ * Codec<String> string = Codecs.prefixed(Codecs.uint8(),
+ *     Strings::codePointCount,
+ *     length -> Codecs.ofCharset(charset, length));
  *
  * // List with item count prefix
- * Codec<List<Foo>> codec = VariableLengthCodecs
- *     .ofItemLength(NumberCodecs.ofUnsignedShort())
- *     .of(List::size,
- *         length -> ListCodecs.of(fooCodec, length));
+ * Codec<List<Foo>> list = Codecs.prefixed(Codecs.uint16(),
+ *     List::size,
+ *     length -> Codecs.listOf(fooCodec, length));
  * }</pre>
  *
  * @param <V> the type of value this codec handles
@@ -38,23 +36,19 @@ public class VariableItemLengthCodec<V> implements Codec<V> {
   private final ToIntFunction<V> lengthOf;
   private final IntFunction<Codec<V>> codecFactory;
 
-  VariableItemLengthCodec(
-      Codec<Integer> lengthCodec, ToIntFunction<V> lengthOf, IntFunction<Codec<V>> codecFactory) {
-    this.lengthCodec = lengthCodec;
-    this.lengthOf = lengthOf;
-    this.codecFactory = codecFactory;
-  }
-
   /**
-   * Returns a new builder for creating {@link VariableItemLengthCodec} instances with the specified
-   * length codec.
+   * Creates a new variable item-length codec.
    *
    * @param lengthCodec the codec for the item count prefix
-   * @return a new builder
-   * @throws NullPointerException if lengthCodec is null
+   * @param lengthOf a function that returns the item count for a given value
+   * @param codecFactory a function that creates a codec for the given item count
+   * @throws NullPointerException if any argument is null
    */
-  public static Builder builder(Codec<Integer> lengthCodec) {
-    return new Builder(lengthCodec);
+  VariableItemLengthCodec(
+      Codec<Integer> lengthCodec, ToIntFunction<V> lengthOf, IntFunction<Codec<V>> codecFactory) {
+    this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
+    this.lengthOf = Objects.requireNonNull(lengthOf, "lengthOf");
+    this.codecFactory = Objects.requireNonNull(codecFactory, "codecFactory");
   }
 
   /**
@@ -83,32 +77,5 @@ public class VariableItemLengthCodec<V> implements Codec<V> {
   public V decode(InputStream input) throws IOException {
     int length = lengthCodec.decode(input);
     return codecFactory.apply(length).decode(input);
-  }
-
-  /** A builder for creating {@link VariableItemLengthCodec} instances. */
-  public static class Builder {
-    private final Codec<Integer> lengthCodec;
-
-    Builder(Codec<Integer> lengthCodec) {
-      this.lengthCodec = Objects.requireNonNull(lengthCodec, "lengthCodec");
-    }
-
-    /**
-     * Builds a new {@link VariableItemLengthCodec} with the specified length function and codec
-     * factory.
-     *
-     * @param <V> the type of value the codec handles
-     * @param lengthOf a function that returns the item count for a given value
-     * @param codecFactory a function that creates a codec for the given item count
-     * @return a new codec instance
-     * @throws NullPointerException if any argument is null
-     */
-    public <V> VariableItemLengthCodec<V> of(
-        ToIntFunction<V> lengthOf, IntFunction<Codec<V>> codecFactory) {
-      return new VariableItemLengthCodec<>(
-          lengthCodec,
-          Objects.requireNonNull(lengthOf, "lengthOf"),
-          Objects.requireNonNull(codecFactory, "codecFactory"));
-    }
   }
 }

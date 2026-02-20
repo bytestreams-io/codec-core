@@ -19,12 +19,6 @@ class FixedHexStringCodecTest {
   private static final HexFormat HEX_FORMAT = HexFormat.of().withUpperCase();
 
   @Test
-  void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
-    FixedHexStringCodec codec = new FixedHexStringCodec(length);
-    assertThat(codec.getLength()).isEqualTo(length);
-  }
-
-  @Test
   void encode(@Randomize(intMin = 0, intMax = 0xFF) int value) throws IOException {
     FixedHexStringCodec codec = new FixedHexStringCodec(2);
     ByteArrayOutputStream output = new ByteArrayOutputStream();

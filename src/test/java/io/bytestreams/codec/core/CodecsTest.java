@@ -16,59 +16,43 @@ class CodecsTest {
   class Numbers {
 
     @Test
-    void uint8_returns_1_byte_codec() {
-      FixedLengthCodec<Integer> codec = Codecs.uint8();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(1);
+    void uint8_returns_codec() {
+      assertThat(Codecs.uint8()).isInstanceOf(BinaryNumberCodec.class);
     }
 
     @Test
-    void uint16_returns_2_byte_codec() {
-      FixedLengthCodec<Integer> codec = Codecs.uint16();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(2);
+    void uint16_returns_codec() {
+      assertThat(Codecs.uint16()).isInstanceOf(BinaryNumberCodec.class);
     }
 
     @Test
-    void uint32_returns_4_byte_codec() {
-      FixedLengthCodec<Long> codec = Codecs.uint32();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(4);
+    void uint32_returns_codec() {
+      assertThat(Codecs.uint32()).isInstanceOf(BinaryNumberCodec.class);
     }
 
     @Test
-    void int16_returns_2_byte_codec() {
-      FixedLengthCodec<Short> codec = Codecs.int16();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(2);
+    void int16_returns_codec() {
+      assertThat(Codecs.int16()).isInstanceOf(BinaryNumberCodec.class);
     }
 
     @Test
-    void int32_returns_4_byte_codec() {
-      FixedLengthCodec<Integer> codec = Codecs.int32();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(4);
+    void int32_returns_codec() {
+      assertThat(Codecs.int32()).isInstanceOf(BinaryNumberCodec.class);
     }
 
     @Test
-    void int64_returns_8_byte_codec() {
-      FixedLengthCodec<Long> codec = Codecs.int64();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(8);
+    void int64_returns_codec() {
+      assertThat(Codecs.int64()).isInstanceOf(BinaryNumberCodec.class);
     }
 
     @Test
-    void float32_returns_4_byte_codec() {
-      FixedLengthCodec<Float> codec = Codecs.float32();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(4);
+    void float32_returns_codec() {
+      assertThat(Codecs.float32()).isInstanceOf(BinaryNumberCodec.class);
     }
 
     @Test
-    void float64_returns_8_byte_codec() {
-      FixedLengthCodec<Double> codec = Codecs.float64();
-      assertThat(codec).isInstanceOf(BinaryNumberCodec.class);
-      assertThat(codec.getLength()).isEqualTo(8);
+    void float64_returns_codec() {
+      assertThat(Codecs.float64()).isInstanceOf(BinaryNumberCodec.class);
     }
   }
 
@@ -77,9 +61,7 @@ class CodecsTest {
 
     @Test
     void ascii_fixed_returns_fixed_codec() {
-      FixedLengthCodec<String> codec = Codecs.ascii(5);
-      assertThat(codec).isInstanceOf(FixedCodePointStringCodec.class);
-      assertThat(codec.getLength()).isEqualTo(5);
+      assertThat(Codecs.ascii(5)).isInstanceOf(FixedCodePointStringCodec.class);
     }
 
     @Test
@@ -89,9 +71,7 @@ class CodecsTest {
 
     @Test
     void utf8_fixed_returns_fixed_codec() {
-      FixedLengthCodec<String> codec = Codecs.utf8(5);
-      assertThat(codec).isInstanceOf(FixedCodePointStringCodec.class);
-      assertThat(codec.getLength()).isEqualTo(5);
+      assertThat(Codecs.utf8(5)).isInstanceOf(FixedCodePointStringCodec.class);
     }
 
     @Test
@@ -101,9 +81,7 @@ class CodecsTest {
 
     @Test
     void latin1_fixed_returns_fixed_codec() {
-      FixedLengthCodec<String> codec = Codecs.latin1(5);
-      assertThat(codec).isInstanceOf(FixedCodePointStringCodec.class);
-      assertThat(codec.getLength()).isEqualTo(5);
+      assertThat(Codecs.latin1(5)).isInstanceOf(FixedCodePointStringCodec.class);
     }
 
     @Test
@@ -113,9 +91,7 @@ class CodecsTest {
 
     @Test
     void ebcdic_fixed_returns_fixed_codec() {
-      FixedLengthCodec<String> codec = Codecs.ebcdic(5);
-      assertThat(codec).isInstanceOf(FixedCodePointStringCodec.class);
-      assertThat(codec.getLength()).isEqualTo(5);
+      assertThat(Codecs.ebcdic(5)).isInstanceOf(FixedCodePointStringCodec.class);
     }
 
     @Test
@@ -125,9 +101,8 @@ class CodecsTest {
 
     @Test
     void ofCharset_fixed_returns_fixed_codec() {
-      FixedLengthCodec<String> codec = Codecs.ofCharset(StandardCharsets.UTF_16, 3);
-      assertThat(codec).isInstanceOf(FixedCodePointStringCodec.class);
-      assertThat(codec.getLength()).isEqualTo(3);
+      assertThat(Codecs.ofCharset(StandardCharsets.UTF_16, 3))
+          .isInstanceOf(FixedCodePointStringCodec.class);
     }
 
     @Test
@@ -142,9 +117,7 @@ class CodecsTest {
 
     @Test
     void hex_fixed_returns_fixed_codec() {
-      FixedLengthCodec<String> codec = Codecs.hex(4);
-      assertThat(codec).isInstanceOf(FixedHexStringCodec.class);
-      assertThat(codec.getLength()).isEqualTo(4);
+      assertThat(Codecs.hex(4)).isInstanceOf(FixedHexStringCodec.class);
     }
 
     @Test
@@ -202,9 +175,8 @@ class CodecsTest {
 
     @Test
     void listOf_fixed_returns_fixed_list_codec() throws IOException {
-      FixedLengthCodec<List<Integer>> codec = Codecs.listOf(Codecs.uint8(), 3);
+      Codec<List<Integer>> codec = Codecs.listOf(Codecs.uint8(), 3);
       assertThat(codec).isInstanceOf(FixedListCodec.class);
-      assertThat(codec.getLength()).isEqualTo(3);
 
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       codec.encode(List.of(1, 2, 3), out);
@@ -252,16 +224,13 @@ class CodecsTest {
 
     @Test
     void binary_returns_binary_codec() {
-      FixedLengthCodec<byte[]> codec = Codecs.binary(8);
-      assertThat(codec).isInstanceOf(BinaryCodec.class);
-      assertThat(codec.getLength()).isEqualTo(8);
+      assertThat(Codecs.binary(8)).isInstanceOf(BinaryCodec.class);
     }
 
     @Test
     void bool_returns_boolean_codec() throws IOException {
-      FixedLengthCodec<Boolean> codec = Codecs.bool();
+      Codec<Boolean> codec = Codecs.bool();
       assertThat(codec).isInstanceOf(BooleanCodec.class);
-      assertThat(codec.getLength()).isEqualTo(1);
 
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       codec.encode(true, out);

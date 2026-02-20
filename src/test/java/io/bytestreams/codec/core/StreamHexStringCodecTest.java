@@ -24,7 +24,7 @@ class StreamHexStringCodecTest {
     EncodeResult result = codec.encode(hexString, output);
 
     assertThat(output.toByteArray()).isEqualTo(HEX_FORMAT.parseHex(hexString));
-    assertThat(result.length()).isEqualTo(2);
+    assertThat(result.count()).isEqualTo(2);
     assertThat(result.bytes()).isEqualTo(1);
   }
 
@@ -36,7 +36,7 @@ class StreamHexStringCodecTest {
     EncodeResult result = codec.encode("f", output);
 
     assertThat(output.toByteArray()).isEqualTo(new byte[] {0x0f});
-    assertThat(result.length()).isEqualTo(1);
+    assertThat(result.count()).isEqualTo(1);
     assertThat(result.bytes()).isEqualTo(1);
   }
 

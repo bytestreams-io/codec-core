@@ -31,7 +31,7 @@ import io.bytestreams.codec.core.Codecs;
 // Encode an unsigned byte
 Codec<Integer> codec = Codecs.uint8();
 EncodeResult result = codec.encode(255, outputStream);
-result.length(); // logical length in codec-specific units
+result.count();  // logical count in codec-specific units
 result.bytes();  // number of bytes written to the stream
 
 // Decode an unsigned byte
@@ -132,7 +132,7 @@ Codec<MyObject> tagged = Codecs.<MyObject, String>tagged(MyObject::new, Codecs.a
 
 ```java
 // Fixed-length list (exactly 3 items)
-FixedLengthCodec<List<String>> fixed = Codecs.listOf(stringCodec, 3);
+Codec<List<String>> fixed = Codecs.listOf(stringCodec, 3);
 
 // Stream list (reads items until EOF)
 Codec<List<String>> stream = Codecs.listOf(stringCodec);
@@ -142,10 +142,10 @@ Codec<List<String>> stream = Codecs.listOf(stringCodec);
 
 ```java
 // Variable-length by byte count
-Codec<String> varString = Codecs.prefixed(Codecs.uint16(), stringCodec);
+Codec<String> prefixedByBytes = Codecs.prefixed(Codecs.uint16(), stringCodec);
 
-// Variable-length by item count
-Codec<String> varItems = Codecs.prefixed(Codecs.uint8(),
+// Variable-length by code point count
+Codec<String> prefixedByCount = Codecs.prefixed(Codecs.uint8(),
     Strings::codePointCount,
     Codecs::ascii);
 ```

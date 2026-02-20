@@ -17,8 +17,10 @@ public interface Codec<V> {
    *
    * @param value the value to encode
    * @param output the output stream to write the encoded bytes to
-   * @return the encode result containing logical length and bytes written
+   * @return the encode result containing logical count and bytes written
    * @throws IOException if an I/O error occurs during encoding
+   * @throws IllegalArgumentException if the value violates codec constraints (e.g. wrong length)
+   * @throws CodecException if an encoding error is detected (e.g. invalid value, field errors)
    */
   EncodeResult encode(V value, OutputStream output) throws IOException;
 
@@ -28,6 +30,7 @@ public interface Codec<V> {
    * @param input the input stream to read the encoded bytes from
    * @return the decoded value
    * @throws IOException if an I/O error occurs during decoding
+   * @throws CodecException if a decoding error is detected (e.g. invalid data, field errors)
    */
   V decode(InputStream input) throws IOException;
 

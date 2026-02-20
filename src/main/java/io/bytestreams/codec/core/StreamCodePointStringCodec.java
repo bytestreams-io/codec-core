@@ -32,6 +32,7 @@ public class StreamCodePointStringCodec implements Codec<String> {
     this.charset = Objects.requireNonNull(charset, "charset");
   }
 
+  /** {@inheritDoc} */
   @Override
   public EncodeResult encode(String value, OutputStream output) throws IOException {
     byte[] encoded = value.getBytes(charset);
@@ -39,6 +40,7 @@ public class StreamCodePointStringCodec implements Codec<String> {
     return new EncodeResult(value.codePointCount(0, value.length()), encoded.length);
   }
 
+  /** {@inheritDoc} */
   @Override
   public String decode(InputStream input) throws IOException {
     return new String(input.readAllBytes(), charset);

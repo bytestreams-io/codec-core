@@ -36,7 +36,7 @@ class VariableItemLengthCodecTest {
       String substring = value.substring(0, value.offsetByCodePoints(0, length));
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       EncodeResult returned = codec.encode(substring, output);
-      assertThat(returned.length()).isEqualTo(length);
+      assertThat(returned.count()).isEqualTo(length);
       assertThat(returned.bytes()).isEqualTo(1 + substring.getBytes(charset).length);
 
       byte[] bytes = output.toByteArray();
@@ -99,7 +99,7 @@ class VariableItemLengthCodecTest {
     // Value bytes: "abc" left-padded to "0abc" → [0x0a, 0xbc]
     assertThat(bytes[1]).isEqualTo((byte) 0x0a);
     assertThat(bytes[2]).isEqualTo((byte) 0xbc);
-    assertThat(result.length()).isEqualTo(3);
+    assertThat(result.count()).isEqualTo(3);
     assertThat(result.bytes()).isEqualTo(3);
   }
 

@@ -37,7 +37,7 @@ class StreamListCodecTest {
     EncodeResult result = codec.encode(List.of(value), output);
 
     assertThat(output.toByteArray()).isEqualTo(value.getBytes(charset));
-    assertThat(result.length()).isEqualTo(1);
+    assertThat(result.count()).isEqualTo(1);
     assertThat(result.bytes()).isEqualTo(value.getBytes(charset).length);
   }
 
@@ -57,7 +57,7 @@ class StreamListCodecTest {
     EncodeResult result = codec.encode(List.of(value1, value2), output);
 
     assertThat(output.toByteArray()).isEqualTo(expected.array());
-    assertThat(result.length()).isEqualTo(2);
+    assertThat(result.count()).isEqualTo(2);
     assertThat(result.bytes()).isEqualTo(bytes1.length + bytes2.length);
   }
 
@@ -71,7 +71,7 @@ class StreamListCodecTest {
     EncodeResult result = codec.encode(List.of(), output);
 
     assertThat(output.toByteArray()).isEmpty();
-    assertThat(result.length()).isZero();
+    assertThat(result.count()).isZero();
     assertThat(result.bytes()).isZero();
   }
 

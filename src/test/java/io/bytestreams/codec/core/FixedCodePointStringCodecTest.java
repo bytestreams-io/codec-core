@@ -21,13 +21,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 class FixedCodePointStringCodecTest {
 
   @Test
-  void getLength(@Randomize(intMin = 1, intMax = 100) int length) {
-    FixedCodePointStringCodec codec =
-        new FixedCodePointStringCodec(length, Charset.defaultCharset());
-    assertThat(codec.getLength()).isEqualTo(length);
-  }
-
-  @Test
   void constructor_negative_length() {
     assertThatThrownBy(() -> new FixedCodePointStringCodec(-1, UTF_8))
         .isInstanceOf(IllegalArgumentException.class)
@@ -166,8 +159,7 @@ class FixedCodePointStringCodecTest {
 
   @Test
   void constructor_default_charset() {
-    FixedCodePointStringCodec codec = new FixedCodePointStringCodec(5, Charset.defaultCharset());
-    assertThat(codec.getLength()).isEqualTo(5);
+    assertThat(new FixedCodePointStringCodec(5, Charset.defaultCharset())).isNotNull();
   }
 
   @Test

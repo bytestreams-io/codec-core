@@ -19,7 +19,7 @@ class MappedCodecTest {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     EncodeResult result = codec.encode(value, output);
     assertThat(output.toString(US_ASCII)).isEqualTo(value.toString());
-    assertThat(result.length()).isEqualTo(36);
+    assertThat(result.count()).isEqualTo(36);
     assertThat(result.bytes()).isEqualTo(36);
   }
 
@@ -30,13 +30,6 @@ class MappedCodecTest {
     UUID expected = UUID.randomUUID();
     ByteArrayInputStream input = new ByteArrayInputStream(expected.toString().getBytes(US_ASCII));
     assertThat(codec.decode(input)).isEqualTo(expected);
-  }
-
-  @Test
-  void xmap_does_not_preserve_fixed_length() {
-    FixedLengthCodec<String> base = new FixedCodePointStringCodec(10, US_ASCII);
-    Codec<Integer> mapped = base.xmap(String::length, String::valueOf);
-    assertThat(mapped).isNotInstanceOf(FixedLengthCodec.class);
   }
 
   @Test

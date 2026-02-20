@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  *
  * @param <V> the type of values in the list
  */
-public class FixedListCodec<V> implements FixedLengthCodec<List<V>> {
+public class FixedListCodec<V> implements Codec<List<V>> {
   private final Codec<V> itemCodec;
   private final int length;
   private final Supplier<List<V>> listFactory;
@@ -57,16 +57,6 @@ public class FixedListCodec<V> implements FixedLengthCodec<List<V>> {
     Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
     this.listFactory = Objects.requireNonNull(listFactory, "listFactory");
-  }
-
-  /**
-   * {@inheritDoc}
-   *
-   * @return the number of items
-   */
-  @Override
-  public int getLength() {
-    return length;
   }
 
   /**

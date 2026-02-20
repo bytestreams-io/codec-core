@@ -22,11 +22,6 @@ class BinaryNumberCodecTest {
     private final BinaryNumberCodec<Integer> codec = BinaryNumberCodec.ofInt();
 
     @Test
-    void getLength() {
-      assertThat(codec.getLength()).isEqualTo(Integer.BYTES);
-    }
-
-    @Test
     void encode(@Randomize int value) throws IOException {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -57,11 +52,6 @@ class BinaryNumberCodecTest {
   @Nested
   class LongTests {
     private final BinaryNumberCodec<Long> codec = BinaryNumberCodec.ofLong();
-
-    @Test
-    void getLength() {
-      assertThat(codec.getLength()).isEqualTo(Long.BYTES);
-    }
 
     @Test
     void encode(@Randomize long value) throws IOException {
@@ -96,11 +86,6 @@ class BinaryNumberCodecTest {
     private final BinaryNumberCodec<Short> codec = BinaryNumberCodec.ofShort();
 
     @Test
-    void getLength() {
-      assertThat(codec.getLength()).isEqualTo(Short.BYTES);
-    }
-
-    @Test
     void encode(@Randomize short value) throws IOException {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       codec.encode(value, output);
@@ -131,11 +116,6 @@ class BinaryNumberCodecTest {
   @Nested
   class DoubleTests {
     private final BinaryNumberCodec<Double> codec = BinaryNumberCodec.ofDouble();
-
-    @Test
-    void getLength() {
-      assertThat(codec.getLength()).isEqualTo(Double.BYTES);
-    }
 
     @Test
     void encode(@Randomize double value) throws IOException {
@@ -170,11 +150,6 @@ class BinaryNumberCodecTest {
   @Nested
   class FloatTests {
     private final BinaryNumberCodec<Float> codec = BinaryNumberCodec.ofFloat();
-
-    @Test
-    void getLength() {
-      assertThat(codec.getLength()).isEqualTo(Float.BYTES);
-    }
 
     @Test
     void encode(@Randomize float value) throws IOException {
@@ -300,11 +275,6 @@ class BinaryNumberCodecTest {
   class UnsignedIntegerTests {
     private static final long UNSIGNED_INT_MAX = 0xFFFFFFFFL;
     private final BinaryNumberCodec<Long> codec = BinaryNumberCodec.ofUnsignedInt();
-
-    @Test
-    void getLength() {
-      assertThat(codec.getLength()).isEqualTo(Integer.BYTES);
-    }
 
     @Test
     void encode(@Randomize(longMin = 0, longMax = UNSIGNED_INT_MAX + 1) long value)

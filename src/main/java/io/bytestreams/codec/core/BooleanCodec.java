@@ -11,12 +11,7 @@ import java.io.OutputStream;
  * <p>Encodes {@code false} as {@code 0x00} and {@code true} as {@code 0x01}. Decoding is strict:
  * any value other than {@code 0x00} or {@code 0x01} throws a {@link CodecException}.
  */
-public class BooleanCodec implements FixedLengthCodec<Boolean> {
-
-  @Override
-  public int getLength() {
-    return 1;
-  }
+public class BooleanCodec implements Codec<Boolean> {
 
   @Override
   public EncodeResult encode(Boolean value, OutputStream output) throws IOException {

@@ -46,6 +46,9 @@ Codec<byte[]> binary = Codecs.binary(16);
 
 // Boolean (1 byte: 0x00 = false, 0x01 = true)
 Codec<Boolean> bool = Codecs.bool();
+
+// Constant bytes (magic numbers, version bytes, protocol signatures)
+Codec<byte[]> magic = Codecs.constant(new byte[] {0x4D, 0x5A});
 ```
 
 ### Number Codecs
@@ -193,6 +196,7 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
 | `Codecs.ofCharset(charset, n)` / `Codecs.ofCharset(charset)` | String with explicit charset |
 | `Codecs.hex(n)` / `Codecs.hex()` | Hexadecimal string (fixed or stream) |
 | `Codecs.binary(n)` | Fixed-length binary data |
+| `Codecs.constant(bytes)` | Constant byte sequence (magic numbers, signatures) |
 | `Codecs.bool()` | Boolean (1 byte: 0x00/0x01) |
 | `Codecs.listOf(codec, n)` / `Codecs.listOf(codec)` | List (fixed-length or stream) |
 | `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
@@ -205,6 +209,7 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
 |-------|------|-------------|
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
 | `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
+| `ConstantCodec` | `byte[]` | Constant byte sequence validated on decode |
 | `BinaryNumberCodec<V>` | `V extends Number` | Signed/unsigned number as fixed-length big-endian binary |
 | `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string |

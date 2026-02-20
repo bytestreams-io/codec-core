@@ -27,6 +27,9 @@ import java.util.function.ToIntFunction;
  * Codec<String> ascii = Codecs.ascii(10);
  * Codec<String> utf8 = Codecs.utf8();
  *
+ * // Constant bytes
+ * Codec<byte[]> magic = Codecs.constant(new byte[] {0x4D, 0x5A});
+ *
  * // Composition
  * Codec<String> prefixed = Codecs.prefixed(Codecs.uint16(), Codecs.utf8());
  * Codec<List<Integer>> list = Codecs.listOf(Codecs.uint8(), 5);
@@ -340,6 +343,26 @@ public class Codecs {
    */
   public static Codec<byte[]> binary(int length) {
     return new BinaryCodec(length);
+  }
+
+  /**
+   * Creates a constant codec that always writes the expected bytes on encode (ignoring the input
+   * value) and validates that the bytes match on decode.
+   *
+   * <p>Useful for magic numbers, version bytes, and protocol signatures. The value passed to
+   * {@link Codec#encode encode} is ignored; {@code null} is acceptable.
+   *
+   * <pre>{@code
+   * Codec<byte[]> magic = Codecs.constant(new byte[] {0x4D, 0x5A});
+   * }</pre>
+   *
+   * @param expected the expected byte sequence (must be non-null and non-empty)
+   * @return a new constant codec
+   * @throws NullPointerException if expected is null
+   * @throws IllegalArgumentException if expected is empty
+   */
+  public static Codec<byte[]> constant(byte[] expected) {
+    return new ConstantCodec(expected);
   }
 
   /**

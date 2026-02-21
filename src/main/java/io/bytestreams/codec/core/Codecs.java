@@ -254,6 +254,20 @@ public class Codecs {
   // ---------------------------------------------------------------------------
 
   /**
+   * Creates a new builder for a choice codec that encodes discriminated unions.
+   *
+   * <p>The class tag codec determines which alternative to use. The tag-to-class mapping is handled
+   * externally via {@link Codec#xmap xmap}.
+   *
+   * @param classCodec the codec for the class tag
+   * @param <V> the base type of the discriminated union
+   * @return a new choice codec builder
+   */
+  public static <V> ChoiceCodec.Builder<V> choice(Codec<Class<? extends V>> classCodec) {
+    return ChoiceCodec.builder(classCodec);
+  }
+
+  /**
    * Creates a variable-length codec where the byte count is encoded as a prefix.
    *
    * @param lengthCodec the codec for the byte count prefix

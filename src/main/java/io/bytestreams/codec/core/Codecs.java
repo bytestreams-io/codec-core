@@ -268,6 +268,35 @@ public class Codecs {
   }
 
   /**
+   * Creates a pair codec that encodes and decodes two values sequentially.
+   *
+   * @param first the codec for the first value
+   * @param second the codec for the second value
+   * @param <A> the first value type
+   * @param <B> the second value type
+   * @return a new pair codec
+   */
+  public static <A, B> PairCodec<A, B> pair(Codec<A> first, Codec<B> second) {
+    return new PairCodec<>(first, second);
+  }
+
+  /**
+   * Creates a triple codec that encodes and decodes three values sequentially.
+   *
+   * @param first the codec for the first value
+   * @param second the codec for the second value
+   * @param third the codec for the third value
+   * @param <A> the first value type
+   * @param <B> the second value type
+   * @param <C> the third value type
+   * @return a new triple codec
+   */
+  public static <A, B, C> TripleCodec<A, B, C> triple(
+      Codec<A> first, Codec<B> second, Codec<C> third) {
+    return new TripleCodec<>(first, second, third);
+  }
+
+  /**
    * Creates a variable-length codec where the byte count is encoded as a prefix.
    *
    * @param lengthCodec the codec for the byte count prefix

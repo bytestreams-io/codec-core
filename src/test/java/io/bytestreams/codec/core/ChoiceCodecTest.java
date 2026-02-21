@@ -7,7 +7,6 @@ import io.bytestreams.codec.core.util.BiMap;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +17,7 @@ class ChoiceCodecTest {
   private static final Codec<Class<? extends Shape>> CLASS_CODEC = Codecs.uint8().xmap(TAGS);
   private static final Codec<Circle> CIRCLE_CODEC = Codecs.uint8().xmap(Circle::new, c -> c.radius);
   private static final Codec<Rectangle> RECTANGLE_CODEC =
-      Codecs.listOf(Codecs.uint8(), 2)
-          .xmap(l -> new Rectangle(l.get(0), l.get(1)), r -> List.of(r.width, r.height));
+      Codecs.pair(Codecs.uint8(), Codecs.uint8()).as(Rectangle::new, r -> r.width, r -> r.height);
 
   private static Codec<Shape> shapeCodec() {
     return Codecs.choice(CLASS_CODEC)

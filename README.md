@@ -185,6 +185,21 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
     .build();
 ```
 
+### Tuple Codecs
+
+Pair and triple codecs compose two or three heterogeneous codecs into a domain type.
+Use `.as()` to map to your type without exposing internal tuple records.
+
+```java
+// Pair — two values
+Codec<Rectangle> rect = Codecs.pair(Codecs.uint8(), Codecs.uint8())
+    .as(Rectangle::new, r -> r.width, r -> r.height);
+
+// Triple — three values
+Codec<Color> color = Codecs.triple(Codecs.uint8(), Codecs.uint8(), Codecs.uint8())
+    .as(Color::new, c -> c.r, c -> c.g, c -> c.b);
+```
+
 ### Choice Codec
 
 A choice codec encodes discriminated unions — a class tag selects which codec to use.
@@ -227,6 +242,8 @@ Codec<Shape> shapeCodec = Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
 | `Codecs.listOf(codec, n)` / `Codecs.listOf(codec)` | List (fixed-length or stream) |
 | `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
 | `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
+| `Codecs.pair(a, b)` | Pair codec for two sequential values |
+| `Codecs.triple(a, b, c)` | Triple codec for three sequential values |
 | `Codecs.choice(classCodec)` | Discriminated union (choice) codec builder |
 | `Codecs.sequential(factory)` | Sequential object codec builder |
 | `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
@@ -242,6 +259,8 @@ Codec<Shape> shapeCodec = Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
 | `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string |
 | `FixedListCodec<V>` | `List<V>` | Fixed-length list that encodes/decodes exactly N items |
+| `PairCodec<A, B>` | `Pair<A, B>` | Two sequential values with `.as()` mapping |
+| `TripleCodec<A, B, C>` | `Triple<A, B, C>` | Three sequential values with `.as()` mapping |
 | `SequentialObjectCodec<T>` | `T` | Object with sequential fields, supports optional fields |
 | `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
 | `StreamHexStringCodec` | `String` | Variable-length hexadecimal string |

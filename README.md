@@ -185,6 +185,24 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
     .build();
 ```
 
+### Choice Codec
+
+A choice codec encodes discriminated unions — a class tag selects which codec to use.
+Use a `BiMap` with `xmap` to map between tags and class values.
+
+```java
+// Map integer tags to shape classes
+BiMap<Integer, Class<? extends Shape>> tags = BiMap.of(
+    Map.entry(1, Circle.class),
+    Map.entry(2, Rectangle.class));
+
+// Build the choice codec
+Codec<Shape> shapeCodec = Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
+    .on(Circle.class, circleCodec)
+    .on(Rectangle.class, rectangleCodec)
+    .build();
+```
+
 ## Available Codecs
 
 | Method | Description |
@@ -209,6 +227,7 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
 | `Codecs.listOf(codec, n)` / `Codecs.listOf(codec)` | List (fixed-length or stream) |
 | `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
 | `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
+| `Codecs.choice(classCodec)` | Discriminated union (choice) codec builder |
 | `Codecs.sequential(factory)` | Sequential object codec builder |
 | `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
 | `codec.xmap(decoder, encoder)` | Bidirectional type mapping |
@@ -216,6 +235,7 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
 | Codec | Type | Description |
 |-------|------|-------------|
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
+| `ChoiceCodec<V>` | `V` | Discriminated union with tag-selected codec |
 | `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
 | `ConstantCodec` | `byte[]` | Constant byte sequence validated on decode |
 | `BinaryNumberCodec<V>` | `V extends Number` | Signed/unsigned number as fixed-length big-endian binary |

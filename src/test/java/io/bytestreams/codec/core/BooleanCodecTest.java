@@ -13,11 +13,6 @@ class BooleanCodecTest {
   private final BooleanCodec codec = new BooleanCodec();
 
   @Test
-  void getLength() {
-    assertThat(codec.getLength()).isEqualTo(1);
-  }
-
-  @Test
   void encode_true() throws IOException {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(true, output);

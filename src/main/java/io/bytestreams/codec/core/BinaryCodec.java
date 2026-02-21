@@ -9,7 +9,7 @@ import java.io.OutputStream;
 /**
  * A codec for fixed-length binary data.
  */
-public class BinaryCodec implements FixedLengthCodec<byte[]> {
+public class BinaryCodec implements Codec<byte[]> {
   private static final String ERROR_MESSAGE = "value must be of length %d, but was [%d]";
   private final int length;
 
@@ -22,16 +22,6 @@ public class BinaryCodec implements FixedLengthCodec<byte[]> {
   public BinaryCodec(int length) {
     Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
-  }
-
-  /**
-   * {@inheritDoc}
-   *
-   * @return the number of bytes
-   */
-  @Override
-  public int getLength() {
-    return length;
   }
 
   /**

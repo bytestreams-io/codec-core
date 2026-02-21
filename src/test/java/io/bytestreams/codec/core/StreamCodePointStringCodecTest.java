@@ -39,7 +39,7 @@ class StreamCodePointStringCodecTest {
 
     EncodeResult result = codec.encode(value, output);
 
-    assertThat(result.length()).isEqualTo(value.codePointCount(0, value.length()));
+    assertThat(result.count()).isEqualTo(value.codePointCount(0, value.length()));
     assertThat(result.bytes()).isEqualTo(value.getBytes(UTF_8).length);
   }
 

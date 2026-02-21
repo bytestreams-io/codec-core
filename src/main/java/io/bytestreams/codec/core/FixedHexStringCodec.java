@@ -18,7 +18,7 @@ import java.util.HexFormat;
  * Codec<String> codec = Codecs.hex(4);
  * }</pre>
  */
-public class FixedHexStringCodec implements FixedLengthCodec<String> {
+public class FixedHexStringCodec implements Codec<String> {
   private static final String ERROR_MESSAGE =
       "value length must be less than or equal to %d, but was [%d]";
   private static final HexFormat HEX_FORMAT = HexFormat.of().withUpperCase();
@@ -33,16 +33,6 @@ public class FixedHexStringCodec implements FixedLengthCodec<String> {
   FixedHexStringCodec(int length) {
     Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
-  }
-
-  /**
-   * {@inheritDoc}
-   *
-   * @return the number of digits
-   */
-  @Override
-  public int getLength() {
-    return length;
   }
 
   /**

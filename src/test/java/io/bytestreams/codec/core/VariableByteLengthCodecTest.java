@@ -36,7 +36,7 @@ class VariableByteLengthCodecTest {
       byte[] encoded = substring.getBytes(charset);
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       EncodeResult returned = codec.encode(substring, output);
-      assertThat(returned.length()).isEqualTo(length);
+      assertThat(returned.count()).isEqualTo(length);
       assertThat(returned.bytes()).isEqualTo(1 + encoded.length);
 
       byte[] bytes = output.toByteArray();

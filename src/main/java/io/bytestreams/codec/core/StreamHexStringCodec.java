@@ -27,6 +27,11 @@ public class StreamHexStringCodec implements Codec<String> {
   /** Creates a new stream hex string codec. */
   StreamHexStringCodec() {}
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Odd-length values are left-padded with '0' to align to byte boundaries.
+   */
   @Override
   public EncodeResult encode(String value, OutputStream output) throws IOException {
     int paddedLength = Strings.hexByteCount(value) * 2;
@@ -36,6 +41,7 @@ public class StreamHexStringCodec implements Codec<String> {
     return new EncodeResult(value.length(), bytes.length);
   }
 
+  /** {@inheritDoc} */
   @Override
   public String decode(InputStream input) throws IOException {
     return HEX_FORMAT.formatHex(input.readAllBytes());

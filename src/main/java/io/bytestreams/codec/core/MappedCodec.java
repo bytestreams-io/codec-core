@@ -20,9 +20,9 @@ import java.util.function.Function;
  * @param <U> the mapped value type
  */
 class MappedCodec<V, U> implements Codec<U> {
-  final Codec<V> base;
-  final Function<V, U> decoder;
-  final Function<U, V> encoder;
+  private final Codec<V> base;
+  private final Function<V, U> decoder;
+  private final Function<U, V> encoder;
 
   MappedCodec(Codec<V> base, Function<V, U> decoder, Function<U, V> encoder) {
     this.base = Objects.requireNonNull(base, "base");
@@ -30,11 +30,13 @@ class MappedCodec<V, U> implements Codec<U> {
     this.encoder = Objects.requireNonNull(encoder, "encoder");
   }
 
+  /** {@inheritDoc} */
   @Override
   public EncodeResult encode(U value, OutputStream output) throws IOException {
     return base.encode(encoder.apply(value), output);
   }
 
+  /** {@inheritDoc} */
   @Override
   public U decode(InputStream input) throws IOException {
     return decoder.apply(base.decode(input));

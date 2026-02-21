@@ -53,7 +53,7 @@ public class VariableByteLengthCodec<V> implements Codec<V> {
     EncodeResult valueResult = valueCodec.encode(value, buffer);
     EncodeResult prefixResult = lengthCodec.encode(valueResult.bytes(), output);
     buffer.writeTo(output);
-    return new EncodeResult(valueResult.length(), prefixResult.bytes() + valueResult.bytes());
+    return new EncodeResult(valueResult.count(), prefixResult.bytes() + valueResult.bytes());
   }
 
   /**

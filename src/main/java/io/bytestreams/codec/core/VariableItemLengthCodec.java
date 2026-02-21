@@ -62,7 +62,7 @@ public class VariableItemLengthCodec<V> implements Codec<V> {
     int length = lengthOf.applyAsInt(value);
     EncodeResult prefixResult = lengthCodec.encode(length, output);
     EncodeResult valueResult = codecFactory.apply(length).encode(value, output);
-    return new EncodeResult(valueResult.length(), prefixResult.bytes() + valueResult.bytes());
+    return new EncodeResult(valueResult.count(), prefixResult.bytes() + valueResult.bytes());
   }
 
   /**

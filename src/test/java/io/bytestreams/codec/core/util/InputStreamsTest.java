@@ -42,6 +42,15 @@ class InputStreamsTest {
   }
 
   @Test
+  void readFully_negative_length() {
+    ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {1, 2, 3});
+
+    assertThatThrownBy(() -> InputStreams.readFully(input, -1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("-1");
+  }
+
+  @Test
   void readFully_empty_stream() {
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 

@@ -20,16 +20,16 @@ import java.util.function.ToIntFunction;
  *
  * <pre>{@code
  * // Number codecs
- * FixedLengthCodec<Integer> u8 = Codecs.uint8();
- * FixedLengthCodec<Long> i64 = Codecs.int64();
+ * Codec<Integer> u8 = Codecs.uint8();
+ * Codec<Long> i64 = Codecs.int64();
  *
  * // String codecs
- * FixedLengthCodec<String> ascii = Codecs.ascii(10);
+ * Codec<String> ascii = Codecs.ascii(10);
  * Codec<String> utf8 = Codecs.utf8();
  *
  * // Composition
  * Codec<String> prefixed = Codecs.prefixed(Codecs.uint16(), Codecs.utf8());
- * FixedLengthCodec<List<Integer>> list = Codecs.listOf(Codecs.uint8(), 5);
+ * Codec<List<Integer>> list = Codecs.listOf(Codecs.uint8(), 5);
  *
  * // Object codecs
  * SequentialObjectCodec<Msg> codec = Codecs.<Msg>sequential(Msg::new)
@@ -51,7 +51,7 @@ public class Codecs {
    *
    * @return a new unsigned byte codec
    */
-  public static FixedLengthCodec<Integer> uint8() {
+  public static Codec<Integer> uint8() {
     return BinaryNumberCodec.ofUnsignedByte();
   }
 
@@ -60,7 +60,7 @@ public class Codecs {
    *
    * @return a new unsigned short codec
    */
-  public static FixedLengthCodec<Integer> uint16() {
+  public static Codec<Integer> uint16() {
     return BinaryNumberCodec.ofUnsignedShort();
   }
 
@@ -70,7 +70,7 @@ public class Codecs {
    *
    * @return a new unsigned integer codec
    */
-  public static FixedLengthCodec<Long> uint32() {
+  public static Codec<Long> uint32() {
     return BinaryNumberCodec.ofUnsignedInt();
   }
 
@@ -79,7 +79,7 @@ public class Codecs {
    *
    * @return a new signed short codec
    */
-  public static FixedLengthCodec<Short> int16() {
+  public static Codec<Short> int16() {
     return BinaryNumberCodec.ofShort();
   }
 
@@ -89,7 +89,7 @@ public class Codecs {
    *
    * @return a new signed integer codec
    */
-  public static FixedLengthCodec<Integer> int32() {
+  public static Codec<Integer> int32() {
     return BinaryNumberCodec.ofInt();
   }
 
@@ -98,7 +98,7 @@ public class Codecs {
    *
    * @return a new signed long codec
    */
-  public static FixedLengthCodec<Long> int64() {
+  public static Codec<Long> int64() {
     return BinaryNumberCodec.ofLong();
   }
 
@@ -107,7 +107,7 @@ public class Codecs {
    *
    * @return a new float codec
    */
-  public static FixedLengthCodec<Float> float32() {
+  public static Codec<Float> float32() {
     return BinaryNumberCodec.ofFloat();
   }
 
@@ -116,7 +116,7 @@ public class Codecs {
    *
    * @return a new double codec
    */
-  public static FixedLengthCodec<Double> float64() {
+  public static Codec<Double> float64() {
     return BinaryNumberCodec.ofDouble();
   }
 
@@ -130,7 +130,7 @@ public class Codecs {
    * @param length the number of code points
    * @return a new codec
    */
-  public static FixedLengthCodec<String> ascii(int length) {
+  public static Codec<String> ascii(int length) {
     return new FixedCodePointStringCodec(length, US_ASCII);
   }
 
@@ -149,7 +149,7 @@ public class Codecs {
    * @param length the number of code points
    * @return a new codec
    */
-  public static FixedLengthCodec<String> utf8(int length) {
+  public static Codec<String> utf8(int length) {
     return new FixedCodePointStringCodec(length, UTF_8);
   }
 
@@ -168,7 +168,7 @@ public class Codecs {
    * @param length the number of code points
    * @return a new codec
    */
-  public static FixedLengthCodec<String> latin1(int length) {
+  public static Codec<String> latin1(int length) {
     return new FixedCodePointStringCodec(length, ISO_8859_1);
   }
 
@@ -187,7 +187,7 @@ public class Codecs {
    * @param length the number of code points
    * @return a new codec
    */
-  public static FixedLengthCodec<String> ebcdic(int length) {
+  public static Codec<String> ebcdic(int length) {
     return new FixedCodePointStringCodec(length, EBCDIC);
   }
 
@@ -207,7 +207,7 @@ public class Codecs {
    * @param length the number of code points
    * @return a new codec
    */
-  public static FixedLengthCodec<String> ofCharset(Charset charset, int length) {
+  public static Codec<String> ofCharset(Charset charset, int length) {
     return new FixedCodePointStringCodec(length, charset);
   }
 
@@ -232,7 +232,7 @@ public class Codecs {
    * @param length the number of hex digits
    * @return a new codec
    */
-  public static FixedLengthCodec<String> hex(int length) {
+  public static Codec<String> hex(int length) {
     return new FixedHexStringCodec(length);
   }
 
@@ -284,7 +284,7 @@ public class Codecs {
    * @param <V> the item type
    * @return a new fixed list codec
    */
-  public static <V> FixedLengthCodec<List<V>> listOf(Codec<V> itemCodec, int length) {
+  public static <V> Codec<List<V>> listOf(Codec<V> itemCodec, int length) {
     return new FixedListCodec<>(itemCodec, length);
   }
 
@@ -338,7 +338,7 @@ public class Codecs {
    * @param length the number of bytes
    * @return a new binary codec
    */
-  public static FixedLengthCodec<byte[]> binary(int length) {
+  public static Codec<byte[]> binary(int length) {
     return new BinaryCodec(length);
   }
 
@@ -347,7 +347,7 @@ public class Codecs {
    *
    * @return a new boolean codec
    */
-  public static FixedLengthCodec<Boolean> bool() {
+  public static Codec<Boolean> bool() {
     return new BooleanCodec();
   }
 }

@@ -16,13 +16,13 @@ import java.util.function.Function;
  * <p>Example usage:
  *
  * <pre>{@code
- * FixedLengthCodec<Integer> int32 = Codecs.int32();
- * FixedLengthCodec<Long> uint32 = Codecs.uint32();
+ * Codec<Integer> int32 = Codecs.int32();
+ * Codec<Long> uint32 = Codecs.uint32();
  * }</pre>
  *
  * @param <V> the {@link Number} type this codec handles
  */
-public class BinaryNumberCodec<V extends Number> implements FixedLengthCodec<V> {
+public class BinaryNumberCodec<V extends Number> implements Codec<V> {
   private final int byteLength;
   private final BiConsumer<ByteBuffer, V> writer;
   private final Function<ByteBuffer, V> reader;
@@ -135,11 +135,6 @@ public class BinaryNumberCodec<V extends Number> implements FixedLengthCodec<V> 
     Preconditions.check(value.longValue() <= max, message);
   }
 
-  @Override
-  public int getLength() {
-    return byteLength;
-  }
-
   /**
    * {@inheritDoc}
    *
@@ -154,6 +149,11 @@ public class BinaryNumberCodec<V extends Number> implements FixedLengthCodec<V> 
     return EncodeResult.ofBytes(byteLength);
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * @throws java.io.EOFException if the stream ends before the required bytes are read
+   */
   @Override
   public V decode(InputStream input) throws IOException {
     return reader.apply(ByteBuffer.wrap(InputStreams.readFully(input, byteLength)));

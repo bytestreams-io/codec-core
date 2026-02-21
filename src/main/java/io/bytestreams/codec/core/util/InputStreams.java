@@ -19,10 +19,12 @@ public final class InputStreams {
    * @param input the input stream to read from
    * @param length the exact number of bytes to read
    * @return a byte array containing the bytes read
+   * @throws IllegalArgumentException if length is negative
    * @throws IOException if an I/O error occurs
    * @throws EOFException if the stream ends before the required bytes are read
    */
   public static byte[] readFully(InputStream input, int length) throws IOException {
+    Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     byte[] bytes = new byte[length];
     int total = 0;
     while (total < length) {

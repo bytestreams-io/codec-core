@@ -28,7 +28,7 @@ import java.util.Objects;
  * Codec<String> utf8 = Codecs.utf8(5);
  * }</pre>
  */
-public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
+public class FixedCodePointStringCodec implements Codec<String> {
   private final int length;
   private final Charset charset;
   private final boolean singleByteCharset;
@@ -46,16 +46,6 @@ public class FixedCodePointStringCodec implements FixedLengthCodec<String> {
     this.length = length;
     this.charset = Objects.requireNonNull(charset, "charset");
     this.singleByteCharset = charset.newEncoder().maxBytesPerChar() <= 1.0f;
-  }
-
-  /**
-   * {@inheritDoc}
-   *
-   * @return the number of code points
-   */
-  @Override
-  public int getLength() {
-    return length;
   }
 
   /**

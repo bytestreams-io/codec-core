@@ -268,6 +268,17 @@ public class Codecs {
   }
 
   /**
+   * Creates a lazy codec that defers resolution to first use, enabling recursive definitions.
+   *
+   * @param supplier supplies the codec on first use
+   * @param <V> the value type
+   * @return a new lazy codec
+   */
+  public static <V> Codec<V> lazy(Supplier<Codec<V>> supplier) {
+    return new LazyCodec<>(supplier);
+  }
+
+  /**
    * Creates a pair codec that encodes and decodes two values sequentially.
    *
    * @param first the codec for the first value

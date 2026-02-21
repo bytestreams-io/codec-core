@@ -10,6 +10,7 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=io.bytestreams.codec%3Acore&metric=bugs)](https://sonarcloud.io/summary/new_code?id=io.bytestreams.codec%3Acore)
 [![codecov](https://codecov.io/gh/bytestreams-io/codec-core/graph/badge.svg)](https://codecov.io/gh/bytestreams-io/codec-core)
 [![GitHub License](https://img.shields.io/github/license/bytestreams-io/codec-core)](LICENSE)
+[![Javadoc](https://img.shields.io/badge/javadoc-latest-blue)](https://bytestreams-io.github.io/codec-core/)
 
 Core codec library for encoding and decoding values to and from byte streams.
 

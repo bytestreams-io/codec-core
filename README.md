@@ -115,6 +115,14 @@ Codec<LocalDate> dateCodec = Codecs.ascii(10).xmap(LocalDate::parse, LocalDate::
 
 // String-encoded integer from a 4-character ASCII field
 Codec<Integer> numericCodec = Codecs.ascii(4).xmap(Integer::parseInt, String::valueOf);
+
+// Finite set mapping with BiMap (define the mapping once, use bidirectionally)
+BiMap<Integer, Color> colors = BiMap.of(
+    Map.entry(1, Color.RED),
+    Map.entry(2, Color.GREEN),
+    Map.entry(3, Color.BLUE)
+);
+Codec<Color> colorCodec = Codecs.uint8().xmap(colors);
 ```
 
 ### Object Codecs
@@ -228,6 +236,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 
 | Class | Key Methods | Description |
 |-------|-------------|-------------|
+| `BiMap` | `of`, `get`, `getKey` | Immutable bidirectional map for finite set mappings |
 | `Strings` | `padStart`, `padEnd`, `codePointCount`, `hexByteCount` | String padding and counting utilities |
 | `InputStreams` | `readFully` | Read exactly N bytes from an input stream |
 | `Preconditions` | `check` | Validate conditions, throwing `IllegalArgumentException` on failure |

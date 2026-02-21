@@ -218,6 +218,18 @@ Codec<Shape> shapeCodec = Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
     .build();
 ```
 
+### Lazy Codec
+
+A lazy codec defers resolution to first use, enabling recursive codec definitions.
+
+```java
+Codec<TreeNode>[] holder = new Codec[1];
+holder[0] = Codecs.pair(
+    Codecs.utf8(10),
+    Codecs.prefixed(Codecs.uint8(), Codecs.listOf(Codecs.lazy(() -> holder[0])))
+).as(TreeNode::new, n -> n.name, n -> n.children);
+```
+
 ## Available Codecs
 
 | Method | Description |
@@ -244,6 +256,7 @@ Codec<Shape> shapeCodec = Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
 | `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
 | `Codecs.pair(a, b)` | Pair codec for two sequential values |
 | `Codecs.triple(a, b, c)` | Triple codec for three sequential values |
+| `Codecs.lazy(supplier)` | Lazy codec for recursive definitions |
 | `Codecs.choice(classCodec)` | Discriminated union (choice) codec builder |
 | `Codecs.sequential(factory)` | Sequential object codec builder |
 | `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
@@ -252,20 +265,21 @@ Codec<Shape> shapeCodec = Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
 | Codec | Type | Description |
 |-------|------|-------------|
 | `BinaryCodec` | `byte[]` | Fixed-length binary data |
-| `ChoiceCodec<V>` | `V` | Discriminated union with tag-selected codec |
-| `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
-| `ConstantCodec` | `byte[]` | Constant byte sequence validated on decode |
 | `BinaryNumberCodec<V>` | `V extends Number` | Signed/unsigned number as fixed-length big-endian binary |
+| `BooleanCodec` | `Boolean` | Boolean (1 byte, strict 0x00/0x01) |
+| `ChoiceCodec<V>` | `V` | Discriminated union with tag-selected codec |
+| `ConstantCodec` | `byte[]` | Constant byte sequence validated on decode |
 | `FixedCodePointStringCodec` | `String` | Fixed-length string measured in code points |
 | `FixedHexStringCodec` | `String` | Fixed-length hexadecimal string |
 | `FixedListCodec<V>` | `List<V>` | Fixed-length list that encodes/decodes exactly N items |
+| `LazyCodec<V>` | `V` | Deferred codec resolution for recursive structures |
 | `PairCodec<A, B>` | `Pair<A, B>` | Two sequential values with `.as()` mapping |
-| `TripleCodec<A, B, C>` | `Triple<A, B, C>` | Three sequential values with `.as()` mapping |
 | `SequentialObjectCodec<T>` | `T` | Object with sequential fields, supports optional fields |
 | `StreamCodePointStringCodec` | `String` | Variable-length string measured in code points (reads to EOF) |
 | `StreamHexStringCodec` | `String` | Variable-length hexadecimal string |
 | `StreamListCodec<V>` | `List<V>` | Variable-length list that reads items until EOF |
 | `TaggedObjectCodec<T, K>` | `T extends Tagged<T, K>` | Object with tag-identified fields |
+| `TripleCodec<A, B, C>` | `Triple<A, B, C>` | Three sequential values with `.as()` mapping |
 | `VariableByteLengthCodec<V>` | `V` | Variable-length value with byte count prefix |
 | `VariableItemLengthCodec<V>` | `V` | Variable-length value with item count prefix |
 

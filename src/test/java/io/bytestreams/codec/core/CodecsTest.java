@@ -228,6 +228,11 @@ class CodecsTest {
     }
 
     @Test
+    void constant_returns_constant_codec() {
+      assertThat(Codecs.constant(new byte[] {0x4D, 0x5A})).isInstanceOf(ConstantCodec.class);
+    }
+
+    @Test
     void bool_returns_boolean_codec() throws IOException {
       Codec<Boolean> codec = Codecs.bool();
       assertThat(codec).isInstanceOf(BooleanCodec.class);

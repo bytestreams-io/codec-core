@@ -3,8 +3,6 @@ name: Javadoc
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 permissions:
   pages: write
@@ -25,9 +23,7 @@ jobs:
       - run: mvn javadoc:javadoc -q
 
       - uses: actions/upload-pages-artifact@v4
-        if: github.event_name == 'push'
         with:
           path: target/reports/apidocs
 
       - uses: actions/deploy-pages@v4
-        if: github.event_name == 'push'

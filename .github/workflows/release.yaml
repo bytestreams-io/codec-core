@@ -33,7 +33,7 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           REVISION: ${{ github.ref_name }}
         run: |
-          ./release.sh --activate-profiles central >> $GITHUB_OUTPUT
+          ./release.sh >> $GITHUB_OUTPUT
 
       - name: Release summary
         run: |

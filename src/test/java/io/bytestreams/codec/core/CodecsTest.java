@@ -110,6 +110,36 @@ class CodecsTest {
       assertThat(Codecs.ofCharset(StandardCharsets.UTF_16))
           .isInstanceOf(StreamCodePointStringCodec.class);
     }
+
+    @Test
+    void ofCharset_prefixed_returns_variable_item_length_codec() {
+      assertThat(Codecs.ofCharset(StandardCharsets.UTF_8, Codecs.uint8()))
+          .isInstanceOf(VariableItemLengthCodec.class);
+    }
+
+    @Test
+    void ofCharset_prefixed_encodes_code_point_count_for_multibyte_charset() throws IOException {
+      Codec<String> codec = Codecs.ofCharset(StandardCharsets.UTF_8, Codecs.uint8());
+
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      // U+1F600 (grinning face) = 1 code point, 4 UTF-8 bytes, 2 Java chars
+      codec.encode("\uD83D\uDE00", out);
+
+      byte[] bytes = out.toByteArray();
+      assertThat(bytes[0] & 0xFF).isEqualTo(1); // code point count, not String::length (2)
+    }
+
+    @Test
+    void ofCharset_prefixed_uses_string_length_for_single_byte_charset() throws IOException {
+      Codec<String> codec = Codecs.ofCharset(StandardCharsets.US_ASCII, Codecs.uint8());
+
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      codec.encode("abc", out);
+
+      byte[] bytes = out.toByteArray();
+      assertThat(bytes[0] & 0xFF).isEqualTo(3);
+      assertThat(new String(bytes, 1, 3, StandardCharsets.US_ASCII)).isEqualTo("abc");
+    }
   }
 
   @Nested

@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import io.bytestreams.codec.core.util.Strings;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -222,6 +223,22 @@ public class Codecs {
    */
   public static Codec<String> ofCharset(Charset charset) {
     return new StreamCodePointStringCodec(charset);
+  }
+
+  /**
+   * Creates a variable-length string codec where the code point count is encoded as a prefix.
+   *
+   * <p>For single-byte charsets, uses {@link String#length()} for the count (O(1)). For multi-byte
+   * charsets, uses {@link io.bytestreams.codec.core.util.Strings#codePointCount} (O(n)).
+   *
+   * @param charset the charset
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> ofCharset(Charset charset, Codec<Integer> lengthCodec) {
+    ToIntFunction<String> lengthOf =
+        charset.newEncoder().maxBytesPerChar() == 1 ? String::length : Strings::codePointCount;
+    return prefixed(lengthCodec, lengthOf, length -> ofCharset(charset, length));
   }
 
   // ---------------------------------------------------------------------------

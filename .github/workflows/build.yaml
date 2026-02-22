@@ -8,7 +8,6 @@ on:
 
 permissions:
   checks: write
-  packages: write
   pull-requests: write
 
 jobs:
@@ -23,7 +22,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          server-id: github
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: maven
@@ -73,7 +74,8 @@ jobs:
       - name: Release
         id: release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           MAJOR: ${{ github.ref_name == github.event.repository.default_branch && '1' || '0' }}
         run: |

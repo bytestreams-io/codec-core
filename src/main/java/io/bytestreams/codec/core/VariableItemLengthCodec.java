@@ -19,9 +19,7 @@ import java.util.function.ToIntFunction;
  *
  * <pre>{@code
  * // String with code point count prefix
- * Codec<String> string = Codecs.prefixed(Codecs.uint8(),
- *     Strings::codePointCount,
- *     length -> Codecs.ofCharset(charset, length));
+ * Codec<String> string = Codecs.utf8(Codecs.uint8());
  *
  * // List with item count prefix
  * Codec<List<Foo>> list = Codecs.prefixed(Codecs.uint16(),

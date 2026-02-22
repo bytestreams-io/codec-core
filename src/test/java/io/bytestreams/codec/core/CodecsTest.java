@@ -174,6 +174,22 @@ class CodecsTest {
     void hex_stream_returns_stream_codec() {
       assertThat(Codecs.hex()).isInstanceOf(StreamHexStringCodec.class);
     }
+
+    @Test
+    void hex_prefixed_returns_variable_item_length_codec() {
+      assertThat(Codecs.hex(Codecs.uint8())).isInstanceOf(VariableItemLengthCodec.class);
+    }
+
+    @Test
+    void hex_prefixed_encodes_digit_count() throws IOException {
+      Codec<String> codec = Codecs.hex(Codecs.uint8());
+
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      codec.encode("abc", out);
+
+      byte[] bytes = out.toByteArray();
+      assertThat(bytes[0] & 0xFF).isEqualTo(3); // digit count, not byte count (2)
+    }
   }
 
   @Nested

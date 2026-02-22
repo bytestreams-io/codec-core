@@ -310,6 +310,17 @@ public class Codecs {
     return new StreamHexStringCodec();
   }
 
+  /**
+   * Creates a variable-length hex string codec where the hex digit count is encoded as a prefix.
+   * Odd-length values are left-padded with '0' to align to byte boundaries.
+   *
+   * @param lengthCodec the codec for the hex digit count prefix
+   * @return a new codec
+   */
+  public static Codec<String> hex(Codec<Integer> lengthCodec) {
+    return prefixed(lengthCodec, String::length, Codecs::hex);
+  }
+
   // ---------------------------------------------------------------------------
   // Composition combinators
   // ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import io.bytestreams.codec.core.util.Strings;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -147,6 +148,17 @@ public class Codecs {
   }
 
   /**
+   * Creates a variable-length US-ASCII string codec where the code point count is encoded as a
+   * prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> ascii(Codec<Integer> lengthCodec) {
+    return ofCharset(US_ASCII, lengthCodec);
+  }
+
+  /**
    * Creates a fixed-length UTF-8 string codec.
    *
    * @param length the number of code points
@@ -163,6 +175,17 @@ public class Codecs {
    */
   public static Codec<String> utf8() {
     return new StreamCodePointStringCodec(UTF_8);
+  }
+
+  /**
+   * Creates a variable-length UTF-8 string codec where the code point count is encoded as a
+   * prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> utf8(Codec<Integer> lengthCodec) {
+    return ofCharset(UTF_8, lengthCodec);
   }
 
   /**
@@ -185,6 +208,17 @@ public class Codecs {
   }
 
   /**
+   * Creates a variable-length ISO-8859-1 (Latin-1) string codec where the code point count is
+   * encoded as a prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> latin1(Codec<Integer> lengthCodec) {
+    return ofCharset(ISO_8859_1, lengthCodec);
+  }
+
+  /**
    * Creates a fixed-length EBCDIC (IBM1047) string codec.
    *
    * @param length the number of code points
@@ -201,6 +235,17 @@ public class Codecs {
    */
   public static Codec<String> ebcdic() {
     return new StreamCodePointStringCodec(EBCDIC);
+  }
+
+  /**
+   * Creates a variable-length EBCDIC (IBM1047) string codec where the code point count is encoded
+   * as a prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> ebcdic(Codec<Integer> lengthCodec) {
+    return ofCharset(EBCDIC, lengthCodec);
   }
 
   /**
@@ -222,6 +267,22 @@ public class Codecs {
    */
   public static Codec<String> ofCharset(Charset charset) {
     return new StreamCodePointStringCodec(charset);
+  }
+
+  /**
+   * Creates a variable-length string codec where the code point count is encoded as a prefix.
+   *
+   * <p>For single-byte charsets, uses {@link String#length()} for the count (O(1)). For multi-byte
+   * charsets, uses {@link io.bytestreams.codec.core.util.Strings#codePointCount} (O(n)).
+   *
+   * @param charset the charset
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> ofCharset(Charset charset, Codec<Integer> lengthCodec) {
+    ToIntFunction<String> lengthOf =
+        Strings.isSingleByte(charset) ? String::length : Strings::codePointCount;
+    return prefixed(lengthCodec, lengthOf, length -> ofCharset(charset, length));
   }
 
   // ---------------------------------------------------------------------------
@@ -247,6 +308,17 @@ public class Codecs {
    */
   public static Codec<String> hex() {
     return new StreamHexStringCodec();
+  }
+
+  /**
+   * Creates a variable-length hex string codec where the hex digit count is encoded as a prefix.
+   * Odd-length values are left-padded with '0' to align to byte boundaries.
+   *
+   * @param lengthCodec the codec for the hex digit count prefix
+   * @return a new codec
+   */
+  public static Codec<String> hex(Codec<Integer> lengthCodec) {
+    return prefixed(lengthCodec, String::length, Codecs::hex);
   }
 
   // ---------------------------------------------------------------------------

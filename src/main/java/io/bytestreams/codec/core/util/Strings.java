@@ -1,5 +1,6 @@
 package io.bytestreams.codec.core.util;
 
+import java.nio.charset.Charset;
 import java.util.function.Function;
 
 /**
@@ -62,6 +63,16 @@ public final class Strings {
    */
   public static Function<String, String> padEnd(char padding, int length) {
     return value -> padEnd(value, padding, length);
+  }
+
+  /**
+   * Returns whether the charset uses at most one byte per character.
+   *
+   * @param charset the charset to check
+   * @return true if the charset is single-byte
+   */
+  public static boolean isSingleByte(Charset charset) {
+    return charset.newEncoder().maxBytesPerChar() <= 1.0f;
   }
 
   /**

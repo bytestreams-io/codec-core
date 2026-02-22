@@ -157,9 +157,10 @@ Codec<List<String>> stream = Codecs.listOf(stringCodec);
 Codec<String> prefixedByBytes = Codecs.prefixed(Codecs.uint16(), stringCodec);
 
 // Variable-length by code point count
-Codec<String> prefixedByCount = Codecs.prefixed(Codecs.uint8(),
-    Strings::codePointCount,
-    Codecs::ascii);
+Codec<String> prefixedByCount = Codecs.utf8(Codecs.uint16());
+
+// Variable-length hex by digit count
+Codec<String> prefixedHex = Codecs.hex(Codecs.uint8());
 ```
 
 ### Composition
@@ -272,12 +273,12 @@ Codec<Person> fixed = Codecs.<Person>sequential(Person::new)
 | `Codecs.int64()` | Signed long (8 bytes big-endian) |
 | `Codecs.float32()` | IEEE 754 float (4 bytes) |
 | `Codecs.float64()` | IEEE 754 double (8 bytes) |
-| `Codecs.ascii(n)` / `Codecs.ascii()` | US-ASCII string (fixed or stream) |
-| `Codecs.utf8(n)` / `Codecs.utf8()` | UTF-8 string (fixed or stream) |
-| `Codecs.latin1(n)` / `Codecs.latin1()` | ISO-8859-1 string (fixed or stream) |
-| `Codecs.ebcdic(n)` / `Codecs.ebcdic()` | EBCDIC (IBM1047) string (fixed or stream) |
-| `Codecs.ofCharset(charset, n)` / `Codecs.ofCharset(charset)` | String with explicit charset |
-| `Codecs.hex(n)` / `Codecs.hex()` | Hexadecimal string (fixed or stream) |
+| `Codecs.ascii(n)` / `Codecs.ascii()` / `Codecs.ascii(lc)` | US-ASCII string (fixed, stream, or prefixed) |
+| `Codecs.utf8(n)` / `Codecs.utf8()` / `Codecs.utf8(lc)` | UTF-8 string (fixed, stream, or prefixed) |
+| `Codecs.latin1(n)` / `Codecs.latin1()` / `Codecs.latin1(lc)` | ISO-8859-1 string (fixed, stream, or prefixed) |
+| `Codecs.ebcdic(n)` / `Codecs.ebcdic()` / `Codecs.ebcdic(lc)` | EBCDIC (IBM1047) string (fixed, stream, or prefixed) |
+| `Codecs.ofCharset(charset, n)` / `Codecs.ofCharset(charset)` / `Codecs.ofCharset(charset, lc)` | String with explicit charset |
+| `Codecs.hex(n)` / `Codecs.hex()` / `Codecs.hex(lc)` | Hexadecimal string (fixed, stream, or prefixed) |
 | `Codecs.binary(n)` | Fixed-length binary data |
 | `Codecs.constant(bytes)` | Constant byte sequence (magic numbers, signatures) |
 | `Codecs.bool()` | Boolean (1 byte: 0x00/0x01) |

@@ -21,8 +21,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class VariableItemLengthCodecTest {
 
   private static Codec<String> codePointCodec(Charset charset) {
-    return Codecs.prefixed(
-        Codecs.uint8(), Strings::codePointCount, length -> Codecs.ofCharset(charset, length));
+    return Codecs.ofCharset(charset, Codecs.uint8());
   }
 
   @ParameterizedTest
@@ -83,7 +82,7 @@ class VariableItemLengthCodecTest {
   }
 
   private static Codec<String> hexDigitCodec() {
-    return Codecs.prefixed(Codecs.uint8(), String::length, Codecs::hex);
+    return Codecs.hex(Codecs.uint8());
   }
 
   @Test

@@ -1,11 +1,29 @@
 package io.bytestreams.codec.core.util;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 class StringsTest {
+
+  @Test
+  void isSingleByte_ascii() {
+    assertThat(Strings.isSingleByte(US_ASCII)).isTrue();
+  }
+
+  @Test
+  void isSingleByte_latin1() {
+    assertThat(Strings.isSingleByte(ISO_8859_1)).isTrue();
+  }
+
+  @Test
+  void isSingleByte_utf8() {
+    assertThat(Strings.isSingleByte(UTF_8)).isFalse();
+  }
 
   @Test
   void padStart() {

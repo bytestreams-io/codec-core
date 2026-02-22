@@ -148,6 +148,17 @@ public class Codecs {
   }
 
   /**
+   * Creates a variable-length US-ASCII string codec where the code point count is encoded as a
+   * prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> ascii(Codec<Integer> lengthCodec) {
+    return ofCharset(US_ASCII, lengthCodec);
+  }
+
+  /**
    * Creates a fixed-length UTF-8 string codec.
    *
    * @param length the number of code points
@@ -164,6 +175,17 @@ public class Codecs {
    */
   public static Codec<String> utf8() {
     return new StreamCodePointStringCodec(UTF_8);
+  }
+
+  /**
+   * Creates a variable-length UTF-8 string codec where the code point count is encoded as a
+   * prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> utf8(Codec<Integer> lengthCodec) {
+    return ofCharset(UTF_8, lengthCodec);
   }
 
   /**
@@ -186,6 +208,17 @@ public class Codecs {
   }
 
   /**
+   * Creates a variable-length ISO-8859-1 (Latin-1) string codec where the code point count is
+   * encoded as a prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> latin1(Codec<Integer> lengthCodec) {
+    return ofCharset(ISO_8859_1, lengthCodec);
+  }
+
+  /**
    * Creates a fixed-length EBCDIC (IBM1047) string codec.
    *
    * @param length the number of code points
@@ -202,6 +235,17 @@ public class Codecs {
    */
   public static Codec<String> ebcdic() {
     return new StreamCodePointStringCodec(EBCDIC);
+  }
+
+  /**
+   * Creates a variable-length EBCDIC (IBM1047) string codec where the code point count is encoded
+   * as a prefix.
+   *
+   * @param lengthCodec the codec for the code point count prefix
+   * @return a new codec
+   */
+  public static Codec<String> ebcdic(Codec<Integer> lengthCodec) {
+    return ofCharset(EBCDIC, lengthCodec);
   }
 
   /**

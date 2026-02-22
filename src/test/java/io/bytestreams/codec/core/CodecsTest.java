@@ -112,6 +112,26 @@ class CodecsTest {
     }
 
     @Test
+    void ascii_prefixed_returns_variable_item_length_codec() {
+      assertThat(Codecs.ascii(Codecs.uint8())).isInstanceOf(VariableItemLengthCodec.class);
+    }
+
+    @Test
+    void utf8_prefixed_returns_variable_item_length_codec() {
+      assertThat(Codecs.utf8(Codecs.uint8())).isInstanceOf(VariableItemLengthCodec.class);
+    }
+
+    @Test
+    void latin1_prefixed_returns_variable_item_length_codec() {
+      assertThat(Codecs.latin1(Codecs.uint8())).isInstanceOf(VariableItemLengthCodec.class);
+    }
+
+    @Test
+    void ebcdic_prefixed_returns_variable_item_length_codec() {
+      assertThat(Codecs.ebcdic(Codecs.uint8())).isInstanceOf(VariableItemLengthCodec.class);
+    }
+
+    @Test
     void ofCharset_prefixed_returns_variable_item_length_codec() {
       assertThat(Codecs.ofCharset(StandardCharsets.UTF_8, Codecs.uint8()))
           .isInstanceOf(VariableItemLengthCodec.class);

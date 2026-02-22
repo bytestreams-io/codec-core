@@ -281,7 +281,7 @@ public class Codecs {
    */
   public static Codec<String> ofCharset(Charset charset, Codec<Integer> lengthCodec) {
     ToIntFunction<String> lengthOf =
-        charset.newEncoder().maxBytesPerChar() == 1 ? String::length : Strings::codePointCount;
+        Strings.isSingleByte(charset) ? String::length : Strings::codePointCount;
     return prefixed(lengthCodec, lengthOf, length -> ofCharset(charset, length));
   }
 

@@ -3,6 +3,7 @@ package io.bytestreams.codec.core;
 import io.bytestreams.codec.core.util.CodePointReader;
 import io.bytestreams.codec.core.util.InputStreams;
 import io.bytestreams.codec.core.util.Preconditions;
+import io.bytestreams.codec.core.util.Strings;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +46,7 @@ public class FixedCodePointStringCodec implements Codec<String> {
     Preconditions.check(length >= 0, "length must be non-negative, but was [%d]", length);
     this.length = length;
     this.charset = Objects.requireNonNull(charset, "charset");
-    this.singleByteCharset = charset.newEncoder().maxBytesPerChar() <= 1.0f;
+    this.singleByteCharset = Strings.isSingleByte(charset);
   }
 
   /**

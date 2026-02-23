@@ -13,29 +13,29 @@ class BiMapTest {
       BiMap.of(Map.entry(1, "one"), Map.entry(2, "two"), Map.entry(3, "three"));
 
   @Test
-  void get() {
-    assertThat(biMap.get(1)).isEqualTo("one");
-    assertThat(biMap.get(2)).isEqualTo("two");
-    assertThat(biMap.get(3)).isEqualTo("three");
+  void to() {
+    assertThat(biMap.to(1)).isEqualTo("one");
+    assertThat(biMap.to(2)).isEqualTo("two");
+    assertThat(biMap.to(3)).isEqualTo("three");
   }
 
   @Test
-  void getKey() {
-    assertThat(biMap.getKey("one")).isEqualTo(1);
-    assertThat(biMap.getKey("two")).isEqualTo(2);
-    assertThat(biMap.getKey("three")).isEqualTo(3);
+  void from() {
+    assertThat(biMap.from("one")).isEqualTo(1);
+    assertThat(biMap.from("two")).isEqualTo(2);
+    assertThat(biMap.from("three")).isEqualTo(3);
   }
 
   @Test
-  void get_missing() {
-    assertThatThrownBy(() -> biMap.get(99))
+  void to_missing() {
+    assertThatThrownBy(() -> biMap.to(99))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("no value for key: 99");
   }
 
   @Test
-  void getKey_missing() {
-    assertThatThrownBy(() -> biMap.getKey("missing"))
+  void from_missing() {
+    assertThatThrownBy(() -> biMap.from("missing"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("no key for value: missing");
   }

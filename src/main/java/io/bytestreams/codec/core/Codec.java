@@ -1,9 +1,10 @@
 package io.bytestreams.codec.core;
 
-import io.bytestreams.codec.core.util.BiMap;
+import io.bytestreams.codec.core.util.Converter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -52,11 +53,10 @@ public interface Codec<V> {
   }
 
   /**
-   * Returns a new codec that maps between types using a {@link BiMap}.
+   * Returns a new codec that maps between types using a {@link Converter}.
    *
-   * <p>The BiMap provides the bidirectional mapping between the base type {@code V} and the mapped
-   * type {@code U}. This is useful when mapping between finite sets of values where the same mapping
-   * would otherwise need to be written twice.
+   * <p>The converter provides the bidirectional mapping between the base type {@code V} and the
+   * mapped type {@code U}. This is useful for reusable or composed conversions.
    *
    * <pre>{@code
    * BiMap<Integer, Color> colors = BiMap.of(
@@ -68,10 +68,11 @@ public interface Codec<V> {
    * }</pre>
    *
    * @param <U> the mapped value type
-   * @param biMap the bidirectional mapping between {@code V} and {@code U}
+   * @param converter the bidirectional conversion between {@code V} and {@code U}
    * @return a new codec that maps between {@code V} and {@code U}
    */
-  default <U> Codec<U> xmap(BiMap<V, U> biMap) {
-    return xmap(biMap::get, biMap::getKey);
+  default <U> Codec<U> xmap(Converter<V, U> converter) {
+    Objects.requireNonNull(converter, "converter");
+    return xmap(converter::to, converter::from);
   }
 }

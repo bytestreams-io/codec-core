@@ -8,7 +8,7 @@ import java.util.Objects;
  * An immutable bidirectional map that maintains a one-to-one mapping between keys and values.
  *
  * <p>Both keys and values must be unique. Lookups can be performed in either direction: by key
- * using {@link #get(Object)} or by value using {@link #getKey(Object)}.
+ * using {@link #to(Object)} or by value using {@link #from(Object)}.
  *
  * <p>Example usage:
  *
@@ -18,14 +18,14 @@ import java.util.Objects;
  *     Map.entry(2, "two"),
  *     Map.entry(3, "three")
  * );
- * biMap.get(1);        // returns "one"
- * biMap.getKey("two"); // returns 2
+ * biMap.to(1);        // returns "one"
+ * biMap.from("two"); // returns 2
  * }</pre>
  *
  * @param <K> the key type
  * @param <V> the value type
  */
-public final class BiMap<K, V> {
+public final class BiMap<K, V> implements Converter<K, V> {
   private final Map<K, V> forward;
   private final Map<V, K> inverse;
 
@@ -68,7 +68,8 @@ public final class BiMap<K, V> {
    * @return the value mapped to the key
    * @throws IllegalArgumentException if the key is not present
    */
-  public V get(K key) {
+  @Override
+  public V to(K key) {
     V value = forward.get(key);
     Preconditions.check(value != null, "no value for key: %s", key);
     return value;
@@ -81,7 +82,8 @@ public final class BiMap<K, V> {
    * @return the key mapped to the value
    * @throws IllegalArgumentException if the value is not present
    */
-  public K getKey(V value) {
+  @Override
+  public K from(V value) {
     K key = inverse.get(value);
     Preconditions.check(key != null, "no key for value: %s", value);
     return key;

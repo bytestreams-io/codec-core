@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.bytestreams.codec.core.util.BiMap;
+import io.bytestreams.codec.core.util.Converter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -67,6 +68,23 @@ class MappedCodecTest {
     UUID expected = UUID.fromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8");
     ByteArrayInputStream input = new ByteArrayInputStream(expected.toString().getBytes(US_ASCII));
     assertThat(codec.decode(input)).isEqualTo(expected);
+  }
+
+  @Test
+  void xmap_converter_encode() throws IOException {
+    Converter<String, String> trim = Converter.of(String::trim, s -> String.format("%-5s", s));
+    Codec<String> codec = new FixedCodePointStringCodec(5, US_ASCII).xmap(trim);
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode("Hi", output);
+    assertThat(output.toString(US_ASCII)).isEqualTo("Hi   ");
+  }
+
+  @Test
+  void xmap_converter_decode() throws IOException {
+    Converter<String, String> trim = Converter.of(String::trim, s -> String.format("%-5s", s));
+    Codec<String> codec = new FixedCodePointStringCodec(5, US_ASCII).xmap(trim);
+    ByteArrayInputStream input = new ByteArrayInputStream("hi   ".getBytes(US_ASCII));
+    assertThat(codec.decode(input)).isEqualTo("hi");
   }
 
   @Test

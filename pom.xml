@@ -172,6 +172,7 @@
           <pom>
             <sortPom>
               <expandEmptyElements>false</expandEmptyElements>
+              <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
             </sortPom>
           </pom>
           <java>
@@ -180,7 +181,7 @@
               <reflowLongStrings>true</reflowLongStrings>
               <formatJavadoc>false</formatJavadoc>
             </googleJavaFormat>
-            <forbidWildcardImports/>
+            <forbidWildcardImports />
           </java>
         </configuration>
         <executions>
@@ -268,11 +269,11 @@
         <configuration>
           <flattenMode>bom</flattenMode>
           <pomElements>
-            <name/>
-            <description/>
-            <url/>
-            <scm/>
-            <developers/>
+            <name />
+            <description />
+            <url />
+            <scm />
+            <developers />
           </pomElements>
         </configuration>
         <executions>
@@ -312,6 +313,7 @@
         <extensions>true</extensions>
         <configuration>
           <publishingServerId>central</publishingServerId>
+          <deploymentName>${project.groupId}:${project.artifactId}:${revision}</deploymentName>
           <autoPublish>true</autoPublish>
           <waitUntil>validated</waitUntil>
         </configuration>

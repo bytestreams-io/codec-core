@@ -1,7 +1,6 @@
 package io.bytestreams.codec.core.util;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * A bidirectional conversion between two types.
@@ -11,7 +10,8 @@ import java.util.function.Function;
  * mathematical bijection, conversions are not required to be strictly one-to-one.
  *
  * <p>Converters can be composed using {@link #andThen(Converter)} or created from function pairs
- * using {@link #of(Function, Function)}.
+ * using {@link Converters#of(java.util.function.Function, java.util.function.Function)
+ * Converters.of}.
  *
  * @param <V> the source type
  * @param <U> the target type
@@ -54,31 +54,6 @@ public interface Converter<V, U> {
       @Override
       public V from(T value) {
         return self.from(after.from(value));
-      }
-    };
-  }
-
-  /**
-   * Creates a converter from two functions.
-   *
-   * @param <V> the source type
-   * @param <U> the target type
-   * @param to the forward conversion function
-   * @param from the reverse conversion function
-   * @return a new converter
-   */
-  static <V, U> Converter<V, U> of(Function<V, U> to, Function<U, V> from) {
-    Objects.requireNonNull(to, "to");
-    Objects.requireNonNull(from, "from");
-    return new Converter<>() {
-      @Override
-      public U to(V value) {
-        return to.apply(value);
-      }
-
-      @Override
-      public V from(U value) {
-        return from.apply(value);
       }
     };
   }

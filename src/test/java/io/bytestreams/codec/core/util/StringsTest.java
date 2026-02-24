@@ -135,4 +135,44 @@ class StringsTest {
     assertThat(pad.apply("hello")).isEqualTo("hello");
     assertThat(pad.apply("toolong")).isEqualTo("toolong");
   }
+
+  @Test
+  void stripStart() {
+    assertThat(Strings.stripStart("00abc", '0')).isEqualTo("abc");
+  }
+
+  @Test
+  void stripStart_no_match() {
+    assertThat(Strings.stripStart("abc", '0')).isEqualTo("abc");
+  }
+
+  @Test
+  void stripStart_all_padding() {
+    assertThat(Strings.stripStart("000", '0')).isEmpty();
+  }
+
+  @Test
+  void stripStart_empty() {
+    assertThat(Strings.stripStart("", '0')).isEmpty();
+  }
+
+  @Test
+  void stripEnd() {
+    assertThat(Strings.stripEnd("abc  ", ' ')).isEqualTo("abc");
+  }
+
+  @Test
+  void stripEnd_no_match() {
+    assertThat(Strings.stripEnd("abc", ' ')).isEqualTo("abc");
+  }
+
+  @Test
+  void stripEnd_all_padding() {
+    assertThat(Strings.stripEnd("   ", ' ')).isEmpty();
+  }
+
+  @Test
+  void stripEnd_empty() {
+    assertThat(Strings.stripEnd("", ' ')).isEmpty();
+  }
 }

@@ -43,7 +43,7 @@ public final class Strings {
 
   /**
    * Returns a function that pads the start of a string with the specified character until it
-   * reaches the desired length. Suitable for use with {@code Codec.xmap()}.
+   * reaches the desired length.
    *
    * @param padding the character to use for padding
    * @param length the target length
@@ -55,7 +55,7 @@ public final class Strings {
 
   /**
    * Returns a function that pads the end of a string with the specified character until it reaches
-   * the desired length. Suitable for use with {@code Codec.xmap()}.
+   * the desired length.
    *
    * @param padding the character to use for padding
    * @param length the target length
@@ -63,6 +63,36 @@ public final class Strings {
    */
   public static Function<String, String> padEnd(char padding, int length) {
     return value -> padEnd(value, padding, length);
+  }
+
+  /**
+   * Strips leading occurrences of the specified character from the string.
+   *
+   * @param value the string to strip
+   * @param padding the character to strip
+   * @return the stripped string
+   */
+  public static String stripStart(String value, char padding) {
+    int start = 0;
+    while (start < value.length() && value.charAt(start) == padding) {
+      start++;
+    }
+    return value.substring(start);
+  }
+
+  /**
+   * Strips trailing occurrences of the specified character from the string.
+   *
+   * @param value the string to strip
+   * @param padding the character to strip
+   * @return the stripped string
+   */
+  public static String stripEnd(String value, char padding) {
+    int end = value.length();
+    while (end > 0 && value.charAt(end - 1) == padding) {
+      end--;
+    }
+    return value.substring(0, end);
   }
 
   /**

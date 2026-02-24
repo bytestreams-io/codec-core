@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.bytestreams.codec.core.util.BiMap;
 import io.bytestreams.codec.core.util.Converter;
+import io.bytestreams.codec.core.util.Converters;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -72,7 +73,7 @@ class MappedCodecTest {
 
   @Test
   void xmap_converter_encode() throws IOException {
-    Converter<String, String> trim = Converter.of(String::trim, s -> String.format("%-5s", s));
+    Converter<String, String> trim = Converters.of(String::trim, s -> String.format("%-5s", s));
     Codec<String> codec = new FixedCodePointStringCodec(5, US_ASCII).xmap(trim);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode("Hi", output);
@@ -81,7 +82,7 @@ class MappedCodecTest {
 
   @Test
   void xmap_converter_decode() throws IOException {
-    Converter<String, String> trim = Converter.of(String::trim, s -> String.format("%-5s", s));
+    Converter<String, String> trim = Converters.of(String::trim, s -> String.format("%-5s", s));
     Codec<String> codec = new FixedCodePointStringCodec(5, US_ASCII).xmap(trim);
     ByteArrayInputStream input = new ByteArrayInputStream("hi   ".getBytes(US_ASCII));
     assertThat(codec.decode(input)).isEqualTo("hi");

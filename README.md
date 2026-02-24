@@ -291,7 +291,7 @@ Codec<Person> fixed = Codecs.<Person>sequential(Person::new)
 | `Codecs.choice(classCodec)` | Discriminated union (choice) codec builder |
 | `Codecs.sequential(factory)` | Sequential object codec builder |
 | `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
-| `codec.xmap(decoder, encoder)` | Bidirectional type mapping |
+| `codec.xmap(decoder, encoder)` / `codec.xmap(converter)` | Bidirectional type mapping |
 
 ## Utilities
 
@@ -299,8 +299,10 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 
 | Class | Key Methods | Description |
 |-------|-------------|-------------|
-| `BiMap` | `of`, `get`, `getKey` | Immutable bidirectional map for finite set mappings |
-| `Strings` | `padStart`, `padEnd`, `codePointCount`, `hexByteCount` | String padding and counting utilities |
+| `Converter` | `to`, `from`, `andThen` | Bidirectional conversion interface |
+| `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad` | Converter factories for common string transformations |
+| `BiMap` | `of`, `to`, `from` | Immutable bidirectional map implementing `Converter` |
+| `Strings` | `padStart`, `padEnd`, `stripStart`, `stripEnd`, `codePointCount`, `hexByteCount` | String padding, stripping, and counting utilities |
 | `InputStreams` | `readFully` | Read exactly N bytes from an input stream |
 | `Preconditions` | `check` | Validate conditions, throwing `IllegalArgumentException` on failure |
 | `Predicates` | `alwaysTrue`, `alwaysFalse` | Common predicate factories |

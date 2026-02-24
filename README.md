@@ -78,6 +78,12 @@ Codec<Float> floatCodec = Codecs.float32();
 
 // IEEE 754 double (8 bytes)
 Codec<Double> doubleCodec = Codecs.float64();
+
+// BCD-encoded integer (4 digits, 2 bytes)
+Codec<Integer> bcdCodec = Codecs.bcdInt(4);
+
+// BCD-encoded long (10 digits, 5 bytes)
+Codec<Long> bcdLongCodec = Codecs.bcdLong(10);
 ```
 
 ### String Codecs
@@ -273,6 +279,8 @@ Codec<Person> fixed = Codecs.<Person>sequential(Person::new)
 | `Codecs.int64()` | Signed long (8 bytes big-endian) |
 | `Codecs.float32()` | IEEE 754 float (4 bytes) |
 | `Codecs.float64()` | IEEE 754 double (8 bytes) |
+| `Codecs.bcdInt(n)` | BCD-encoded integer (n digits, 1–9) |
+| `Codecs.bcdLong(n)` | BCD-encoded long (n digits, 1–18) |
 | `Codecs.ascii(n)` / `Codecs.ascii()` / `Codecs.ascii(lc)` | US-ASCII string (fixed, stream, or prefixed) |
 | `Codecs.utf8(n)` / `Codecs.utf8()` / `Codecs.utf8(lc)` | UTF-8 string (fixed, stream, or prefixed) |
 | `Codecs.latin1(n)` / `Codecs.latin1()` / `Codecs.latin1(lc)` | ISO-8859-1 string (fixed, stream, or prefixed) |

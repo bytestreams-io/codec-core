@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import io.bytestreams.codec.core.util.Preconditions;
 import io.bytestreams.codec.core.util.Strings;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -319,6 +320,44 @@ public class Codecs {
    */
   public static Codec<String> hex(Codec<Integer> lengthCodec) {
     return prefixed(lengthCodec, String::length, Codecs::hex);
+  }
+
+  // ---------------------------------------------------------------------------
+  // BCD codecs
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Creates a fixed-length BCD (Binary Coded Decimal) codec that decodes to {@link Integer}.
+   *
+   * <p>Each byte holds two decimal digits (0–9) in its high and low nibbles. Odd-length digit
+   * counts are left-padded with a zero nibble.
+   *
+   * @param digits the number of BCD digits (1 to 9)
+   * @return a new BCD codec
+   * @throws IllegalArgumentException if digits is not between 1 and 9
+   */
+  public static Codec<Integer> bcdInt(int digits) {
+    Preconditions.check(
+        digits >= 1 && digits <= 9, "digits must be between 1 and 9, but was [%d]", digits);
+    String format = "%0" + digits + "d";
+    return new BcdCodec(digits).xmap(Integer::parseInt, v -> String.format(format, v));
+  }
+
+  /**
+   * Creates a fixed-length BCD (Binary Coded Decimal) codec that decodes to {@link Long}.
+   *
+   * <p>Each byte holds two decimal digits (0–9) in its high and low nibbles. Odd-length digit
+   * counts are left-padded with a zero nibble.
+   *
+   * @param digits the number of BCD digits (1 to 18)
+   * @return a new BCD codec
+   * @throws IllegalArgumentException if digits is not between 1 and 18
+   */
+  public static Codec<Long> bcdLong(int digits) {
+    Preconditions.check(
+        digits >= 1 && digits <= 18, "digits must be between 1 and 18, but was [%d]", digits);
+    String format = "%0" + digits + "d";
+    return new BcdCodec(digits).xmap(Long::parseLong, v -> String.format(format, v));
   }
 
   // ---------------------------------------------------------------------------

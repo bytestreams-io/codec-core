@@ -1,6 +1,7 @@
 package io.bytestreams.codec.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -189,6 +190,163 @@ class CodecsTest {
 
       byte[] bytes = out.toByteArray();
       assertThat(bytes[0] & 0xFF).isEqualTo(3); // digit count, not byte count (2)
+    }
+  }
+
+  @Nested
+  class Bcd {
+
+    @Test
+    void bcdInt_returns_mapped_codec() {
+      assertThat(Codecs.bcdInt(4)).isInstanceOf(MappedCodec.class);
+    }
+
+    @Test
+    void bcdInt_encode() throws IOException {
+      Codec<Integer> codec = Codecs.bcdInt(4);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(1234, output);
+      assertThat(output.toByteArray()).isEqualTo(new byte[] {0x12, 0x34});
+    }
+
+    @Test
+    void bcdInt_decode() throws IOException {
+      Codec<Integer> codec = Codecs.bcdInt(4);
+      ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0x12, 0x34});
+      assertThat(codec.decode(input)).isEqualTo(1234);
+    }
+
+    @Test
+    void bcdInt_encode_with_leading_zeros() throws IOException {
+      Codec<Integer> codec = Codecs.bcdInt(4);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(42, output);
+      assertThat(output.toByteArray()).isEqualTo(new byte[] {0x00, 0x42});
+    }
+
+    @Test
+    void bcdInt_decode_with_leading_zeros() throws IOException {
+      Codec<Integer> codec = Codecs.bcdInt(4);
+      ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0x00, 0x42});
+      assertThat(codec.decode(input)).isEqualTo(42);
+    }
+
+    @Test
+    void bcdInt_zero() throws IOException {
+      Codec<Integer> codec = Codecs.bcdInt(2);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(0, output);
+      assertThat(output.toByteArray()).isEqualTo(new byte[] {0x00});
+    }
+
+    @Test
+    void bcdInt_max_9_digits() throws IOException {
+      Codec<Integer> codec = Codecs.bcdInt(9);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(999999999, output);
+      assertThat(output.toByteArray())
+          .isEqualTo(new byte[] {0x09, (byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0x99});
+    }
+
+    @Test
+    void bcdInt_invalid_digits_zero() {
+      assertThatThrownBy(() -> Codecs.bcdInt(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void bcdInt_invalid_digits_too_large() {
+      assertThatThrownBy(() -> Codecs.bcdInt(10)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void bcdInt_negative_value() {
+      Codec<Integer> codec = Codecs.bcdInt(4);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      assertThatThrownBy(() -> codec.encode(-1, output))
+          .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void bcdLong_returns_mapped_codec() {
+      assertThat(Codecs.bcdLong(10)).isInstanceOf(MappedCodec.class);
+    }
+
+    @Test
+    void bcdLong_encode() throws IOException {
+      Codec<Long> codec = Codecs.bcdLong(10);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(1234567890L, output);
+      assertThat(output.toByteArray()).isEqualTo(new byte[] {0x12, 0x34, 0x56, 0x78, (byte) 0x90});
+    }
+
+    @Test
+    void bcdLong_decode() throws IOException {
+      Codec<Long> codec = Codecs.bcdLong(10);
+      ByteArrayInputStream input =
+          new ByteArrayInputStream(new byte[] {0x12, 0x34, 0x56, 0x78, (byte) 0x90});
+      assertThat(codec.decode(input)).isEqualTo(1234567890L);
+    }
+
+    @Test
+    void bcdLong_encode_with_leading_zeros() throws IOException {
+      Codec<Long> codec = Codecs.bcdLong(10);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(42L, output);
+      assertThat(output.toByteArray()).isEqualTo(new byte[] {0x00, 0x00, 0x00, 0x00, 0x42});
+    }
+
+    @Test
+    void bcdLong_decode_with_leading_zeros() throws IOException {
+      Codec<Long> codec = Codecs.bcdLong(10);
+      ByteArrayInputStream input =
+          new ByteArrayInputStream(new byte[] {0x00, 0x00, 0x00, 0x00, 0x42});
+      assertThat(codec.decode(input)).isEqualTo(42L);
+    }
+
+    @Test
+    void bcdLong_zero() throws IOException {
+      Codec<Long> codec = Codecs.bcdLong(2);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(0L, output);
+      assertThat(output.toByteArray()).isEqualTo(new byte[] {0x00});
+    }
+
+    @Test
+    void bcdLong_max_18_digits() throws IOException {
+      Codec<Long> codec = Codecs.bcdLong(18);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(999999999999999999L, output);
+      assertThat(output.toByteArray())
+          .isEqualTo(
+              new byte[] {
+                (byte) 0x99,
+                (byte) 0x99,
+                (byte) 0x99,
+                (byte) 0x99,
+                (byte) 0x99,
+                (byte) 0x99,
+                (byte) 0x99,
+                (byte) 0x99,
+                (byte) 0x99
+              });
+    }
+
+    @Test
+    void bcdLong_invalid_digits_zero() {
+      assertThatThrownBy(() -> Codecs.bcdLong(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void bcdLong_invalid_digits_too_large() {
+      assertThatThrownBy(() -> Codecs.bcdLong(19)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void bcdLong_negative_value() {
+      Codec<Long> codec = Codecs.bcdLong(10);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      assertThatThrownBy(() -> codec.encode(-1L, output))
+          .isInstanceOf(IllegalArgumentException.class);
     }
   }
 

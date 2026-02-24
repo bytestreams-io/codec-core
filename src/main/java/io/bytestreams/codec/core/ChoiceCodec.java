@@ -1,6 +1,6 @@
 package io.bytestreams.codec.core;
 
-import io.bytestreams.codec.core.util.BiMap;
+import io.bytestreams.codec.core.util.Converter;
 import io.bytestreams.codec.core.util.Preconditions;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +14,7 @@ import java.util.Objects;
  *
  * <p>The wire format is {@code [tag][value]}, where the tag selects among registered alternatives.
  * This codec only sees {@code Codec<Class<? extends V>>} — callers typically create it by using
- * {@link Codec#xmap(BiMap) xmap(BiMap)} to map a tag codec to class values:
+ * {@link Codec#xmap(Converter) xmap(Converter)} to map a tag codec to class values:
  *
  * <pre>{@code
  * BiMap<Integer, Class<? extends Shape>> tags = BiMap.of(

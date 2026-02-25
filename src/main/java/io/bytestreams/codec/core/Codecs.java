@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import io.bytestreams.codec.core.util.Converters;
 import io.bytestreams.codec.core.util.Preconditions;
 import io.bytestreams.codec.core.util.Strings;
 import java.nio.charset.Charset;
@@ -32,6 +33,11 @@ import java.util.function.ToIntFunction;
  * // Constant bytes
  * Codec<byte[]> magic = Codecs.constant(new byte[] {0x4D, 0x5A});
  *
+ * // Numeric string codecs
+ * Codec<Integer> bcd = Codecs.bcdInt(4);
+ * Codec<Integer> asciiNum = Codecs.asciiInt(4);
+ * Codec<Long> ebcdicNum = Codecs.ebcdicLong(10);
+ *
  * // Composition
  * Codec<String> prefixed = Codecs.prefixed(Codecs.uint16(), Codecs.utf8());
  * Codec<List<Integer>> list = Codecs.listOf(Codecs.uint8(), 5);
@@ -44,6 +50,8 @@ import java.util.function.ToIntFunction;
  */
 public class Codecs {
   private static final Charset EBCDIC = Charset.forName("IBM1047");
+  private static final String INT_DIGITS_MSG = "digits must be between 1 and 9, but was [%d]";
+  private static final String LONG_DIGITS_MSG = "digits must be between 1 and 18, but was [%d]";
 
   private Codecs() {}
 
@@ -332,15 +340,19 @@ public class Codecs {
    * <p>Each byte holds two decimal digits (0–9) in its high and low nibbles. Odd-length digit
    * counts are left-padded with a zero nibble.
    *
+   * <pre>{@code
+   * Codec<Integer> codec = Codecs.bcdInt(4);
+   * codec.encode(42, out);   // writes 0x00, 0x42
+   * codec.decode(in);        // reads 0x00, 0x42 → 42
+   * }</pre>
+   *
    * @param digits the number of BCD digits (1 to 9)
-   * @return a new BCD codec
+   * @return a new BCD integer codec
    * @throws IllegalArgumentException if digits is not between 1 and 9
    */
   public static Codec<Integer> bcdInt(int digits) {
-    Preconditions.check(
-        digits >= 1 && digits <= 9, "digits must be between 1 and 9, but was [%d]", digits);
-    String format = "%0" + digits + "d";
-    return new BcdCodec(digits).xmap(Integer::parseInt, v -> String.format(format, v));
+    Preconditions.check(digits >= 1 && digits <= 9, INT_DIGITS_MSG, digits);
+    return new BcdCodec(digits).xmap(Converters.toInt(digits));
   }
 
   /**
@@ -349,15 +361,107 @@ public class Codecs {
    * <p>Each byte holds two decimal digits (0–9) in its high and low nibbles. Odd-length digit
    * counts are left-padded with a zero nibble.
    *
+   * <pre>{@code
+   * Codec<Long> codec = Codecs.bcdLong(10);
+   * codec.encode(1234567890L, out);  // writes 0x12, 0x34, 0x56, 0x78, 0x90
+   * codec.decode(in);                // reads 0x12, 0x34, 0x56, 0x78, 0x90 → 1234567890
+   * }</pre>
+   *
    * @param digits the number of BCD digits (1 to 18)
-   * @return a new BCD codec
+   * @return a new BCD long codec
    * @throws IllegalArgumentException if digits is not between 1 and 18
    */
   public static Codec<Long> bcdLong(int digits) {
-    Preconditions.check(
-        digits >= 1 && digits <= 18, "digits must be between 1 and 18, but was [%d]", digits);
-    String format = "%0" + digits + "d";
-    return new BcdCodec(digits).xmap(Long::parseLong, v -> String.format(format, v));
+    Preconditions.check(digits >= 1 && digits <= 18, LONG_DIGITS_MSG, digits);
+    return new BcdCodec(digits).xmap(Converters.toLong(digits));
+  }
+
+  // ---------------------------------------------------------------------------
+  // ASCII numeric codecs
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Creates a fixed-length ASCII numeric codec that decodes to {@link Integer}.
+   *
+   * <p>The value is encoded as a zero-padded decimal string in US-ASCII.
+   *
+   * <pre>{@code
+   * Codec<Integer> codec = Codecs.asciiInt(4);
+   * codec.encode(42, out);   // writes "0042" in ASCII
+   * codec.decode(in);        // reads "0042" in ASCII → 42
+   * }</pre>
+   *
+   * @param digits the number of digits (1 to 9)
+   * @return a new ASCII integer codec
+   * @throws IllegalArgumentException if digits is not between 1 and 9
+   */
+  public static Codec<Integer> asciiInt(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 9, INT_DIGITS_MSG, digits);
+    return ascii(digits).xmap(Converters.toInt(digits));
+  }
+
+  /**
+   * Creates a fixed-length ASCII numeric codec that decodes to {@link Long}.
+   *
+   * <p>The value is encoded as a zero-padded decimal string in US-ASCII.
+   *
+   * <pre>{@code
+   * Codec<Long> codec = Codecs.asciiLong(10);
+   * codec.encode(1234567890L, out);  // writes "1234567890" in ASCII
+   * codec.decode(in);                // reads "1234567890" in ASCII → 1234567890
+   * }</pre>
+   *
+   * @param digits the number of digits (1 to 18)
+   * @return a new ASCII long codec
+   * @throws IllegalArgumentException if digits is not between 1 and 18
+   */
+  public static Codec<Long> asciiLong(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 18, LONG_DIGITS_MSG, digits);
+    return ascii(digits).xmap(Converters.toLong(digits));
+  }
+
+  // ---------------------------------------------------------------------------
+  // EBCDIC numeric codecs
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Creates a fixed-length EBCDIC numeric codec that decodes to {@link Integer}.
+   *
+   * <p>The value is encoded as a zero-padded decimal string in EBCDIC (IBM1047).
+   *
+   * <pre>{@code
+   * Codec<Integer> codec = Codecs.ebcdicInt(4);
+   * codec.encode(42, out);   // writes "0042" in EBCDIC
+   * codec.decode(in);        // reads "0042" in EBCDIC → 42
+   * }</pre>
+   *
+   * @param digits the number of digits (1 to 9)
+   * @return a new EBCDIC integer codec
+   * @throws IllegalArgumentException if digits is not between 1 and 9
+   */
+  public static Codec<Integer> ebcdicInt(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 9, INT_DIGITS_MSG, digits);
+    return ebcdic(digits).xmap(Converters.toInt(digits));
+  }
+
+  /**
+   * Creates a fixed-length EBCDIC numeric codec that decodes to {@link Long}.
+   *
+   * <p>The value is encoded as a zero-padded decimal string in EBCDIC (IBM1047).
+   *
+   * <pre>{@code
+   * Codec<Long> codec = Codecs.ebcdicLong(10);
+   * codec.encode(1234567890L, out);  // writes "1234567890" in EBCDIC
+   * codec.decode(in);                // reads "1234567890" in EBCDIC → 1234567890
+   * }</pre>
+   *
+   * @param digits the number of digits (1 to 18)
+   * @return a new EBCDIC long codec
+   * @throws IllegalArgumentException if digits is not between 1 and 18
+   */
+  public static Codec<Long> ebcdicLong(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 18, LONG_DIGITS_MSG, digits);
+    return ebcdic(digits).xmap(Converters.toLong(digits));
   }
 
   // ---------------------------------------------------------------------------

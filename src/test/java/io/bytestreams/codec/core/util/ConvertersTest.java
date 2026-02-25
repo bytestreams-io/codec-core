@@ -239,4 +239,86 @@ class ConvertersTest {
   void rightEvenPad_to_all_padding() {
     assertThat(rightEvenPad.to("FF")).isEmpty();
   }
+
+  // toInt
+
+  @Test
+  void toInt_from() {
+    assertThat(Converters.toInt(4).from(42)).isEqualTo("0042");
+  }
+
+  @Test
+  void toInt_from_exact_length() {
+    assertThat(Converters.toInt(4).from(1234)).isEqualTo("1234");
+  }
+
+  @Test
+  void toInt_from_zero() {
+    assertThat(Converters.toInt(3).from(0)).isEqualTo("000");
+  }
+
+  @Test
+  void toInt_to() {
+    assertThat(Converters.toInt(4).to("0042")).isEqualTo(42);
+  }
+
+  @Test
+  void toInt_to_zero() {
+    assertThat(Converters.toInt(3).to("000")).isZero();
+  }
+
+  @Test
+  void toInt_to_invalid() {
+    Converter<String, Integer> converter = Converters.toInt(4);
+    assertThatThrownBy(() -> converter.to("abcd"))
+        .isInstanceOf(ConverterException.class)
+        .hasMessageContaining("invalid integer: abcd")
+        .hasCauseInstanceOf(NumberFormatException.class);
+  }
+
+  @Test
+  void toInt_invalid_digits() {
+    assertThatThrownBy(() -> Converters.toInt(0)).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  // toLong
+
+  @Test
+  void toLong_from() {
+    assertThat(Converters.toLong(10).from(12345678L)).isEqualTo("0012345678");
+  }
+
+  @Test
+  void toLong_from_exact_length() {
+    assertThat(Converters.toLong(10).from(1234567890L)).isEqualTo("1234567890");
+  }
+
+  @Test
+  void toLong_from_zero() {
+    assertThat(Converters.toLong(3).from(0L)).isEqualTo("000");
+  }
+
+  @Test
+  void toLong_to() {
+    assertThat(Converters.toLong(10).to("0012345678")).isEqualTo(12345678L);
+  }
+
+  @Test
+  void toLong_to_zero() {
+    assertThat(Converters.toLong(3).to("000")).isZero();
+  }
+
+  @Test
+  void toLong_to_invalid() {
+    Converter<String, Long> converter = Converters.toLong(10);
+    assertThatThrownBy(() -> converter.to("abcdefghij"))
+        .isInstanceOf(ConverterException.class)
+        .hasMessageContaining("invalid long: abcdefghij")
+        .hasCauseInstanceOf(NumberFormatException.class);
+  }
+
+  @Test
+  void toLong_invalid_digits() {
+    assertThatThrownBy(() -> Converters.toLong(0)).isInstanceOf(IllegalArgumentException.class);
+  }
 }

@@ -6,10 +6,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class CodecsTest {
 
@@ -347,6 +350,156 @@ class CodecsTest {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       assertThatThrownBy(() -> codec.encode(-1L, output))
           .isInstanceOf(IllegalArgumentException.class);
+    }
+  }
+
+  @Nested
+  class AsciiNumeric {
+
+    @Test
+    void asciiInt_returns_mapped_codec() {
+      assertThat(Codecs.asciiInt(4)).isInstanceOf(MappedCodec.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"4, 1234, 1234", "4, 42, 0042", "2, 0, 00", "9, 999999999, 999999999"})
+    void asciiInt_encode(int digits, int value, String expected) throws IOException {
+      Codec<Integer> codec = Codecs.asciiInt(digits);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(value, output);
+      assertThat(output.toByteArray()).isEqualTo(expected.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"4, 1234, 1234", "4, 0042, 42", "2, 00, 0"})
+    void asciiInt_decode(int digits, String encoded, int expected) throws IOException {
+      Codec<Integer> codec = Codecs.asciiInt(digits);
+      ByteArrayInputStream input =
+          new ByteArrayInputStream(encoded.getBytes(StandardCharsets.US_ASCII));
+      assertThat(codec.decode(input)).isEqualTo(expected);
+    }
+
+    @Test
+    void asciiInt_invalid_digits_zero() {
+      assertThatThrownBy(() -> Codecs.asciiInt(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void asciiInt_invalid_digits_too_large() {
+      assertThatThrownBy(() -> Codecs.asciiInt(10)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void asciiLong_returns_mapped_codec() {
+      assertThat(Codecs.asciiLong(10)).isInstanceOf(MappedCodec.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "10, 1234567890, 1234567890",
+      "10, 42, 0000000042",
+      "2, 0, 00",
+      "18, 999999999999999999, 999999999999999999"
+    })
+    void asciiLong_encode(int digits, long value, String expected) throws IOException {
+      Codec<Long> codec = Codecs.asciiLong(digits);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(value, output);
+      assertThat(output.toByteArray()).isEqualTo(expected.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"10, 1234567890, 1234567890", "10, 0000000042, 42", "2, 00, 0"})
+    void asciiLong_decode(int digits, String encoded, long expected) throws IOException {
+      Codec<Long> codec = Codecs.asciiLong(digits);
+      ByteArrayInputStream input =
+          new ByteArrayInputStream(encoded.getBytes(StandardCharsets.US_ASCII));
+      assertThat(codec.decode(input)).isEqualTo(expected);
+    }
+
+    @Test
+    void asciiLong_invalid_digits_zero() {
+      assertThatThrownBy(() -> Codecs.asciiLong(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void asciiLong_invalid_digits_too_large() {
+      assertThatThrownBy(() -> Codecs.asciiLong(19)).isInstanceOf(IllegalArgumentException.class);
+    }
+  }
+
+  @Nested
+  class EbcdicNumeric {
+
+    private static final Charset EBCDIC = Charset.forName("IBM1047");
+
+    @Test
+    void ebcdicInt_returns_mapped_codec() {
+      assertThat(Codecs.ebcdicInt(4)).isInstanceOf(MappedCodec.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"4, 1234, 1234", "4, 42, 0042", "2, 0, 00", "9, 999999999, 999999999"})
+    void ebcdicInt_encode(int digits, int value, String expected) throws IOException {
+      Codec<Integer> codec = Codecs.ebcdicInt(digits);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(value, output);
+      assertThat(output.toByteArray()).isEqualTo(expected.getBytes(EBCDIC));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"4, 1234, 1234", "4, 0042, 42", "2, 00, 0"})
+    void ebcdicInt_decode(int digits, String encoded, int expected) throws IOException {
+      Codec<Integer> codec = Codecs.ebcdicInt(digits);
+      ByteArrayInputStream input = new ByteArrayInputStream(encoded.getBytes(EBCDIC));
+      assertThat(codec.decode(input)).isEqualTo(expected);
+    }
+
+    @Test
+    void ebcdicInt_invalid_digits_zero() {
+      assertThatThrownBy(() -> Codecs.ebcdicInt(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void ebcdicInt_invalid_digits_too_large() {
+      assertThatThrownBy(() -> Codecs.ebcdicInt(10)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void ebcdicLong_returns_mapped_codec() {
+      assertThat(Codecs.ebcdicLong(10)).isInstanceOf(MappedCodec.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "10, 1234567890, 1234567890",
+      "10, 42, 0000000042",
+      "2, 0, 00",
+      "18, 999999999999999999, 999999999999999999"
+    })
+    void ebcdicLong_encode(int digits, long value, String expected) throws IOException {
+      Codec<Long> codec = Codecs.ebcdicLong(digits);
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      codec.encode(value, output);
+      assertThat(output.toByteArray()).isEqualTo(expected.getBytes(EBCDIC));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"10, 1234567890, 1234567890", "10, 0000000042, 42", "2, 00, 0"})
+    void ebcdicLong_decode(int digits, String encoded, long expected) throws IOException {
+      Codec<Long> codec = Codecs.ebcdicLong(digits);
+      ByteArrayInputStream input = new ByteArrayInputStream(encoded.getBytes(EBCDIC));
+      assertThat(codec.decode(input)).isEqualTo(expected);
+    }
+
+    @Test
+    void ebcdicLong_invalid_digits_zero() {
+      assertThatThrownBy(() -> Codecs.ebcdicLong(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void ebcdicLong_invalid_digits_too_large() {
+      assertThatThrownBy(() -> Codecs.ebcdicLong(19)).isInstanceOf(IllegalArgumentException.class);
     }
   }
 

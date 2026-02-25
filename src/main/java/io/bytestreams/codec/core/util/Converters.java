@@ -197,4 +197,58 @@ public final class Converters {
       }
     };
   }
+
+  /**
+   * Returns a converter that parses strings to integers on {@link Converter#to(Object) to} and
+   * formats integers to zero-padded strings on {@link Converter#from(Object) from}.
+   *
+   * @param digits the number of digits for zero-padded formatting
+   * @return a string-to-integer converter
+   * @throws IllegalArgumentException if digits is not positive
+   */
+  public static Converter<String, Integer> toInt(int digits) {
+    Preconditions.check(digits > 0, LENGTH_MUST_BE_POSITIVE, digits);
+    return new Converter<>() {
+      @Override
+      public Integer to(String value) {
+        try {
+          return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+          throw new ConverterException("invalid integer: " + value, e);
+        }
+      }
+
+      @Override
+      public String from(Integer value) {
+        return Strings.padStart(Integer.toString(value), '0', digits);
+      }
+    };
+  }
+
+  /**
+   * Returns a converter that parses strings to longs on {@link Converter#to(Object) to} and
+   * formats longs to zero-padded strings on {@link Converter#from(Object) from}.
+   *
+   * @param digits the number of digits for zero-padded formatting
+   * @return a string-to-long converter
+   * @throws IllegalArgumentException if digits is not positive
+   */
+  public static Converter<String, Long> toLong(int digits) {
+    Preconditions.check(digits > 0, LENGTH_MUST_BE_POSITIVE, digits);
+    return new Converter<>() {
+      @Override
+      public Long to(String value) {
+        try {
+          return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+          throw new ConverterException("invalid long: " + value, e);
+        }
+      }
+
+      @Override
+      public String from(Long value) {
+        return Strings.padStart(Long.toString(value), '0', digits);
+      }
+    };
+  }
 }

@@ -37,6 +37,7 @@
   </issueManagement>
 
   <properties>
+    <google-java-format.version>1.25.0</google-java-format.version>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <revision>1.0.0-SNAPSHOT</revision>
@@ -177,7 +178,7 @@
           </pom>
           <java>
             <googleJavaFormat>
-              <version>1.25.0</version>
+              <version>${google-java-format.version}</version>
               <reflowLongStrings>true</reflowLongStrings>
               <formatJavadoc>false</formatJavadoc>
             </googleJavaFormat>

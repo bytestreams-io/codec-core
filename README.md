@@ -436,7 +436,8 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 
 ## Requirements
 
-- Java 17+
+- Java 17+ (runtime)
+- Java 21+ (build)
 
 ## License
 

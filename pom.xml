@@ -238,6 +238,16 @@
         </executions>
       </plugin>
       <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>io.bytestreams.codec.core</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <executions>
@@ -267,14 +277,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
         <configuration>
-          <flattenMode>bom</flattenMode>
-          <pomElements>
-            <name />
-            <description />
-            <url />
-            <scm />
-            <developers />
-          </pomElements>
+          <flattenMode>ossrh</flattenMode>
         </configuration>
         <executions>
           <execution>

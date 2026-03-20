@@ -16,7 +16,7 @@ import java.util.Set;
  *
  * @param <K> the tag key type
  */
-public final class TaggedDataObject<K> implements Tagged<TaggedDataObject<K>, K> {
+public final class TaggedData<K> implements Tagged<TaggedData<K>, K> {
 
   private final Map<K, List<Object>> fields = new LinkedHashMap<>();
 
@@ -32,7 +32,7 @@ public final class TaggedDataObject<K> implements Tagged<TaggedDataObject<K>, K>
   }
 
   @Override
-  public <V> TaggedDataObject<K> add(K tag, V value) {
+  public <V> TaggedData<K> add(K tag, V value) {
     fields.computeIfAbsent(tag, k -> new ArrayList<>()).add(value);
     return this;
   }
@@ -40,7 +40,7 @@ public final class TaggedDataObject<K> implements Tagged<TaggedDataObject<K>, K>
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof TaggedDataObject<?> that)) return false;
+    if (!(o instanceof TaggedData<?> that)) return false;
     return fields.equals(that.fields);
   }
 

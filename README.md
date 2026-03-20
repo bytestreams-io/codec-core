@@ -495,6 +495,7 @@ Codec<Person> fixed = Codecs.<Person>sequential(Person::new)
 | `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
 | `Codecs.tagged(tagCodec)` | Tagged object codec builder using `TaggedData` |
 | `DataObject.field(name, codec)` | Create a `FieldSpec` for map-backed data objects |
+| `DataObject.field(name, codec, presence)` | Create a `FieldSpec` with a presence predicate |
 | `codec.xmap(decoder, encoder)` / `codec.xmap(converter)` | Bidirectional type mapping |
 
 ## Data Object Classes

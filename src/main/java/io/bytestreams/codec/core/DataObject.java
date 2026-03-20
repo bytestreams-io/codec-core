@@ -44,12 +44,16 @@ public abstract class DataObject {
     }
   }
 
+  /** Gets a field value using a FieldSpec. Delegates to {@link FieldSpec#get(Object)}. */
+  @SuppressWarnings("unchecked")
   protected <V> V get(FieldSpec<? extends DataObject, V> spec) {
-    return get(spec.name());
+    return ((FieldSpec<DataObject, V>) spec).get(this);
   }
 
+  /** Sets a field value using a FieldSpec. Delegates to {@link FieldSpec#set(Object, Object)}. */
+  @SuppressWarnings("unchecked")
   protected <V> void set(FieldSpec<? extends DataObject, V> spec, V value) {
-    set(spec.name(), value);
+    ((FieldSpec<DataObject, V>) spec).set(this, value);
   }
 
   /**

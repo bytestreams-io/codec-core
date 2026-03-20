@@ -281,6 +281,83 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
     .build();
 ```
 
+## Data Objects
+
+Writing POJOs for every message type can be repetitive. codec-core provides map-backed data objects that eliminate the boilerplate.
+
+### SimpleData
+
+`SimpleData` is an open data holder with public get/set access. Use it when you want quick, untyped access without defining a class.
+
+```java
+Codec<SimpleData> codec = Codecs.<SimpleData>sequential(SimpleData::new)
+    .field(SimpleData.field("id", Codecs.uint16()))
+    .field(SimpleData.field("name", Codecs.ascii(20)))
+    .build();
+
+SimpleData obj = codec.decode(inputStream);
+int id = obj.get("id");
+String name = obj.get("name");
+```
+
+### DataObject
+
+For typed, controlled access, subclass `DataObject` directly. Define `FieldSpec` constants and expose only the accessors you want — getters only, setters only, or both.
+
+```java
+class Message extends DataObject {
+    static final FieldSpec<Message, Integer> ID = field("id", Codecs.uint16());
+    static final FieldSpec<Message, String> NAME = field("name", Codecs.ascii(20));
+
+    public int getId() { return get(ID); }
+    public String getName() { return get(NAME); }
+    public void setName(String name) { set(NAME, name); }
+    // no setId() — read-only to consumers, codec can still set via FieldSpec
+}
+
+Codec<Message> codec = Codecs.<Message>sequential(Message::new)
+    .field(Message.ID)
+    .field(Message.NAME)
+    .build();
+```
+
+The `FieldSpec` constants serve double duty: typed access on the object, and schema definition for the codec builder.
+
+### TaggedData
+
+`TaggedData` is a ready-made `Tagged` implementation for use with tagged codecs. No boilerplate required.
+
+```java
+Codec<TaggedData<String>> codec = Codecs.<String>tagged(Codecs.ascii(4))
+    .tag("code", Codecs.uint16())
+    .tag("name", Codecs.ascii(5))
+    .build();
+
+TaggedData<String> obj = codec.decode(inputStream);
+List<Integer> codes = obj.getAll("code");
+```
+
+### FieldSpec
+
+A `FieldSpec` bundles a field's name, codec, getter, setter, and optional presence predicate into a single reusable object. Use it with `DataObject` subclasses or any POJO.
+
+```java
+// With DataObject — getter/setter derived from field name
+static final FieldSpec<Message, Integer> ID = DataObject.field("id", Codecs.uint16());
+
+// With a POJO — explicit getter/setter via anonymous class
+FieldSpec<MyPojo, Integer> idSpec = new FieldSpec<>() {
+    public String name() { return "id"; }
+    public Codec<Integer> codec() { return Codecs.uint16(); }
+    public Integer get(MyPojo obj) { return obj.getId(); }
+    public void set(MyPojo obj, Integer value) { obj.setId(value); }
+};
+
+// Both work with the builder
+Codecs.sequential(Message::new).field(ID).build();
+Codecs.sequential(MyPojo::new).field(idSpec).build();
+```
+
 ## List Codecs
 
 When a protocol contains a repeating sequence of identically-typed elements, use a list codec.
@@ -416,7 +493,18 @@ Codec<Person> fixed = Codecs.<Person>sequential(Person::new)
 | `Codecs.choice(classCodec)` | Discriminated union (choice) codec builder |
 | `Codecs.sequential(factory)` | Sequential object codec builder |
 | `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
+| `Codecs.tagged(tagCodec)` | Tagged object codec builder using `TaggedData` |
+| `DataObject.field(name, codec)` | Create a `FieldSpec` for map-backed data objects |
 | `codec.xmap(decoder, encoder)` / `codec.xmap(converter)` | Bidirectional type mapping |
+
+## Data Object Classes
+
+| Class | Description |
+|-------|-------------|
+| `FieldSpec` | Interface bundling field name, codec, getter, setter, and presence predicate |
+| `DataObject` | Abstract map-backed data object with protected access — subclass for typed, controlled fields |
+| `SimpleData` | `DataObject` subclass with public access to all fields |
+| `TaggedData` | Ready-made `Tagged` implementation backed by a map of tag to value list |
 
 ## Utilities
 

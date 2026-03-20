@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 class SequentialObjectCodecTest {
@@ -324,6 +325,178 @@ class SequentialObjectCodecTest {
 
     assertThat(decoded.getId()).isEqualTo(999);
     assertThat(decoded.getInner().getValue()).isEqualTo(42);
+  }
+
+  // FieldSpec overload tests
+
+  static final FieldSpec<TestObject, Integer> ID_SPEC =
+      new FieldSpec<>() {
+        @Override
+        public String name() {
+          return "id";
+        }
+
+        @Override
+        public Codec<Integer> codec() {
+          return Codecs.uint16();
+        }
+
+        @Override
+        public Integer get(TestObject object) {
+          return object.getId();
+        }
+
+        @Override
+        public void set(TestObject object, Integer value) {
+          object.setId(value);
+        }
+      };
+
+  static final FieldSpec<TestObject, String> NAME_SPEC =
+      new FieldSpec<>() {
+        @Override
+        public String name() {
+          return "name";
+        }
+
+        @Override
+        public Codec<String> codec() {
+          return Codecs.ofCharset(Charset.defaultCharset(), 5);
+        }
+
+        @Override
+        public String get(TestObject object) {
+          return object.getName();
+        }
+
+        @Override
+        public void set(TestObject object, String value) {
+          object.setName(value);
+        }
+      };
+
+  @Test
+  void encode_with_field_spec() throws IOException {
+    TestObject original = new TestObject();
+    original.setId(42);
+    original.setName("hello");
+
+    SequentialObjectCodec<TestObject> codec =
+        SequentialObjectCodec.<TestObject>builder(TestObject::new)
+            .field(ID_SPEC)
+            .field(NAME_SPEC)
+            .build();
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(original, output);
+
+    TestObject decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    assertThat(decoded.getId()).isEqualTo(42);
+    assertThat(decoded.getName()).isEqualTo("hello");
+  }
+
+  @Test
+  void encode_with_field_spec_and_presence() throws IOException {
+    TestObject present = new TestObject();
+    present.setId(1);
+    present.setTag("abc");
+
+    FieldSpec<TestObject, String> tagSpec =
+        new FieldSpec<>() {
+          @Override
+          public String name() {
+            return "tag";
+          }
+
+          @Override
+          public Codec<String> codec() {
+            return Codecs.ofCharset(Charset.defaultCharset(), 3);
+          }
+
+          @Override
+          public String get(TestObject object) {
+            return object.getTag();
+          }
+
+          @Override
+          public void set(TestObject object, String value) {
+            object.setTag(value);
+          }
+
+          @Override
+          public Predicate<TestObject> presence() {
+            return obj -> obj.getId() > 0;
+          }
+        };
+
+    SequentialObjectCodec<TestObject> codec =
+        SequentialObjectCodec.<TestObject>builder(TestObject::new)
+            .field(ID_SPEC)
+            .field(tagSpec)
+            .build();
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(present, output);
+
+    TestObject decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    assertThat(decoded.getId()).isEqualTo(1);
+    assertThat(decoded.getTag()).isEqualTo("abc");
+  }
+
+  @Test
+  void encode_with_field_spec_and_presence_absent() throws IOException {
+    TestObject absent = new TestObject();
+    absent.setId(0);
+
+    FieldSpec<TestObject, String> tagSpec =
+        new FieldSpec<>() {
+          @Override
+          public String name() {
+            return "tag";
+          }
+
+          @Override
+          public Codec<String> codec() {
+            return Codecs.ofCharset(Charset.defaultCharset(), 3);
+          }
+
+          @Override
+          public String get(TestObject object) {
+            return object.getTag();
+          }
+
+          @Override
+          public void set(TestObject object, String value) {
+            object.setTag(value);
+          }
+
+          @Override
+          public Predicate<TestObject> presence() {
+            return obj -> obj.getId() > 0;
+          }
+        };
+
+    SequentialObjectCodec<TestObject> codec =
+        SequentialObjectCodec.<TestObject>builder(TestObject::new)
+            .field(ID_SPEC)
+            .field(tagSpec)
+            .build();
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(absent, output);
+
+    TestObject decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    assertThat(decoded.getId()).isZero();
+    assertThat(decoded.getTag()).isNull();
+  }
+
+  @Test
+  void field_spec_null_rejected() {
+    SequentialObjectCodec.Builder<TestObject> builder =
+        SequentialObjectCodec.builder(TestObject::new);
+    assertThatThrownBy(() -> builder.field((FieldSpec<TestObject, ?>) null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("spec");
   }
 
   // Test helper classes

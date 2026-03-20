@@ -132,6 +132,21 @@ public class SequentialObjectCodec<T> implements Codec<T> {
     }
 
     /**
+     * Adds a field to the codec using a FieldSpec.
+     *
+     * <p>The field's presence is determined by {@link FieldSpec#presence()}, which defaults to
+     * always true (required field).
+     *
+     * @param spec the field specification
+     * @param <V> the field value type
+     * @return this builder
+     */
+    public <V> Builder<T> field(FieldSpec<T, V> spec) {
+      Objects.requireNonNull(spec, "spec");
+      return field(spec.name(), spec.codec(), spec::get, spec::set, spec.presence());
+    }
+
+    /**
      * Builds the SequentialObjectCodec.
      *
      * @return the constructed codec

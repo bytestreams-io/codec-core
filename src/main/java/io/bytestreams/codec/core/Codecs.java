@@ -600,6 +600,17 @@ public class Codecs {
     return TaggedObjectCodec.builder(factory, tagCodec);
   }
 
+  /**
+   * Creates a new builder for a tagged object codec using {@link TaggedDataObject}.
+   *
+   * @param tagCodec the codec used to read and write tags
+   * @param <K> the tag key type
+   * @return a new tagged object codec builder
+   */
+  public static <K> TaggedObjectCodec.Builder<TaggedDataObject<K>, K> tagged(Codec<K> tagCodec) {
+    return tagged(TaggedDataObject::new, tagCodec);
+  }
+
   // ---------------------------------------------------------------------------
   // Other codecs
   // ---------------------------------------------------------------------------

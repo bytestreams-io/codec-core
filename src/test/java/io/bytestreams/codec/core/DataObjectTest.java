@@ -1,6 +1,7 @@
 package io.bytestreams.codec.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -94,6 +95,13 @@ class DataObjectTest {
   }
 
   @Test
+  void equals_not_equal_to_null() {
+    Message msg = new Message();
+    msg.setName("hello");
+    assertThat(msg).isNotEqualTo(null);
+  }
+
+  @Test
   void equals_not_equal_to_other_type() {
     Message msg = new Message();
     msg.setName("hello");
@@ -138,5 +146,37 @@ class DataObjectTest {
     Message msg = new Message();
     msg.setName("hello");
     assertThat(msg).hasToString("{name=hello}");
+  }
+
+  @Test
+  void field_null_name_rejected() {
+    Codec<Integer> codec = Codecs.uint16();
+    assertThatThrownBy(() -> DataObject.field(null, codec))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("name");
+  }
+
+  @Test
+  void field_null_codec_rejected() {
+    assertThatThrownBy(() -> DataObject.field("id", null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("codec");
+  }
+
+  @Test
+  void field_null_presence_rejected() {
+    Codec<Integer> codec = Codecs.uint16();
+    assertThatThrownBy(() -> DataObject.field("id", codec, null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("presence");
+  }
+
+  @Test
+  void equals_different_subclass_not_equal() {
+    Message a = new Message();
+    a.setName("hello");
+    SimpleData b = new SimpleData();
+    b.set("name", "hello");
+    assertThat(a).isNotEqualTo(b);
   }
 }

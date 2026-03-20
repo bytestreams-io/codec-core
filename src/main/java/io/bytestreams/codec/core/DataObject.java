@@ -53,7 +53,7 @@ public abstract class DataObject {
   }
 
   /**
-   * Creates a FieldSpec backed by this map.
+   * Creates a FieldSpec backed by the object's internal map.
    *
    * @param name the field name (used as map key)
    * @param codec the codec for the field value
@@ -66,7 +66,7 @@ public abstract class DataObject {
   }
 
   /**
-   * Creates a FieldSpec backed by this map with a presence predicate.
+   * Creates a FieldSpec backed by the object's internal map with a presence predicate.
    *
    * @param name the field name (used as map key)
    * @param codec the codec for the field value
@@ -111,8 +111,8 @@ public abstract class DataObject {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof DataObject that)) return false;
-    return fields.equals(that.fields);
+    if (o == null || getClass() != o.getClass()) return false;
+    return fields.equals(((DataObject) o).fields);
   }
 
   @Override

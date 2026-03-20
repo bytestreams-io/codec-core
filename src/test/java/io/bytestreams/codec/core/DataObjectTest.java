@@ -12,6 +12,8 @@ class DataObjectTest {
   static class Message extends DataObject {
     static final FieldSpec<Message, Integer> ID = field("id", Codecs.uint16());
     static final FieldSpec<Message, String> NAME = field("name", Codecs.ascii(5));
+    static final FieldSpec<Message, String> TAG =
+        field("tag", Codecs.ascii(3), msg -> msg.getId() > 0);
 
     public int getId() {
       return get(ID);
@@ -96,6 +98,39 @@ class DataObjectTest {
     Message msg = new Message();
     msg.setName("hello");
     assertThat(msg).isNotEqualTo("not a DataObject");
+  }
+
+  @Test
+  void field_with_presence_present() throws IOException {
+    Codec<Message> codec =
+        Codecs.<Message>sequential(Message::new).field(Message.ID).field(Message.TAG).build();
+
+    Message original = new Message();
+    original.set(Message.ID, 1);
+    original.set(Message.TAG, "abc");
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(original, output);
+
+    Message decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    assertThat(decoded.getId()).isEqualTo(1);
+    assertThat(decoded.<String>get("tag")).isEqualTo("abc");
+  }
+
+  @Test
+  void field_with_presence_absent() throws IOException {
+    Codec<Message> codec =
+        Codecs.<Message>sequential(Message::new).field(Message.ID).field(Message.TAG).build();
+
+    Message original = new Message();
+    original.set(Message.ID, 0);
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(original, output);
+
+    Message decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    assertThat(decoded.getId()).isZero();
+    assertThat(decoded.<String>get("tag")).isNull();
   }
 
   @Test

@@ -1,8 +1,10 @@
 package io.bytestreams.codec.core;
 
+import io.bytestreams.codec.core.util.Predicates;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Abstract map-backed data object for use with sequential codecs.
@@ -60,8 +62,24 @@ public abstract class DataObject {
    * @return a new FieldSpec
    */
   public static <T extends DataObject, V> FieldSpec<T, V> field(String name, Codec<V> codec) {
+    return field(name, codec, Predicates.alwaysTrue());
+  }
+
+  /**
+   * Creates a FieldSpec backed by this map with a presence predicate.
+   *
+   * @param name the field name (used as map key)
+   * @param codec the codec for the field value
+   * @param presence predicate to determine if field is present
+   * @param <T> the DataObject subclass type
+   * @param <V> the field value type
+   * @return a new FieldSpec
+   */
+  public static <T extends DataObject, V> FieldSpec<T, V> field(
+      String name, Codec<V> codec, Predicate<T> presence) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(codec, "codec");
+    Objects.requireNonNull(presence, "presence");
     return new FieldSpec<>() {
       @Override
       public String name() {
@@ -81,6 +99,11 @@ public abstract class DataObject {
       @Override
       public void set(T obj, V value) {
         obj.set(name, value);
+      }
+
+      @Override
+      public Predicate<T> presence() {
+        return presence;
       }
     };
   }

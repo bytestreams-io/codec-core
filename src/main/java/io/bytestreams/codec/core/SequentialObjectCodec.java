@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -33,7 +35,7 @@ import java.util.function.Supplier;
  *
  * @param <T> the type of object to encode/decode
  */
-public class SequentialObjectCodec<T> implements Codec<T> {
+public class SequentialObjectCodec<T> implements Codec<T>, Introspectable<T> {
 
   private final List<FieldCodec<T, ?>> fields;
   private final Supplier<T> factory;
@@ -75,6 +77,27 @@ public class SequentialObjectCodec<T> implements Codec<T> {
       field.decode(instance, input);
     }
     return instance;
+  }
+
+  @Override
+  public Object inspect(T object) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    for (FieldCodec<T, ?> field : fields) {
+      if (field.presence().test(object)) {
+        Object value = field.get(object);
+        if (field.codec() instanceof Introspectable<?> nested) {
+          result.put(field.name(), inspectNested(nested, value));
+        } else {
+          result.put(field.name(), value);
+        }
+      }
+    }
+    return result;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <V> Object inspectNested(Introspectable<V> nested, Object value) {
+    return nested.inspect((V) value);
   }
 
   /** Builder for constructing a SequentialObjectCodec. */
@@ -177,6 +200,23 @@ public class SequentialObjectCodec<T> implements Codec<T> {
       this.getter = getter;
       this.setter = setter;
       this.presence = presence;
+    }
+
+    String name() {
+      return name;
+    }
+
+    Codec<V> codec() {
+      return codec;
+    }
+
+    Predicate<T> presence() {
+      return presence;
+    }
+
+    @SuppressWarnings("unchecked")
+    Object get(T object) {
+      return getter.apply(object);
     }
 
     EncodeResult encode(T object, OutputStream output) {

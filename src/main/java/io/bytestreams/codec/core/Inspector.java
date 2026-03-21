@@ -25,4 +25,20 @@ public interface Inspector<T> {
    * @return a structured representation (Map, List, or scalar)
    */
   Object inspect(T value);
+
+  /**
+   * Inspects a value using an inspector whose type parameter is unknown at compile time.
+   *
+   * <p>This helper centralizes the unchecked cast required when an {@code Inspector<?>} is obtained
+   * via {@code instanceof} pattern matching. The caller is responsible for ensuring the value's
+   * runtime type matches the inspector's type parameter.
+   *
+   * @param inspector the inspector (typically obtained from a codec's {@code instanceof} check)
+   * @param value the value to inspect
+   * @return the structured representation
+   */
+  @SuppressWarnings("unchecked")
+  static Object inspect(Inspector<?> inspector, Object value) {
+    return ((Inspector<Object>) inspector).inspect(value);
+  }
 }

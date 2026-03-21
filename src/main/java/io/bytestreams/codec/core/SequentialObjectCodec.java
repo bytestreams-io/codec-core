@@ -86,18 +86,13 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
       if (field.presence().test(object)) {
         Object value = field.get(object);
         if (field.codec() instanceof Inspector<?> nested) {
-          result.put(field.name(), inspectNested(nested, value));
+          result.put(field.name(), Inspector.inspect(nested, value));
         } else {
           result.put(field.name(), value);
         }
       }
     }
     return result;
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <V> Object inspectNested(Inspector<V> nested, Object value) {
-    return nested.inspect((V) value);
   }
 
   /** Builder for constructing a SequentialObjectCodec. */

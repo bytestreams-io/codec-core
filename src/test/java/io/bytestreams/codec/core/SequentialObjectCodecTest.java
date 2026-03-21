@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class SequentialObjectCodecTest {
@@ -412,6 +414,84 @@ class SequentialObjectCodecTest {
     assertThatThrownBy(() -> builder.field((FieldSpec<TestObject, ?>) null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("spec");
+  }
+
+  @Test
+  void inspect_returns_map_of_field_values() {
+    SequentialObjectCodec<TestObject> codec =
+        SequentialObjectCodec.<TestObject>builder(TestObject::new)
+            .field("name", Codecs.ascii(5), TestObject::getName, TestObject::setName)
+            .field("id", Codecs.uint8(), TestObject::getId, TestObject::setId)
+            .build();
+
+    TestObject obj = new TestObject();
+    obj.setName("Alice");
+    obj.setId(30);
+
+    Object result = codec.inspect(obj);
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("name", "Alice");
+    expected.put("id", 30);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void inspect_skips_absent_fields() {
+    SequentialObjectCodec<TestObject> codec =
+        SequentialObjectCodec.<TestObject>builder(TestObject::new)
+            .field("name", Codecs.ascii(5), TestObject::getName, TestObject::setName)
+            .field("id", Codecs.uint8(), TestObject::getId, TestObject::setId)
+            .field(
+                "tag",
+                Codecs.ascii(3),
+                TestObject::getTag,
+                TestObject::setTag,
+                obj -> obj.getId() > 0)
+            .build();
+
+    TestObject obj = new TestObject();
+    obj.setName("Alice");
+    obj.setId(0);
+    obj.setTag("xyz");
+
+    Object result = codec.inspect(obj);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> map = (Map<String, Object>) result;
+    assertThat(map).containsKeys("name", "id").doesNotContainKey("tag");
+  }
+
+  @Test
+  void inspect_recurses_into_nested_sequential() {
+    SequentialObjectCodec<InnerObject> innerCodec =
+        SequentialObjectCodec.<InnerObject>builder(InnerObject::new)
+            .field("value", Codecs.uint8(), InnerObject::getValue, InnerObject::setValue)
+            .build();
+
+    SequentialObjectCodec<OuterObject> outerCodec =
+        SequentialObjectCodec.<OuterObject>builder(OuterObject::new)
+            .field("id", Codecs.uint8(), OuterObject::getId, OuterObject::setId)
+            .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
+            .build();
+
+    InnerObject inner = new InnerObject();
+    inner.setValue(42);
+
+    OuterObject outer = new OuterObject();
+    outer.setId(1);
+    outer.setInner(inner);
+
+    Object result = outerCodec.inspect(outer);
+
+    Map<String, Object> expectedInner = new LinkedHashMap<>();
+    expectedInner.put("value", 42);
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("id", 1);
+    expected.put("inner", expectedInner);
+
+    assertThat(result).isEqualTo(expected);
   }
 
   // Test helper classes

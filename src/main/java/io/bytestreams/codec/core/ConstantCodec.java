@@ -16,7 +16,7 @@ import java.util.Objects;
  * <p>On encode, always writes the expected bytes (ignoring the input value). On decode, reads and
  * validates that the bytes match the expected value, throwing {@link CodecException} on mismatch.
  */
-public class ConstantCodec implements Codec<byte[]> {
+public class ConstantCodec implements Codec<byte[]>, Inspector<byte[]> {
   private static final HexFormat HEX = HexFormat.of().withUpperCase();
   private final byte[] expected;
 
@@ -59,6 +59,11 @@ public class ConstantCodec implements Codec<byte[]> {
               .formatted(HEX.formatHex(expected), HEX.formatHex(actual)),
           null);
     }
+    return expected.clone();
+  }
+
+  @Override
+  public Object inspect(byte[] value) {
     return expected.clone();
   }
 }

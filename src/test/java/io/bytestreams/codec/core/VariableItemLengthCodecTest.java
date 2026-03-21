@@ -12,6 +12,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -153,5 +156,49 @@ class VariableItemLengthCodecTest {
             () -> new VariableItemLengthCodec<String>(uint8, Strings::codePointCount, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("codecFactory");
+  }
+
+  @Test
+  void inspect_delegates_to_inner() {
+    SequentialObjectCodec<Inner> innerCodec =
+        SequentialObjectCodec.<Inner>builder(Inner::new)
+            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+            .build();
+
+    // codecFactory returns innerCodec (which implements Inspector) regardless of length
+    Codec<Inner> codec = Codecs.prefixed(Codecs.uint8(), v -> 1, len -> innerCodec);
+
+    Inner inner = new Inner();
+    inner.setValue(7);
+
+    Object result = Inspector.inspect((Inspector<?>) codec, inner);
+
+    Map<String, Object> expectedInner = new LinkedHashMap<>();
+    expectedInner.put("value", 7);
+    assertThat(result).isEqualTo(expectedInner);
+  }
+
+  @Test
+  void inspect_returns_raw_when_inner_not_introspectable() {
+    Codec<List<Integer>> codec =
+        Codecs.prefixed(Codecs.uint8(), List::size, len -> Codecs.listOf(Codecs.uint8(), len));
+
+    List<Integer> list = List.of(1, 2, 3);
+
+    Object result = Inspector.inspect((Inspector<?>) codec, list);
+
+    assertThat(result).isEqualTo(list);
+  }
+
+  static class Inner {
+    private int value;
+
+    int getValue() {
+      return value;
+    }
+
+    void setValue(int value) {
+      this.value = value;
+    }
   }
 }

@@ -25,7 +25,7 @@ import java.util.Objects;
  *
  * @param <V> the type of value this codec handles
  */
-public class VariableByteLengthCodec<V> implements Codec<V> {
+public class VariableByteLengthCodec<V> implements Codec<V>, Inspector<V> {
   private final Codec<Integer> lengthCodec;
   private final Codec<V> valueCodec;
 
@@ -69,5 +69,10 @@ public class VariableByteLengthCodec<V> implements Codec<V> {
     int length = lengthCodec.decode(input);
     byte[] data = InputStreams.readFully(input, length);
     return valueCodec.decode(new ByteArrayInputStream(data));
+  }
+
+  @Override
+  public Object inspect(V value) {
+    return valueCodec instanceof Inspector<?> nested ? Inspector.inspect(nested, value) : value;
   }
 }

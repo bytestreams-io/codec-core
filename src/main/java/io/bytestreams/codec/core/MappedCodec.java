@@ -19,7 +19,7 @@ import java.util.function.Function;
  * @param <V> the base codec's value type
  * @param <U> the mapped value type
  */
-class MappedCodec<V, U> implements Codec<U> {
+class MappedCodec<V, U> implements Codec<U>, Inspector<U> {
   private final Codec<V> base;
   private final Function<V, U> decoder;
   private final Function<U, V> encoder;
@@ -40,5 +40,11 @@ class MappedCodec<V, U> implements Codec<U> {
   @Override
   public U decode(InputStream input) throws IOException {
     return decoder.apply(base.decode(input));
+  }
+
+  @Override
+  public Object inspect(U value) {
+    V reversed = encoder.apply(value);
+    return base instanceof Inspector<?> nested ? Inspector.inspect(nested, reversed) : value;
   }
 }

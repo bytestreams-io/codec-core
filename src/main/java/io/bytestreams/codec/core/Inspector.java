@@ -15,7 +15,7 @@ package io.bytestreams.codec.core;
  *
  * @param <T> the type of the value to inspect
  */
-public interface Introspectable<T> {
+public interface Inspector<T> {
 
   /**
    * Returns a structured representation of the given value suitable for logging, serialization, or

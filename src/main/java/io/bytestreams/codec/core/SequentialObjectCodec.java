@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  *
  * @param <T> the type of object to encode/decode
  */
-public class SequentialObjectCodec<T> implements Codec<T>, Introspectable<T> {
+public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
 
   private final List<FieldCodec<T, ?>> fields;
   private final Supplier<T> factory;
@@ -85,7 +85,7 @@ public class SequentialObjectCodec<T> implements Codec<T>, Introspectable<T> {
     for (FieldCodec<T, ?> field : fields) {
       if (field.presence().test(object)) {
         Object value = field.get(object);
-        if (field.codec() instanceof Introspectable<?> nested) {
+        if (field.codec() instanceof Inspector<?> nested) {
           result.put(field.name(), inspectNested(nested, value));
         } else {
           result.put(field.name(), value);
@@ -96,7 +96,7 @@ public class SequentialObjectCodec<T> implements Codec<T>, Introspectable<T> {
   }
 
   @SuppressWarnings("unchecked")
-  private static <V> Object inspectNested(Introspectable<V> nested, Object value) {
+  private static <V> Object inspectNested(Inspector<V> nested, Object value) {
     return nested.inspect((V) value);
   }
 

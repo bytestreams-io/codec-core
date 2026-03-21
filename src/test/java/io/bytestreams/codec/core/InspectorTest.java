@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-class IntrospectableTest {
+class InspectorTest {
 
   @Test
   void sequential_inspect_returns_map_of_field_values() {

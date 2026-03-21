@@ -51,8 +51,7 @@ class InspectorTest {
 
     @SuppressWarnings("unchecked")
     Map<String, Object> map = (Map<String, Object>) result;
-    assertThat(map).containsKeys("name", "age");
-    assertThat(map).doesNotContainKey("tag");
+    assertThat(map).containsKeys("name", "age").doesNotContainKey("tag");
   }
 
   @Test

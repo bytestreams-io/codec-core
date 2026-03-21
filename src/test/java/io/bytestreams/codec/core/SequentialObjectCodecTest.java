@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 class SequentialObjectCodecTest {
@@ -330,50 +329,22 @@ class SequentialObjectCodecTest {
   // FieldSpec overload tests
 
   static final FieldSpec<TestObject, Integer> ID_SPEC =
-      new FieldSpec<>() {
-        @Override
-        public String name() {
-          return "id";
-        }
-
-        @Override
-        public Codec<Integer> codec() {
-          return Codecs.uint16();
-        }
-
-        @Override
-        public Integer get(TestObject object) {
-          return object.getId();
-        }
-
-        @Override
-        public void set(TestObject object, Integer value) {
-          object.setId(value);
-        }
-      };
+      FieldSpec.of("id", Codecs.uint16(), TestObject::getId, TestObject::setId);
 
   static final FieldSpec<TestObject, String> NAME_SPEC =
-      new FieldSpec<>() {
-        @Override
-        public String name() {
-          return "name";
-        }
+      FieldSpec.of(
+          "name",
+          Codecs.ofCharset(Charset.defaultCharset(), 5),
+          TestObject::getName,
+          TestObject::setName);
 
-        @Override
-        public Codec<String> codec() {
-          return Codecs.ofCharset(Charset.defaultCharset(), 5);
-        }
-
-        @Override
-        public String get(TestObject object) {
-          return object.getName();
-        }
-
-        @Override
-        public void set(TestObject object, String value) {
-          object.setName(value);
-        }
-      };
+  static final FieldSpec<TestObject, String> TAG_SPEC =
+      FieldSpec.of(
+          "tag",
+          Codecs.ofCharset(Charset.defaultCharset(), 3),
+          TestObject::getTag,
+          TestObject::setTag,
+          obj -> obj.getId() > 0);
 
   @Test
   void encode_with_field_spec() throws IOException {
@@ -401,38 +372,10 @@ class SequentialObjectCodecTest {
     present.setId(1);
     present.setTag("abc");
 
-    FieldSpec<TestObject, String> tagSpec =
-        new FieldSpec<>() {
-          @Override
-          public String name() {
-            return "tag";
-          }
-
-          @Override
-          public Codec<String> codec() {
-            return Codecs.ofCharset(Charset.defaultCharset(), 3);
-          }
-
-          @Override
-          public String get(TestObject object) {
-            return object.getTag();
-          }
-
-          @Override
-          public void set(TestObject object, String value) {
-            object.setTag(value);
-          }
-
-          @Override
-          public Predicate<TestObject> presence() {
-            return obj -> obj.getId() > 0;
-          }
-        };
-
     SequentialObjectCodec<TestObject> codec =
         SequentialObjectCodec.<TestObject>builder(TestObject::new)
             .field(ID_SPEC)
-            .field(tagSpec)
+            .field(TAG_SPEC)
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -448,38 +391,10 @@ class SequentialObjectCodecTest {
     TestObject absent = new TestObject();
     absent.setId(0);
 
-    FieldSpec<TestObject, String> tagSpec =
-        new FieldSpec<>() {
-          @Override
-          public String name() {
-            return "tag";
-          }
-
-          @Override
-          public Codec<String> codec() {
-            return Codecs.ofCharset(Charset.defaultCharset(), 3);
-          }
-
-          @Override
-          public String get(TestObject object) {
-            return object.getTag();
-          }
-
-          @Override
-          public void set(TestObject object, String value) {
-            object.setTag(value);
-          }
-
-          @Override
-          public Predicate<TestObject> presence() {
-            return obj -> obj.getId() > 0;
-          }
-        };
-
     SequentialObjectCodec<TestObject> codec =
         SequentialObjectCodec.<TestObject>builder(TestObject::new)
             .field(ID_SPEC)
-            .field(tagSpec)
+            .field(TAG_SPEC)
             .build();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();

@@ -214,7 +214,6 @@ public class SequentialObjectCodec<T> implements Codec<T>, Introspectable<T> {
       return presence;
     }
 
-    @SuppressWarnings("unchecked")
     Object get(T object) {
       return getter.apply(object);
     }

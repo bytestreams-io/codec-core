@@ -3,11 +3,17 @@ package io.bytestreams.codec.core;
 import static java.util.function.Function.identity;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 
 class InspectorIntegrationTest {
 
@@ -82,5 +88,54 @@ class InspectorIntegrationTest {
     Object result = Inspector.inspect(mapped, obj);
 
     assertThat(result).isEqualTo(Map.of("value", 42));
+  }
+
+  @Test
+  void mdc_path_tracks_tagged_codec_nested_inside_sequential() throws IOException {
+    List<String> observedPaths = new ArrayList<>();
+
+    Codec<Integer> capturingCodec =
+        new Codec<>() {
+          @Override
+          public EncodeResult encode(Integer value, OutputStream output) throws IOException {
+            observedPaths.add(MDC.get("codec.field"));
+            output.write(value >> 8);
+            output.write(value);
+            return EncodeResult.ofBytes(2);
+          }
+
+          @Override
+          public Integer decode(InputStream input) throws IOException {
+            observedPaths.add(MDC.get("codec.field"));
+            return (input.read() << 8) | input.read();
+          }
+        };
+
+    Codec<String> tagCodec = Codecs.ofCharset(Charset.defaultCharset(), 4);
+    TaggedObjectCodec<TestFixtures.TestTagged, String> taggedCodec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, tagCodec)
+            .tag("code", capturingCodec)
+            .build();
+
+    SequentialObjectCodec<TestFixtures.Outer> outerCodec =
+        SequentialObjectCodec.<TestFixtures.Outer>builder(TestFixtures.Outer::new)
+            .field("id", Codecs.uint16(), TestFixtures.Outer::getId, TestFixtures.Outer::setId)
+            .field("tags", taggedCodec, TestFixtures.Outer::getTags, TestFixtures.Outer::setTags)
+            .build();
+
+    TestFixtures.TestTagged tagged = new TestFixtures.TestTagged();
+    tagged.add("code", 42);
+
+    TestFixtures.Outer obj = new TestFixtures.Outer();
+    obj.setId(1);
+    obj.setTags(tagged);
+
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    outerCodec.encode(obj, out);
+    outerCodec.decode(new ByteArrayInputStream(out.toByteArray()));
+
+    assertThat(observedPaths).contains("tags.code");
+    assertThat(MDC.get("codec.field")).isNull();
   }
 }

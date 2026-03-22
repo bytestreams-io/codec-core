@@ -62,6 +62,7 @@ public class ConstantCodec implements Codec<byte[]>, Inspectable<byte[]> {
     return expected.clone();
   }
 
+  /** Returns the expected constant bytes regardless of the input value. */
   @Override
   public Object inspect(byte[] value) {
     return expected.clone();

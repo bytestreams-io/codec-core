@@ -71,5 +71,15 @@ class TestFixtures {
     void setInner(Inner inner) {
       this.inner = inner;
     }
+
+    TestTagged getTags() {
+      return tags;
+    }
+
+    void setTags(TestTagged tags) {
+      this.tags = tags;
+    }
+
+    private TestTagged tags;
   }
 }

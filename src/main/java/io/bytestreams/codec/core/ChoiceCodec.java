@@ -29,9 +29,9 @@ import java.util.Objects;
  *
  * @param <V> the base type of the discriminated union
  */
-public class ChoiceCodec<V> implements Codec<V> {
+public class ChoiceCodec<V> implements Codec<V>, Inspectable<V> {
   private final Codec<Class<? extends V>> classCodec;
-  final Map<Class<? extends V>, Codec<? extends V>> codecs;
+  private final Map<Class<? extends V>, Codec<? extends V>> codecs;
 
   ChoiceCodec(
       Codec<Class<? extends V>> classCodec, Map<Class<? extends V>, Codec<? extends V>> codecs) {
@@ -62,6 +62,17 @@ public class ChoiceCodec<V> implements Codec<V> {
       throw new CodecException("no codec registered for " + type.getName(), null);
     }
     return codec.decode(input);
+  }
+
+  @Override
+  public Object inspect(V value) {
+    @SuppressWarnings("unchecked")
+    Class<? extends V> type = (Class<? extends V>) value.getClass();
+    Codec<? extends V> codec = codecs.get(type);
+    if (codec == null) {
+      return value;
+    }
+    return Inspector.inspect(codec, value);
   }
 
   /**

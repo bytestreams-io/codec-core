@@ -1,11 +1,10 @@
 package io.bytestreams.codec.core;
 
 /**
- * Extension point for custom codecs to participate in field inspection.
+ * Extension point for codecs to participate in field inspection.
  *
- * <p>Built-in codecs do not implement this interface — the {@link Inspector} utility handles them
- * directly. Custom codec implementations can implement this interface to provide structured
- * representations of their values during inspection.
+ * <p>Built-in composite codecs implement this interface to provide structured representations of
+ * their values. Custom codec implementations can also implement this interface.
  *
  * @param <T> the type of the value to inspect
  */

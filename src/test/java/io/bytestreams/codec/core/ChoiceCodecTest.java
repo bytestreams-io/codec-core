@@ -7,6 +7,7 @@ import io.bytestreams.codec.core.util.BiMap;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -129,6 +130,68 @@ class ChoiceCodecTest {
         .hasMessageContaining("classCodec");
   }
 
+  @Test
+  void inspect_delegates_to_matched_branch() {
+    SequentialObjectCodec<InnerCircle> introspectableCircleCodec =
+        SequentialObjectCodec.<InnerCircle>builder(InnerCircle::new)
+            .field("radius", Codecs.uint8(), InnerCircle::getRadius, InnerCircle::setRadius)
+            .build();
+    BiMap<Integer, Class<? extends Shape>> tags =
+        BiMap.of(Map.entry(1, InnerCircle.class), Map.entry(2, Rectangle.class));
+    Codec<Shape> codec =
+        Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
+            .on(InnerCircle.class, introspectableCircleCodec)
+            .on(Rectangle.class, RECTANGLE_CODEC)
+            .build();
+
+    InnerCircle circle = new InnerCircle();
+    circle.setRadius(42);
+
+    Object result = Inspector.inspect((Inspector<?>) codec, circle);
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("radius", 42);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void inspect_returns_raw_when_no_codec_matched() {
+    Codec<Shape> codec = shapeCodec();
+
+    Object result = Inspector.inspect((Inspector<?>) codec, new Triangle());
+
+    assertThat(result).isInstanceOf(Triangle.class);
+  }
+
+  @Test
+  void inspect_returns_raw_when_codec_not_introspectable() {
+    Codec<Circle> plainCircleCodec =
+        new Codec<>() {
+          @Override
+          public EncodeResult encode(Circle value, java.io.OutputStream output) {
+            // not used in this test
+            return new EncodeResult(0, 0);
+          }
+
+          @Override
+          public Circle decode(java.io.InputStream input) {
+            // not used in this test
+            return null;
+          }
+        };
+    BiMap<Integer, Class<? extends Shape>> tags =
+        BiMap.of(Map.entry(1, Circle.class), Map.entry(2, Rectangle.class));
+    Codec<Shape> codec =
+        Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
+            .on(Circle.class, plainCircleCodec)
+            .on(Rectangle.class, RECTANGLE_CODEC)
+            .build();
+
+    Object result = Inspector.inspect((Inspector<?>) codec, new Circle(42));
+
+    assertThat(result).isInstanceOf(Circle.class);
+  }
+
   abstract static class Shape {}
 
   static class Circle extends Shape {
@@ -150,4 +213,16 @@ class ChoiceCodecTest {
   }
 
   static class Triangle extends Shape {}
+
+  static class InnerCircle extends Shape {
+    private int radius;
+
+    int getRadius() {
+      return radius;
+    }
+
+    void setRadius(int radius) {
+      this.radius = radius;
+    }
+  }
 }

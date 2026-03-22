@@ -7,6 +7,8 @@ import io.bytestreams.codec.core.util.Triple;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class TripleCodecTest {
@@ -87,6 +89,44 @@ class TripleCodecTest {
     assertThatThrownBy(() -> new TripleCodec<>(first, second, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("third");
+  }
+
+  @Test
+  void inspect_returns_map() {
+    TripleCodec<Integer, Integer, Integer> codec =
+        Codecs.triple(Codecs.uint8(), Codecs.uint8(), Codecs.uint8());
+
+    Object result = codec.inspect(new Triple<>(10, 20, 30));
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("first", 10);
+    expected.put("second", 20);
+    expected.put("third", 30);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void inspect_recurses_into_introspectable_elements() {
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
+            .build();
+    TripleCodec<Integer, TestFixtures.Inner, Integer> codec =
+        new TripleCodec<>(Codecs.uint8(), innerCodec, Codecs.uint8());
+
+    TestFixtures.Inner inner = new TestFixtures.Inner();
+    inner.setValue(99);
+
+    Object result = codec.inspect(new Triple<>(10, inner, 30));
+
+    Map<String, Object> expectedInner = new LinkedHashMap<>();
+    expectedInner.put("value", 99);
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("first", 10);
+    expected.put("second", expectedInner);
+    expected.put("third", 30);
+    assertThat(result).isEqualTo(expected);
   }
 
   static class Color {

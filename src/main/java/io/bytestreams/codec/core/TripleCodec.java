@@ -5,6 +5,8 @@ import io.bytestreams.codec.core.util.Triple;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -26,7 +28,7 @@ import java.util.function.Function;
  * @param <B> the type of the second value
  * @param <C> the type of the third value
  */
-public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>> {
+public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>>, Inspector<Triple<A, B, C>> {
   private final Codec<A> first;
   private final Codec<B> second;
   private final Codec<C> third;
@@ -69,5 +71,14 @@ public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>> {
     return xmap(
         triple -> constructor.apply(triple.first(), triple.second(), triple.third()),
         v -> new Triple<>(getFirst.apply(v), getSecond.apply(v), getThird.apply(v)));
+  }
+
+  @Override
+  public Object inspect(Triple<A, B, C> value) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("first", Inspector.tryInspect(first, value.first()));
+    result.put("second", Inspector.tryInspect(second, value.second()));
+    result.put("third", Inspector.tryInspect(third, value.third()));
+    return result;
   }
 }

@@ -41,4 +41,16 @@ public interface Inspector<T> {
   static Object inspect(Inspector<?> inspector, Object value) {
     return ((Inspector<Object>) inspector).inspect(value);
   }
+
+  /**
+   * Inspects a value if the given codec implements {@code Inspector}, otherwise returns the value
+   * as-is.
+   *
+   * @param codec the codec to check
+   * @param value the value to inspect
+   * @return the inspected representation if the codec is an inspector, otherwise the raw value
+   */
+  static Object tryInspect(Codec<?> codec, Object value) {
+    return codec instanceof Inspector<?> nested ? inspect(nested, value) : value;
+  }
 }

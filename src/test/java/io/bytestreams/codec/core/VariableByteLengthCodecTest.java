@@ -120,14 +120,15 @@ class VariableByteLengthCodecTest {
 
   @Test
   void inspect_delegates_to_inner() {
-    SequentialObjectCodec<Inner> innerCodec =
-        SequentialObjectCodec.<Inner>builder(Inner::new)
-            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
-    Codec<Inner> codec = Codecs.prefixed(Codecs.uint16(), innerCodec);
+    Codec<TestFixtures.Inner> codec = Codecs.prefixed(Codecs.uint16(), innerCodec);
 
-    Inner inner = new Inner();
+    TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(42);
 
     Object result = Inspector.inspect((Inspector<?>) codec, inner);
@@ -144,17 +145,5 @@ class VariableByteLengthCodecTest {
     Object result = Inspector.inspect((Inspector<?>) codec, "hello");
 
     assertThat(result).isEqualTo("hello");
-  }
-
-  static class Inner {
-    private int value;
-
-    int getValue() {
-      return value;
-    }
-
-    void setValue(int value) {
-      this.value = value;
-    }
   }
 }

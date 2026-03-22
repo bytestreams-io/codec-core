@@ -13,7 +13,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -160,15 +159,16 @@ class VariableItemLengthCodecTest {
 
   @Test
   void inspect_delegates_to_inner() {
-    SequentialObjectCodec<Inner> innerCodec =
-        SequentialObjectCodec.<Inner>builder(Inner::new)
-            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
     // codecFactory returns innerCodec (which implements Inspector) regardless of length
-    Codec<Inner> codec = Codecs.prefixed(Codecs.uint8(), v -> 1, len -> innerCodec);
+    Codec<TestFixtures.Inner> codec = Codecs.prefixed(Codecs.uint8(), v -> 1, len -> innerCodec);
 
-    Inner inner = new Inner();
+    TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(7);
 
     Object result = Inspector.inspect((Inspector<?>) codec, inner);
@@ -180,25 +180,10 @@ class VariableItemLengthCodecTest {
 
   @Test
   void inspect_returns_raw_when_inner_not_introspectable() {
-    Codec<List<Integer>> codec =
-        Codecs.prefixed(Codecs.uint8(), List::size, len -> Codecs.listOf(Codecs.uint8(), len));
+    Codec<String> codec = Codecs.prefixed(Codecs.uint8(), v -> 1, len -> Codecs.ascii(5));
 
-    List<Integer> list = List.of(1, 2, 3);
+    Object result = Inspector.inspect((Inspector<?>) codec, "hello");
 
-    Object result = Inspector.inspect((Inspector<?>) codec, list);
-
-    assertThat(result).isEqualTo(list);
-  }
-
-  static class Inner {
-    private int value;
-
-    int getValue() {
-      return value;
-    }
-
-    void setValue(int value) {
-      this.value = value;
-    }
+    assertThat(result).isEqualTo("hello");
   }
 }

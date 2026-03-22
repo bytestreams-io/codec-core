@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  *
  * @param <V> the type of values in the list
  */
-public class StreamListCodec<V> implements Codec<List<V>> {
+public class StreamListCodec<V> implements Codec<List<V>>, Inspector<List<V>> {
   private final Codec<V> itemCodec;
   private final Supplier<List<V>> listFactory;
 
@@ -85,6 +85,14 @@ public class StreamListCodec<V> implements Codec<List<V>> {
     while ((next = pushback.read()) != -1) {
       pushback.unread(next);
       values.add(itemCodec.decode(pushback));
+    }
+    return values;
+  }
+
+  @Override
+  public Object inspect(List<V> values) {
+    if (itemCodec instanceof Inspector<?> nested) {
+      return values.stream().map(v -> Inspector.inspect(nested, v)).toList();
     }
     return values;
   }

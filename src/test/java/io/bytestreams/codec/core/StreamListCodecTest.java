@@ -13,8 +13,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -196,5 +198,38 @@ class StreamListCodecTest {
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("listFactory.get()");
+  }
+
+  @Test
+  void inspect_recurses_elements() {
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
+            .build();
+    StreamListCodec<TestFixtures.Inner> codec = new StreamListCodec<>(innerCodec);
+
+    TestFixtures.Inner inner1 = new TestFixtures.Inner();
+    inner1.setValue(10);
+    TestFixtures.Inner inner2 = new TestFixtures.Inner();
+    inner2.setValue(20);
+
+    Object result = codec.inspect(List.of(inner1, inner2));
+
+    Map<String, Object> expected1 = new LinkedHashMap<>();
+    expected1.put("value", 10);
+    Map<String, Object> expected2 = new LinkedHashMap<>();
+    expected2.put("value", 20);
+    assertThat(result).isEqualTo(List.of(expected1, expected2));
+  }
+
+  @Test
+  void inspect_returns_raw_when_not_introspectable() {
+    StreamListCodec<Integer> codec = new StreamListCodec<>(Codecs.uint8());
+    List<Integer> values = List.of(10, 20);
+
+    Object result = codec.inspect(values);
+
+    assertThat(result).isSameAs(values);
   }
 }

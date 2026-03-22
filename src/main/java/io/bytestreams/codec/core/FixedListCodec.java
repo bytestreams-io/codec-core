@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  *
  * @param <V> the type of values in the list
  */
-public class FixedListCodec<V> implements Codec<List<V>> {
+public class FixedListCodec<V> implements Codec<List<V>>, Inspector<List<V>> {
   private final Codec<V> itemCodec;
   private final int length;
   private final Supplier<List<V>> listFactory;
@@ -89,6 +89,14 @@ public class FixedListCodec<V> implements Codec<List<V>> {
     List<V> values = Objects.requireNonNull(listFactory.get(), "listFactory.get() returned null");
     for (int i = 0; i < length; i++) {
       values.add(itemCodec.decode(input));
+    }
+    return values;
+  }
+
+  @Override
+  public Object inspect(List<V> values) {
+    if (itemCodec instanceof Inspector<?> nested) {
+      return values.stream().map(v -> Inspector.inspect(nested, v)).toList();
     }
     return values;
   }

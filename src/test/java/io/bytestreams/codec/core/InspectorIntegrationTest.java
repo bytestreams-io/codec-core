@@ -3,11 +3,41 @@ package io.bytestreams.codec.core;
 import static java.util.function.Function.identity;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class InspectorIntegrationTest {
+
+  @Test
+  void inspect_delegates_to_inspectable_codec() {
+    Codec<String> codec = new InspectableStringCodec();
+
+    Object result = Inspector.inspect(codec, "hello");
+
+    assertThat(result).isEqualTo("HELLO");
+  }
+
+  static class InspectableStringCodec implements Codec<String>, Inspectable<String> {
+    @Override
+    public EncodeResult encode(String value, OutputStream output) {
+      // not used in this test
+      return EncodeResult.EMPTY;
+    }
+
+    @Override
+    public String decode(InputStream input) {
+      // not used in this test
+      return null;
+    }
+
+    @Override
+    public Object inspect(String value) {
+      return value.toUpperCase();
+    }
+  }
 
   @Test
   void inspect_recurses_through_prefixed_wrapper() {
@@ -28,7 +58,7 @@ class InspectorIntegrationTest {
     TestFixtures.Inner b = new TestFixtures.Inner();
     b.setValue(20);
 
-    Object result = Inspector.inspect((Inspector<?>) prefixedList, List.of(a, b));
+    Object result = Inspector.inspect(prefixedList, List.of(a, b));
 
     assertThat(result).isEqualTo(List.of(Map.of("value", 10), Map.of("value", 20)));
   }
@@ -49,7 +79,7 @@ class InspectorIntegrationTest {
     TestFixtures.Inner obj = new TestFixtures.Inner();
     obj.setValue(42);
 
-    Object result = Inspector.inspect((Inspector<?>) mapped, obj);
+    Object result = Inspector.inspect(mapped, obj);
 
     assertThat(result).isEqualTo(Map.of("value", 42));
   }

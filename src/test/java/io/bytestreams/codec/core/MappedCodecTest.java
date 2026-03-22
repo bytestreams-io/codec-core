@@ -115,7 +115,7 @@ class MappedCodecTest {
     TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(99);
 
-    Object result = Inspector.inspect((Inspector<?>) mapped, inner);
+    Object result = Inspector.inspect(mapped, inner);
 
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("value", 99);
@@ -123,11 +123,11 @@ class MappedCodecTest {
   }
 
   @Test
-  void inspect_returns_raw_when_inner_not_introspectable() {
+  void inspect_reverse_maps_through_base() {
     Codec<String> mapped = Codecs.uint8().xmap(String::valueOf, Integer::parseInt);
 
-    Object result = Inspector.inspect((Inspector<?>) mapped, "42");
+    Object result = Inspector.inspect(mapped, "42");
 
-    assertThat(result).isEqualTo("42");
+    assertThat(result).isEqualTo(42);
   }
 }

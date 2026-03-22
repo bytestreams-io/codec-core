@@ -214,7 +214,7 @@ class StreamListCodecTest {
     TestFixtures.Inner inner2 = new TestFixtures.Inner();
     inner2.setValue(20);
 
-    Object result = codec.inspect(List.of(inner1, inner2));
+    Object result = Inspector.inspect(codec, List.of(inner1, inner2));
 
     Map<String, Object> expected1 = new LinkedHashMap<>();
     expected1.put("value", 10);
@@ -228,8 +228,8 @@ class StreamListCodecTest {
     StreamListCodec<Integer> codec = new StreamListCodec<>(Codecs.uint8());
     List<Integer> values = List.of(10, 20);
 
-    Object result = codec.inspect(values);
+    Object result = Inspector.inspect(codec, values);
 
-    assertThat(result).isSameAs(values);
+    assertThat(result).isEqualTo(values);
   }
 }

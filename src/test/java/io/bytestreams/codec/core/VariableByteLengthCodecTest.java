@@ -131,7 +131,7 @@ class VariableByteLengthCodecTest {
     TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(42);
 
-    Object result = Inspector.inspect((Inspector<?>) codec, inner);
+    Object result = Inspector.inspect(codec, inner);
 
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("value", 42);
@@ -142,7 +142,7 @@ class VariableByteLengthCodecTest {
   void inspect_returns_raw_when_inner_not_introspectable() {
     Codec<String> codec = Codecs.prefixed(Codecs.uint16(), Codecs.ascii(5));
 
-    Object result = Inspector.inspect((Inspector<?>) codec, "hello");
+    Object result = Inspector.inspect(codec, "hello");
 
     assertThat(result).isEqualTo("hello");
   }

@@ -96,7 +96,7 @@ class TripleCodecTest {
     TripleCodec<Integer, Integer, Integer> codec =
         Codecs.triple(Codecs.uint8(), Codecs.uint8(), Codecs.uint8());
 
-    Object result = codec.inspect(new Triple<>(10, 20, 30));
+    Object result = Inspector.inspect(codec, new Triple<>(10, 20, 30));
 
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("first", 10);
@@ -118,7 +118,7 @@ class TripleCodecTest {
     TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(99);
 
-    Object result = codec.inspect(new Triple<>(10, inner, 30));
+    Object result = Inspector.inspect(codec, new Triple<>(10, inner, 30));
 
     Map<String, Object> expectedInner = new LinkedHashMap<>();
     expectedInner.put("value", 99);

@@ -5,8 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -33,15 +31,15 @@ import org.slf4j.MDC;
  * @param <T> the type of object to encode/decode
  * @param <K> the tag key type
  */
-public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, Inspector<T> {
+public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T> {
 
   private static final Logger logger = LoggerFactory.getLogger(TaggedObjectCodec.class);
   private static final String MDC_KEY = "codec.field";
   private static final String LOG_KEY_FIELD = "field";
 
   private final Codec<K> tagCodec;
-  private final Map<K, Codec<?>> codecs;
-  private final Codec<?> defaultCodec;
+  final Map<K, Codec<?>> codecs;
+  final Codec<?> defaultCodec;
   private final Supplier<T> factory;
 
   TaggedObjectCodec(
@@ -178,22 +176,6 @@ public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, I
     } else {
       MDC.put(MDC_KEY, previous);
     }
-  }
-
-  @Override
-  public Object inspect(T object) {
-    Map<String, Object> result = new LinkedHashMap<>();
-    for (K tag : object.tags()) {
-      List<Object> values = object.getAll(tag);
-      Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
-      if (codec instanceof Inspector<?> nested) {
-        result.put(
-            String.valueOf(tag), values.stream().map(v -> Inspector.inspect(nested, v)).toList());
-      } else {
-        result.put(String.valueOf(tag), values);
-      }
-    }
-    return result;
   }
 
   /**

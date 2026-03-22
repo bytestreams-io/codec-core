@@ -10,11 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class TaggedObjectCodecTest {
@@ -23,18 +20,19 @@ class TaggedObjectCodecTest {
 
   @Test
   void roundtrip_single_field() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
-    TestTagged original = new TestTagged();
+    TestFixtures.TestTagged original = new TestFixtures.TestTagged();
     original.add("code", 42);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(original, output);
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.tags()).containsExactly("code");
     assertThat(decoded.<Integer>getAll("code")).containsExactly(42);
@@ -42,20 +40,21 @@ class TaggedObjectCodecTest {
 
   @Test
   void roundtrip_multiple_different_tags() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .tag("name", Codecs.ofCharset(Charset.defaultCharset(), 5))
             .build();
 
-    TestTagged original = new TestTagged();
+    TestFixtures.TestTagged original = new TestFixtures.TestTagged();
     original.add("code", 100);
     original.add("name", "hello");
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(original, output);
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.tags()).containsExactly("code", "name");
     assertThat(decoded.<Integer>getAll("code")).containsExactly(100);
@@ -64,12 +63,13 @@ class TaggedObjectCodecTest {
 
   @Test
   void roundtrip_duplicate_tags() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
-    TestTagged original = new TestTagged();
+    TestFixtures.TestTagged original = new TestFixtures.TestTagged();
     original.add("code", 1);
     original.add("code", 2);
     original.add("code", 3);
@@ -77,7 +77,7 @@ class TaggedObjectCodecTest {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(original, output);
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.tags()).containsExactly("code");
     assertThat(decoded.<Integer>getAll("code")).containsExactly(1, 2, 3);
@@ -85,18 +85,19 @@ class TaggedObjectCodecTest {
 
   @Test
   void roundtrip_with_default_codec() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .defaultCodec(new BinaryCodec(2))
             .build();
 
-    TestTagged original = new TestTagged();
+    TestFixtures.TestTagged original = new TestFixtures.TestTagged();
     original.add("abcd", new byte[] {1, 2});
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(original, output);
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.tags()).containsExactly("abcd");
     assertThat(decoded.<byte[]>getAll("abcd")).hasSize(1);
@@ -105,20 +106,21 @@ class TaggedObjectCodecTest {
 
   @Test
   void roundtrip_mixed_registered_and_default() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .defaultCodec(new BinaryCodec(3))
             .build();
 
-    TestTagged original = new TestTagged();
+    TestFixtures.TestTagged original = new TestFixtures.TestTagged();
     original.add("code", 42);
     original.add("data", new byte[] {10, 20, 30});
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(original, output);
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.tags()).containsExactly("code", "data");
     assertThat(decoded.<Integer>getAll("code")).containsExactly(42);
@@ -128,19 +130,20 @@ class TaggedObjectCodecTest {
 
   @Test
   void roundtrip_no_registered_codecs_all_go_to_default() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .defaultCodec(new BinaryCodec(2))
             .build();
 
-    TestTagged original = new TestTagged();
+    TestFixtures.TestTagged original = new TestFixtures.TestTagged();
     original.add("aaaa", new byte[] {1, 2});
     original.add("bbbb", new byte[] {3, 4});
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(original, output);
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.tags()).containsExactly("aaaa", "bbbb");
     assertThat(decoded.<byte[]>getAll("aaaa")).hasSize(1);
@@ -151,31 +154,33 @@ class TaggedObjectCodecTest {
 
   @Test
   void roundtrip_empty_fields() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
-    TestTagged original = new TestTagged();
+    TestFixtures.TestTagged original = new TestFixtures.TestTagged();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     codec.encode(original, output);
 
     assertThat(output.toByteArray()).isEmpty();
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.tags()).isEmpty();
   }
 
   @Test
   void encode_unknown_tag_without_default_throws() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
     obj.add("xxxx", 99);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -188,12 +193,13 @@ class TaggedObjectCodecTest {
 
   @Test
   void encode_error_includes_tag() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", new NotImplementedCodec<>())
             .build();
 
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
     obj.add("code", 42);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -206,12 +212,13 @@ class TaggedObjectCodecTest {
 
   @Test
   void encode_non_codec_exception_wraps_with_tag() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", new AlwaysThrowsCodec<>())
             .build();
 
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
     obj.add("code", 42);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -224,20 +231,22 @@ class TaggedObjectCodecTest {
 
   @Test
   void decode_empty_stream() throws IOException {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
-    TestTagged decoded = codec.decode(new ByteArrayInputStream(new byte[0]));
+    TestFixtures.TestTagged decoded = codec.decode(new ByteArrayInputStream(new byte[0]));
 
     assertThat(decoded.tags()).isEmpty();
   }
 
   @Test
   void decode_unknown_tag_without_default_throws() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
@@ -255,8 +264,9 @@ class TaggedObjectCodecTest {
 
   @Test
   void decode_error_includes_tag() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
@@ -272,8 +282,9 @@ class TaggedObjectCodecTest {
 
   @Test
   void decode_tag_codec_throws_codec_exception() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, new NotImplementedCodec<>())
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, new NotImplementedCodec<>())
             .tag("code", Codecs.uint16())
             .build();
 
@@ -286,8 +297,9 @@ class TaggedObjectCodecTest {
 
   @Test
   void decode_tag_codec_throws_non_codec_exception() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, new AlwaysThrowsCodec<>())
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, new AlwaysThrowsCodec<>())
             .tag("code", Codecs.uint16())
             .build();
 
@@ -300,15 +312,15 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_tag_codec() {
-    assertThatThrownBy(() -> TaggedObjectCodec.builder(TestTagged::new, null))
+    assertThatThrownBy(() -> TaggedObjectCodec.builder(TestFixtures.TestTagged::new, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("tagCodec");
   }
 
   @Test
   void builder_null_tag() {
-    TaggedObjectCodec.Builder<TestTagged, String> builder =
-        TaggedObjectCodec.builder(TestTagged::new, TAG_CODEC);
+    TaggedObjectCodec.Builder<TestFixtures.TestTagged, String> builder =
+        TaggedObjectCodec.builder(TestFixtures.TestTagged::new, TAG_CODEC);
 
     Codec<Integer> codec = Codecs.uint16();
 
@@ -319,8 +331,8 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_codec() {
-    TaggedObjectCodec.Builder<TestTagged, String> builder =
-        TaggedObjectCodec.builder(TestTagged::new, TAG_CODEC);
+    TaggedObjectCodec.Builder<TestFixtures.TestTagged, String> builder =
+        TaggedObjectCodec.builder(TestFixtures.TestTagged::new, TAG_CODEC);
 
     assertThatThrownBy(() -> builder.tag("code", null))
         .isInstanceOf(NullPointerException.class)
@@ -329,8 +341,8 @@ class TaggedObjectCodecTest {
 
   @Test
   void builder_null_default_codec() {
-    TaggedObjectCodec.Builder<TestTagged, String> builder =
-        TaggedObjectCodec.builder(TestTagged::new, TAG_CODEC);
+    TaggedObjectCodec.Builder<TestFixtures.TestTagged, String> builder =
+        TaggedObjectCodec.builder(TestFixtures.TestTagged::new, TAG_CODEC);
 
     assertThatThrownBy(() -> builder.defaultCodec(null))
         .isInstanceOf(NullPointerException.class)
@@ -346,8 +358,8 @@ class TaggedObjectCodecTest {
 
   @Test
   void factory_returns_null() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(() -> null, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(() -> null, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
@@ -360,29 +372,30 @@ class TaggedObjectCodecTest {
 
   @Test
   void add_returns_same_instance() {
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
 
-    TestTagged result = obj.add("code", 42);
+    TestFixtures.TestTagged result = obj.add("code", 42);
 
     assertThat(result).isSameAs(obj);
   }
 
   @Test
   void getAll_absent_tag_returns_empty_list() {
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
 
     assertThat(obj.<Integer>getAll("missing")).isEmpty();
   }
 
   @Test
   void inspect_returns_map_of_tag_to_values() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .tag("name", Codecs.ascii(5))
             .build();
 
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
     obj.add("code", 42);
     obj.add("name", "hello");
 
@@ -403,15 +416,16 @@ class TaggedObjectCodecTest {
                 TestFixtures.Inner::setValue)
             .build();
 
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("data", innerCodec)
             .build();
 
     TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(99);
 
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
     obj.add("data", inner);
 
     @SuppressWarnings("unchecked")
@@ -426,12 +440,13 @@ class TaggedObjectCodecTest {
 
   @Test
   void inspect_handles_duplicate_tags() {
-    TaggedObjectCodec<TestTagged, String> codec =
-        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+    TaggedObjectCodec<TestFixtures.TestTagged, String> codec =
+        TaggedObjectCodec.<TestFixtures.TestTagged, String>builder(
+                TestFixtures.TestTagged::new, TAG_CODEC)
             .tag("code", Codecs.uint16())
             .build();
 
-    TestTagged obj = new TestTagged();
+    TestFixtures.TestTagged obj = new TestFixtures.TestTagged();
     obj.add("code", 1);
     obj.add("code", 2);
 
@@ -450,27 +465,6 @@ class TaggedObjectCodecTest {
     @Override
     public V decode(InputStream input) {
       throw new IllegalStateException("always fails");
-    }
-  }
-
-  static class TestTagged implements Tagged<TestTagged, String> {
-    private final Map<String, List<Object>> fields = new LinkedHashMap<>();
-
-    @Override
-    public Set<String> tags() {
-      return fields.keySet();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V> List<V> getAll(String tag) {
-      return (List<V>) fields.getOrDefault(tag, List.of());
-    }
-
-    @Override
-    public <V> TestTagged add(String tag, V value) {
-      fields.computeIfAbsent(tag, k -> new ArrayList<>()).add(value);
-      return this;
     }
   }
 }

@@ -400,7 +400,7 @@ class TaggedObjectCodecTest {
     obj.add("name", "hello");
 
     @SuppressWarnings("unchecked")
-    Map<String, Object> result = (Map<String, Object>) codec.inspect(obj);
+    Map<String, Object> result = (Map<String, Object>) Inspector.inspect(codec, obj);
 
     assertThat(result).containsEntry("code", List.of(42)).containsEntry("name", List.of("hello"));
   }
@@ -429,7 +429,7 @@ class TaggedObjectCodecTest {
     obj.add("data", inner);
 
     @SuppressWarnings("unchecked")
-    Map<String, Object> result = (Map<String, Object>) codec.inspect(obj);
+    Map<String, Object> result = (Map<String, Object>) Inspector.inspect(codec, obj);
 
     assertThat(result).containsKey("data");
     @SuppressWarnings("unchecked")
@@ -451,7 +451,7 @@ class TaggedObjectCodecTest {
     obj.add("code", 2);
 
     @SuppressWarnings("unchecked")
-    Map<String, Object> result = (Map<String, Object>) codec.inspect(obj);
+    Map<String, Object> result = (Map<String, Object>) Inspector.inspect(codec, obj);
 
     assertThat(result).containsEntry("code", List.of(1, 2));
   }

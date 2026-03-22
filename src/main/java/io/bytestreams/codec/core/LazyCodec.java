@@ -24,7 +24,7 @@ import java.util.function.Supplier;
  *
  * @param <V> the type of value this codec handles
  */
-public class LazyCodec<V> implements Codec<V>, Inspector<V> {
+public class LazyCodec<V> implements Codec<V> {
   private final Supplier<Codec<V>> supplier;
   private Codec<V> resolved;
 
@@ -32,7 +32,7 @@ public class LazyCodec<V> implements Codec<V>, Inspector<V> {
     this.supplier = Objects.requireNonNull(supplier, "supplier");
   }
 
-  private synchronized Codec<V> codec() {
+  synchronized Codec<V> codec() {
     if (resolved == null) {
       resolved = Objects.requireNonNull(supplier.get(), "supplier.get()");
     }
@@ -47,10 +47,5 @@ public class LazyCodec<V> implements Codec<V>, Inspector<V> {
   @Override
   public V decode(InputStream input) throws IOException {
     return codec().decode(input);
-  }
-
-  @Override
-  public Object inspect(V value) {
-    return codec() instanceof Inspector<?> nested ? Inspector.inspect(nested, value) : value;
   }
 }

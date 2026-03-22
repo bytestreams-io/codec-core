@@ -78,7 +78,7 @@ class PairCodecTest {
   void inspect_returns_map() {
     PairCodec<Integer, Integer> codec = Codecs.pair(Codecs.uint8(), Codecs.uint16());
 
-    Object result = codec.inspect(new Pair<>(42, 1000));
+    Object result = Inspector.inspect(codec, new Pair<>(42, 1000));
 
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("first", 42);
@@ -98,7 +98,7 @@ class PairCodecTest {
     TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(99);
 
-    Object result = codec.inspect(new Pair<>(42, inner));
+    Object result = Inspector.inspect(codec, new Pair<>(42, inner));
 
     Map<String, Object> expectedInner = new LinkedHashMap<>();
     expectedInner.put("value", 99);

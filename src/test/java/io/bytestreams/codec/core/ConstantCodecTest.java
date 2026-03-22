@@ -95,7 +95,7 @@ class ConstantCodecTest {
     byte[] expectedBytes = {0x01, 0x02, 0x03};
     Codec<byte[]> codec = Codecs.constant(expectedBytes);
 
-    Object result = Inspector.inspect((Inspector<?>) codec, new byte[3]);
+    Object result = Inspector.inspect(codec, new byte[3]);
 
     assertThat(result).isEqualTo(expectedBytes).isNotSameAs(expectedBytes);
   }

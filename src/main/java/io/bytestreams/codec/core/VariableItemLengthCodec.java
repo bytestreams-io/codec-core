@@ -29,10 +29,10 @@ import java.util.function.ToIntFunction;
  *
  * @param <V> the type of value this codec handles
  */
-public class VariableItemLengthCodec<V> implements Codec<V>, Inspector<V> {
+public class VariableItemLengthCodec<V> implements Codec<V> {
   private final Codec<Integer> lengthCodec;
-  private final ToIntFunction<V> lengthOf;
-  private final IntFunction<Codec<V>> codecFactory;
+  final ToIntFunction<V> lengthOf;
+  final IntFunction<Codec<V>> codecFactory;
 
   /**
    * Creates a new variable item-length codec.
@@ -75,11 +75,5 @@ public class VariableItemLengthCodec<V> implements Codec<V>, Inspector<V> {
   public V decode(InputStream input) throws IOException {
     int length = lengthCodec.decode(input);
     return codecFactory.apply(length).decode(input);
-  }
-
-  @Override
-  public Object inspect(V value) {
-    Codec<V> codec = codecFactory.apply(lengthOf.applyAsInt(value));
-    return codec instanceof Inspector<?> nested ? Inspector.inspect(nested, value) : value;
   }
 }

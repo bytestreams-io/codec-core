@@ -171,7 +171,7 @@ class VariableItemLengthCodecTest {
     TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(7);
 
-    Object result = Inspector.inspect((Inspector<?>) codec, inner);
+    Object result = Inspector.inspect(codec, inner);
 
     Map<String, Object> expectedInner = new LinkedHashMap<>();
     expectedInner.put("value", 7);
@@ -182,7 +182,7 @@ class VariableItemLengthCodecTest {
   void inspect_returns_raw_when_inner_not_introspectable() {
     Codec<String> codec = Codecs.prefixed(Codecs.uint8(), v -> 1, len -> Codecs.ascii(5));
 
-    Object result = Inspector.inspect((Inspector<?>) codec, "hello");
+    Object result = Inspector.inspect(codec, "hello");
 
     assertThat(result).isEqualTo("hello");
   }

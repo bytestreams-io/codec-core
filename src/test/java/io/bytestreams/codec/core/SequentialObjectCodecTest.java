@@ -431,7 +431,7 @@ class SequentialObjectCodecTest {
     obj.setName("Alice");
     obj.setId(30);
 
-    Object result = codec.inspect(obj);
+    Object result = Inspector.inspect(codec, obj);
 
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("name", "Alice");
@@ -458,7 +458,7 @@ class SequentialObjectCodecTest {
     obj.setId(0);
     obj.setTag("xyz");
 
-    Object result = codec.inspect(obj);
+    Object result = Inspector.inspect(codec, obj);
 
     @SuppressWarnings("unchecked")
     Map<String, Object> map = (Map<String, Object>) result;
@@ -486,7 +486,7 @@ class SequentialObjectCodecTest {
     outer.setId(1);
     outer.setInner(inner);
 
-    Object result = outerCodec.inspect(outer);
+    Object result = Inspector.inspect(outerCodec, outer);
 
     Map<String, Object> expectedInner = new LinkedHashMap<>();
     expectedInner.put("value", 42);

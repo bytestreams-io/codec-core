@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -38,13 +36,13 @@ import org.slf4j.MDC;
  *
  * @param <T> the type of object to encode/decode
  */
-public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
+public class SequentialObjectCodec<T> implements Codec<T> {
 
   private static final Logger logger = LoggerFactory.getLogger(SequentialObjectCodec.class);
   private static final String MDC_KEY = "codec.field";
   private static final String LOG_KEY_FIELD = "field";
 
-  private final List<FieldCodec<T, ?>> fields;
+  final List<FieldCodec<T, ?>> fields;
   private final Supplier<T> factory;
 
   SequentialObjectCodec(List<FieldCodec<T, ?>> fields, Supplier<T> factory) {
@@ -91,22 +89,6 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
     }
     logger.atDebug().addKeyValue("type", instance.getClass().getSimpleName()).log("decoded");
     return instance;
-  }
-
-  @Override
-  public Object inspect(T object) {
-    Map<String, Object> result = new LinkedHashMap<>();
-    for (FieldCodec<T, ?> field : fields) {
-      if (field.presence().test(object)) {
-        Object value = field.get(object);
-        if (field.codec() instanceof Inspector<?> nested) {
-          result.put(field.name(), Inspector.inspect(nested, value));
-        } else {
-          result.put(field.name(), value);
-        }
-      }
-    }
-    return result;
   }
 
   /** Builder for constructing a SequentialObjectCodec. */

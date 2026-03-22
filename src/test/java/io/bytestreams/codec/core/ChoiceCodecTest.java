@@ -147,7 +147,7 @@ class ChoiceCodecTest {
     InnerCircle circle = new InnerCircle();
     circle.setRadius(42);
 
-    Object result = Inspector.inspect((Inspector<?>) codec, circle);
+    Object result = Inspector.inspect(codec, circle);
 
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("radius", 42);
@@ -158,7 +158,7 @@ class ChoiceCodecTest {
   void inspect_returns_raw_when_no_codec_matched() {
     Codec<Shape> codec = shapeCodec();
 
-    Object result = Inspector.inspect((Inspector<?>) codec, new Triangle());
+    Object result = Inspector.inspect(codec, new Triangle());
 
     assertThat(result).isInstanceOf(Triangle.class);
   }
@@ -187,7 +187,7 @@ class ChoiceCodecTest {
             .on(Rectangle.class, RECTANGLE_CODEC)
             .build();
 
-    Object result = Inspector.inspect((Inspector<?>) codec, new Circle(42));
+    Object result = Inspector.inspect(codec, new Circle(42));
 
     assertThat(result).isInstanceOf(Circle.class);
   }

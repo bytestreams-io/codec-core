@@ -4,8 +4,6 @@ import io.bytestreams.codec.core.util.Pair;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -26,9 +24,9 @@ import java.util.function.Function;
  * @param <A> the type of the first value
  * @param <B> the type of the second value
  */
-public class PairCodec<A, B> implements Codec<Pair<A, B>>, Inspector<Pair<A, B>> {
-  private final Codec<A> first;
-  private final Codec<B> second;
+public class PairCodec<A, B> implements Codec<Pair<A, B>> {
+  final Codec<A> first;
+  final Codec<B> second;
 
   PairCodec(Codec<A> first, Codec<B> second) {
     this.first = Objects.requireNonNull(first, "first");
@@ -62,13 +60,5 @@ public class PairCodec<A, B> implements Codec<Pair<A, B>>, Inspector<Pair<A, B>>
     return xmap(
         pair -> constructor.apply(pair.first(), pair.second()),
         v -> new Pair<>(getFirst.apply(v), getSecond.apply(v)));
-  }
-
-  @Override
-  public Object inspect(Pair<A, B> value) {
-    Map<String, Object> result = new LinkedHashMap<>();
-    result.put("first", Inspector.tryInspect(first, value.first()));
-    result.put("second", Inspector.tryInspect(second, value.second()));
-    return result;
   }
 }

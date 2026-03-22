@@ -96,7 +96,7 @@ class LazyCodecTest {
     TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(55);
 
-    Object result = Inspector.inspect((Inspector<?>) codec, inner);
+    Object result = Inspector.inspect(codec, inner);
 
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("value", 55);
@@ -107,7 +107,7 @@ class LazyCodecTest {
   void inspect_returns_raw_when_resolved_not_introspectable() {
     Codec<Integer> codec = Codecs.lazy(Codecs::uint8);
 
-    Object result = Inspector.inspect((Inspector<?>) codec, 10);
+    Object result = Inspector.inspect(codec, 10);
 
     assertThat(result).isEqualTo(10);
   }

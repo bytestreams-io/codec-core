@@ -14,6 +14,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * A codec for objects with sequential fields.
@@ -36,6 +39,10 @@ import java.util.function.Supplier;
  * @param <T> the type of object to encode/decode
  */
 public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
+
+  private static final Logger logger = LoggerFactory.getLogger(SequentialObjectCodec.class);
+  private static final String MDC_KEY = "codec.field";
+  private static final String LOG_KEY_FIELD = "field";
 
   private final List<FieldCodec<T, ?>> fields;
   private final Supplier<T> factory;
@@ -67,6 +74,12 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
         fieldCount++;
       }
     }
+    logger
+        .atDebug()
+        .addKeyValue("type", value.getClass().getSimpleName())
+        .addKeyValue("fields", fieldCount)
+        .addKeyValue("bytes", totalBytes)
+        .log("encoded");
     return new EncodeResult(fieldCount, totalBytes);
   }
 
@@ -76,6 +89,7 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
     for (FieldCodec<T, ?> field : fields) {
       field.decode(instance, input);
     }
+    logger.atDebug().addKeyValue("type", instance.getClass().getSimpleName()).log("decoded");
     return instance;
   }
 
@@ -213,28 +227,67 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspector<T> {
       return getter.apply(object);
     }
 
-    EncodeResult encode(T object, OutputStream output) {
-      if (presence.test(object)) {
-        try {
-          return codec.encode(getter.apply(object), output);
-        } catch (CodecException e) {
-          throw e.withField(name);
-        } catch (Exception e) {
-          throw new CodecException(e.getMessage(), e).withField(name);
-        }
+    private static String pushFieldPath(String name) {
+      String previous = MDC.get(MDC_KEY);
+      MDC.put(MDC_KEY, previous == null ? name : previous + "." + name);
+      return previous;
+    }
+
+    private static void popFieldPath(String previous) {
+      if (previous == null) {
+        MDC.remove(MDC_KEY);
       } else {
+        MDC.put(MDC_KEY, previous);
+      }
+    }
+
+    EncodeResult encode(T object, OutputStream output) {
+      if (!presence.test(object)) {
+        logger.atTrace().addKeyValue(LOG_KEY_FIELD, name).log("skipped");
         return EncodeResult.EMPTY;
+      }
+      boolean trace = logger.isTraceEnabled();
+      String previousPath = trace ? pushFieldPath(name) : null;
+      try {
+        EncodeResult result = codec.encode(getter.apply(object), output);
+        if (trace) {
+          logger
+              .atTrace()
+              .addKeyValue(LOG_KEY_FIELD, MDC.get(MDC_KEY))
+              .addKeyValue("bytes", result.bytes())
+              .log("encoded");
+        }
+        return result;
+      } catch (CodecException e) {
+        throw e.withField(name);
+      } catch (Exception e) {
+        throw new CodecException(e.getMessage(), e).withField(name);
+      } finally {
+        if (trace) {
+          popFieldPath(previousPath);
+        }
       }
     }
 
     void decode(T object, InputStream input) {
-      if (presence.test(object)) {
-        try {
-          setter.accept(object, codec.decode(input));
-        } catch (CodecException e) {
-          throw e.withField(name);
-        } catch (Exception e) {
-          throw new CodecException(e.getMessage(), e).withField(name);
+      if (!presence.test(object)) {
+        logger.atTrace().addKeyValue(LOG_KEY_FIELD, name).log("skipped");
+        return;
+      }
+      boolean trace = logger.isTraceEnabled();
+      String previousPath = trace ? pushFieldPath(name) : null;
+      try {
+        setter.accept(object, codec.decode(input));
+        if (trace) {
+          logger.atTrace().addKeyValue(LOG_KEY_FIELD, MDC.get(MDC_KEY)).log("decoded");
+        }
+      } catch (CodecException e) {
+        throw e.withField(name);
+      } catch (Exception e) {
+        throw new CodecException(e.getMessage(), e).withField(name);
+      } finally {
+        if (trace) {
+          popFieldPath(previousPath);
         }
       }
     }

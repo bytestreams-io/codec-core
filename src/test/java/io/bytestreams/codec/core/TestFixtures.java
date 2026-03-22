@@ -1,7 +1,44 @@
 package io.bytestreams.codec.core;
 
-/** Shared test helper classes for inspect() tests across codec test files. */
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.slf4j.LoggerFactory;
+
+/** Shared test helper classes across codec test files. */
 class TestFixtures {
+
+  static AutoCloseable disableLogging(Class<?> clazz) {
+    Logger logger = (Logger) LoggerFactory.getLogger(clazz);
+    Level original = logger.getLevel();
+    logger.setLevel(Level.OFF);
+    return () -> logger.setLevel(original);
+  }
+
+  static class TestTagged implements Tagged<TestTagged, String> {
+    private final Map<String, List<Object>> fields = new LinkedHashMap<>();
+
+    @Override
+    public Set<String> tags() {
+      return fields.keySet();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <V> List<V> getAll(String tag) {
+      return (List<V>) fields.getOrDefault(tag, List.of());
+    }
+
+    @Override
+    public <V> TestTagged add(String tag, V value) {
+      fields.computeIfAbsent(tag, k -> new ArrayList<>()).add(value);
+      return this;
+    }
+  }
 
   static class Inner {
     private int value;

@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * A codec for objects with tag-identified fields.
@@ -31,6 +34,10 @@ import java.util.function.Supplier;
  * @param <K> the tag key type
  */
 public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, Inspector<T> {
+
+  private static final Logger logger = LoggerFactory.getLogger(TaggedObjectCodec.class);
+  private static final String MDC_KEY = "codec.field";
+  private static final String LOG_KEY_FIELD = "field";
 
   private final Codec<K> tagCodec;
   private final Map<K, Codec<?>> codecs;
@@ -65,19 +72,45 @@ public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, I
     int totalBytes = 0;
     for (K tag : value.tags()) {
       for (Object item : value.getAll(tag)) {
-        try {
-          totalBytes += tagCodec.encode(tag, output).bytes();
-          Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
-          totalBytes += encodeValue(codec, item, output).bytes();
-          count++;
-        } catch (CodecException e) {
-          throw e.withField(String.valueOf(tag));
-        } catch (Exception e) {
-          throw new CodecException(e.getMessage(), e).withField(String.valueOf(tag));
-        }
+        totalBytes += encodeTag(tag, item, output);
+        count++;
       }
     }
+    logger
+        .atDebug()
+        .addKeyValue("type", value.getClass().getSimpleName())
+        .addKeyValue("tags", count)
+        .addKeyValue("bytes", totalBytes)
+        .log("encoded");
     return new EncodeResult(count, totalBytes);
+  }
+
+  private int encodeTag(K tag, Object item, OutputStream output) throws IOException {
+    String tagStr = String.valueOf(tag);
+    boolean trace = logger.isTraceEnabled();
+    String previousPath = trace ? pushFieldPath(tagStr) : null;
+    try {
+      int tagBytes = tagCodec.encode(tag, output).bytes();
+      Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
+      int valueBytes = encodeValue(codec, item, output).bytes();
+      int fieldBytes = tagBytes + valueBytes;
+      if (trace) {
+        logger
+            .atTrace()
+            .addKeyValue(LOG_KEY_FIELD, MDC.get(MDC_KEY))
+            .addKeyValue("bytes", fieldBytes)
+            .log("encoded");
+      }
+      return fieldBytes;
+    } catch (CodecException e) {
+      throw e.withField(tagStr);
+    } catch (Exception e) {
+      throw new CodecException(e.getMessage(), e).withField(tagStr);
+    } finally {
+      if (trace) {
+        popFieldPath(previousPath);
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -91,22 +124,60 @@ public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, I
     T instance = Objects.requireNonNull(factory.get(), "factory.get() returned null");
     PushbackInputStream pushback = new PushbackInputStream(input);
     int next;
+    int count = 0;
     while ((next = pushback.read()) != -1) {
       pushback.unread(next);
-      K tag = null;
-      try {
-        tag = tagCodec.decode(pushback);
-        Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
-        Object value = codec.decode(pushback);
-        instance.add(tag, value);
-      } catch (CodecException e) {
-        throw tag != null ? e.withField(String.valueOf(tag)) : e;
-      } catch (Exception e) {
-        CodecException ce = new CodecException(e.getMessage(), e);
-        throw tag != null ? ce.withField(String.valueOf(tag)) : ce;
-      }
+      decodeTag(instance, pushback);
+      count++;
     }
+    logger
+        .atDebug()
+        .addKeyValue("type", instance.getClass().getSimpleName())
+        .addKeyValue("tags", count)
+        .log("decoded");
     return instance;
+  }
+
+  private void decodeTag(T instance, PushbackInputStream pushback) throws IOException {
+    K tag = null;
+    String tagStr = null;
+    try {
+      tag = tagCodec.decode(pushback);
+      tagStr = String.valueOf(tag);
+      boolean trace = logger.isTraceEnabled();
+      String previousPath = trace ? pushFieldPath(tagStr) : null;
+      try {
+        Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
+        Object tagValue = codec.decode(pushback);
+        instance.add(tag, tagValue);
+        if (trace) {
+          logger.atTrace().addKeyValue(LOG_KEY_FIELD, MDC.get(MDC_KEY)).log("decoded");
+        }
+      } finally {
+        if (trace) {
+          popFieldPath(previousPath);
+        }
+      }
+    } catch (CodecException e) {
+      throw tagStr != null ? e.withField(tagStr) : e;
+    } catch (Exception e) {
+      CodecException ce = new CodecException(e.getMessage(), e);
+      throw tagStr != null ? ce.withField(tagStr) : ce;
+    }
+  }
+
+  private static String pushFieldPath(String name) {
+    String previous = MDC.get(MDC_KEY);
+    MDC.put(MDC_KEY, previous == null ? name : previous + "." + name);
+    return previous;
+  }
+
+  private static void popFieldPath(String previous) {
+    if (previous == null) {
+      MDC.remove(MDC_KEY);
+    } else {
+      MDC.put(MDC_KEY, previous);
+    }
   }
 
   @Override

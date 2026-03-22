@@ -218,7 +218,7 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
       return presence;
     }
 
-    Object get(T object) {
+    V get(T object) {
       return getter.apply(object);
     }
 

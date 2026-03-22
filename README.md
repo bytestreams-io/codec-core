@@ -457,6 +457,83 @@ Codec<Person> fixed = Codecs.<Person>sequential(Person::new)
     .build();
 ```
 
+## Field Introspection
+
+The `Inspector` utility produces a structured representation — `Map`, `List`, or scalar — from a decoded value and its codec. This is useful for logging, JSON serialization, OTEL span attributes, or diagnostics without knowing the object's type.
+
+```java
+SequentialObjectCodec<Message> codec = Codecs.<Message>sequential(Message::new)
+    .field("name", Codecs.ascii(20), Message::getName, Message::setName)
+    .field("age", Codecs.uint8(), Message::getAge, Message::setAge)
+    .field("address", addressCodec, Message::getAddress, Message::setAddress)
+    .build();
+
+Message msg = codec.decode(input);
+Object structure = Inspector.inspect(codec, msg);
+// {name=Alice, age=30, address={street=123 Main St, city=Springfield}}
+```
+
+`Inspector.inspect()` recurses through nested codecs automatically — sequential fields, lists, pairs, triples, tagged fields, and through wrapper codecs like `prefixed()` and `xmap()`. Primitive codecs return the value as-is.
+
+| Codec type | `inspect()` returns |
+|------------|-------------------|
+| Sequential object | `Map<String, Object>` — field name to value |
+| Tagged object | `Map<String, Object>` — tag (as string) to `List<Object>` |
+| List (fixed/stream) | `List<Object>` — recurses elements |
+| Pair | `Map<String, Object>` — `"first"` and `"second"` keys |
+| Triple | `Map<String, Object>` — `"first"`, `"second"`, and `"third"` keys |
+| Choice | Delegates to the matched branch codec |
+| Wrapper (prefixed, xmap, lazy) | Delegates to the inner codec |
+| Constant | Returns the expected byte array |
+| Primitive (uint8, ascii, etc.) | Returns value as-is |
+
+### Custom codecs
+
+Custom codec implementations can participate in inspection by implementing `Inspectable<T>`. This is also the natural place to handle sensitive data — the codec author controls what `inspect()` returns:
+
+```java
+class PanCodec extends FixedCodePointStringCodec implements Inspectable<String> {
+    PanCodec() { super(16, US_ASCII); }
+
+    @Override
+    public Object inspect(String value) {
+        return "****" + value.substring(12);  // mask to last 4 digits
+    }
+}
+```
+
+The `Inspector` checks for `Inspectable` first, so custom codecs always take precedence over the built-in inspection logic.
+
+## Structured Logging
+
+Object codecs log encode/decode operations using SLF4J's fluent API with structured key-value pairs. Consumers provide the SLF4J backend (Logback, Log4j2, etc.).
+
+| Level | What | When |
+|-------|------|------|
+| `DEBUG` | Object summary (type, field count, byte count) | Per object encode/decode |
+| `TRACE` | Individual field (name, bytes, present/skipped) | Per field encode/decode |
+
+```
+14:23:01.532 TRACE SequentialObjectCodec - field=name bytes=20 encoded
+14:23:01.532 TRACE SequentialObjectCodec - field=age bytes=1 encoded
+14:23:01.532 DEBUG SequentialObjectCodec - type=Message fields=2 bytes=21 encoded
+```
+
+### Nested field paths
+
+When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field path. A nested codec's logging includes the path from the root:
+
+```
+14:23:01.532 TRACE SequentialObjectCodec - field=address.street bytes=30 encoded
+14:23:01.532 TRACE SequentialObjectCodec - field=address.city bytes=20 encoded
+```
+
+### Performance
+
+- MDC operations and TRACE logging are guarded by `logger.isTraceEnabled()` — zero overhead when TRACE is disabled
+- DEBUG logging uses the SLF4J fluent API, which is a no-op when DEBUG is disabled
+- Field values are never logged (security: sensitive data)
+
 ## Available Codecs
 
 | Method | Description |
@@ -498,10 +575,14 @@ Codec<Person> fixed = Codecs.<Person>sequential(Person::new)
 | `DataObject.field(name, codec, presence)` | Create a `FieldSpec` with a presence predicate |
 | `codec.xmap(decoder, encoder)` / `codec.xmap(converter)` | Bidirectional type mapping |
 
-## Data Object Classes
+## Interfaces and Data Object Classes
 
 | Class | Description |
 |-------|-------------|
+| `Codec` | Core interface for encoding and decoding values to/from byte streams |
+| `Inspector` | Utility class for producing structured representations of decoded values |
+| `Inspectable` | Extension point for custom codecs to participate in `Inspector.inspect()` |
+| `Tagged` | Interface for objects with tag-identified fields (`tags()`, `getAll()`, `add()`) |
 | `FieldSpec` | Interface bundling field name, codec, getter, setter, and presence predicate |
 | `DataObject` | Abstract map-backed data object with protected access — subclass for typed, controlled fields |
 | `SimpleData` | `DataObject` subclass with public access to all fields |
@@ -527,6 +608,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 
 - Java 17+ (runtime)
 - Java 21+ (build)
+- SLF4J API 2.x (compile dependency — consumers provide a backend like Logback or Log4j2)
 
 ## License
 

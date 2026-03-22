@@ -242,15 +242,16 @@ class SequentialObjectCodecTest {
 
   @Test
   void decode_nested_codec_error_includes_full_field_path() {
-    SequentialObjectCodec<InnerObject> innerCodec =
-        SequentialObjectCodec.<InnerObject>builder(InnerObject::new)
-            .field("value", Codecs.uint8(), InnerObject::getValue, InnerObject::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
-    SequentialObjectCodec<OuterObject> outerCodec =
-        SequentialObjectCodec.<OuterObject>builder(OuterObject::new)
-            .field("id", Codecs.uint16(), OuterObject::getId, OuterObject::setId)
-            .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
+    SequentialObjectCodec<TestFixtures.Outer> outerCodec =
+        SequentialObjectCodec.<TestFixtures.Outer>builder(TestFixtures.Outer::new)
+            .field("id", Codecs.uint16(), TestFixtures.Outer::getId, TestFixtures.Outer::setId)
+            .field("inner", innerCodec, TestFixtures.Outer::getInner, TestFixtures.Outer::setInner)
             .build();
 
     // Only provide id bytes, not inner.value
@@ -278,20 +279,21 @@ class SequentialObjectCodecTest {
           }
         };
 
-    SequentialObjectCodec<InnerObject> innerCodec =
-        SequentialObjectCodec.<InnerObject>builder(InnerObject::new)
-            .field("value", throwingCodec, InnerObject::getValue, InnerObject::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", throwingCodec, TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
-    SequentialObjectCodec<OuterObject> outerCodec =
-        SequentialObjectCodec.<OuterObject>builder(OuterObject::new)
-            .field("id", Codecs.uint16(), OuterObject::getId, OuterObject::setId)
-            .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
+    SequentialObjectCodec<TestFixtures.Outer> outerCodec =
+        SequentialObjectCodec.<TestFixtures.Outer>builder(TestFixtures.Outer::new)
+            .field("id", Codecs.uint16(), TestFixtures.Outer::getId, TestFixtures.Outer::setId)
+            .field("inner", innerCodec, TestFixtures.Outer::getInner, TestFixtures.Outer::setInner)
             .build();
 
-    OuterObject obj = new OuterObject();
+    TestFixtures.Outer obj = new TestFixtures.Outer();
     obj.setId(1);
-    obj.setInner(new InnerObject());
+    obj.setInner(new TestFixtures.Inner());
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -302,27 +304,28 @@ class SequentialObjectCodecTest {
 
   @Test
   void nested_object_codec() throws IOException {
-    SequentialObjectCodec<InnerObject> innerCodec =
-        SequentialObjectCodec.<InnerObject>builder(InnerObject::new)
-            .field("value", Codecs.uint8(), InnerObject::getValue, InnerObject::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
-    SequentialObjectCodec<OuterObject> outerCodec =
-        SequentialObjectCodec.<OuterObject>builder(OuterObject::new)
-            .field("id", Codecs.uint16(), OuterObject::getId, OuterObject::setId)
-            .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
+    SequentialObjectCodec<TestFixtures.Outer> outerCodec =
+        SequentialObjectCodec.<TestFixtures.Outer>builder(TestFixtures.Outer::new)
+            .field("id", Codecs.uint16(), TestFixtures.Outer::getId, TestFixtures.Outer::setId)
+            .field("inner", innerCodec, TestFixtures.Outer::getInner, TestFixtures.Outer::setInner)
             .build();
 
-    OuterObject original = new OuterObject();
+    TestFixtures.Outer original = new TestFixtures.Outer();
     original.setId(999);
-    InnerObject inner = new InnerObject();
+    TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(42);
     original.setInner(inner);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     outerCodec.encode(original, output);
 
-    OuterObject decoded = outerCodec.decode(new ByteArrayInputStream(output.toByteArray()));
+    TestFixtures.Outer decoded = outerCodec.decode(new ByteArrayInputStream(output.toByteArray()));
 
     assertThat(decoded.getId()).isEqualTo(999);
     assertThat(decoded.getInner().getValue()).isEqualTo(42);
@@ -464,21 +467,22 @@ class SequentialObjectCodecTest {
 
   @Test
   void inspect_recurses_into_nested_sequential() {
-    SequentialObjectCodec<InnerObject> innerCodec =
-        SequentialObjectCodec.<InnerObject>builder(InnerObject::new)
-            .field("value", Codecs.uint8(), InnerObject::getValue, InnerObject::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
-    SequentialObjectCodec<OuterObject> outerCodec =
-        SequentialObjectCodec.<OuterObject>builder(OuterObject::new)
-            .field("id", Codecs.uint8(), OuterObject::getId, OuterObject::setId)
-            .field("inner", innerCodec, OuterObject::getInner, OuterObject::setInner)
+    SequentialObjectCodec<TestFixtures.Outer> outerCodec =
+        SequentialObjectCodec.<TestFixtures.Outer>builder(TestFixtures.Outer::new)
+            .field("id", Codecs.uint8(), TestFixtures.Outer::getId, TestFixtures.Outer::setId)
+            .field("inner", innerCodec, TestFixtures.Outer::getInner, TestFixtures.Outer::setInner)
             .build();
 
-    InnerObject inner = new InnerObject();
+    TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(42);
 
-    OuterObject outer = new OuterObject();
+    TestFixtures.Outer outer = new TestFixtures.Outer();
     outer.setId(1);
     outer.setInner(inner);
 
@@ -523,39 +527,6 @@ class SequentialObjectCodecTest {
 
     public void setTag(String tag) {
       this.tag = tag;
-    }
-  }
-
-  static class InnerObject {
-    private int value;
-
-    public int getValue() {
-      return value;
-    }
-
-    public void setValue(int value) {
-      this.value = value;
-    }
-  }
-
-  static class OuterObject {
-    private int id;
-    private InnerObject inner;
-
-    public int getId() {
-      return id;
-    }
-
-    public void setId(int id) {
-      this.id = id;
-    }
-
-    public InnerObject getInner() {
-      return inner;
-    }
-
-    public void setInner(InnerObject inner) {
-      this.inner = inner;
     }
   }
 }

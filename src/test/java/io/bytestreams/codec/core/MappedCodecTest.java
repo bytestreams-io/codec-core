@@ -104,14 +104,15 @@ class MappedCodecTest {
 
   @Test
   void inspect_delegates_through_reverse_map() {
-    SequentialObjectCodec<Inner> innerCodec =
-        SequentialObjectCodec.<Inner>builder(Inner::new)
-            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
-    Codec<Inner> mapped = innerCodec.xmap(v -> v, v -> v);
+    Codec<TestFixtures.Inner> mapped = innerCodec.xmap(v -> v, v -> v);
 
-    Inner inner = new Inner();
+    TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(99);
 
     Object result = Inspector.inspect((Inspector<?>) mapped, inner);
@@ -128,17 +129,5 @@ class MappedCodecTest {
     Object result = Inspector.inspect((Inspector<?>) mapped, "42");
 
     assertThat(result).isEqualTo("42");
-  }
-
-  static class Inner {
-    private int value;
-
-    int getValue() {
-      return value;
-    }
-
-    void setValue(int value) {
-      this.value = value;
-    }
   }
 }

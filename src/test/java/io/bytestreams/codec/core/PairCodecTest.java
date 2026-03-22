@@ -7,6 +7,8 @@ import io.bytestreams.codec.core.util.Pair;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class PairCodecTest {
@@ -70,6 +72,40 @@ class PairCodecTest {
     assertThatThrownBy(() -> new PairCodec<>(first, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("second");
+  }
+
+  @Test
+  void inspect_returns_map() {
+    PairCodec<Integer, Integer> codec = Codecs.pair(Codecs.uint8(), Codecs.uint16());
+
+    Object result = codec.inspect(new Pair<>(42, 1000));
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("first", 42);
+    expected.put("second", 1000);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void inspect_recurses_into_introspectable_elements() {
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
+            .build();
+    PairCodec<Integer, TestFixtures.Inner> codec = new PairCodec<>(Codecs.uint8(), innerCodec);
+
+    TestFixtures.Inner inner = new TestFixtures.Inner();
+    inner.setValue(99);
+
+    Object result = codec.inspect(new Pair<>(42, inner));
+
+    Map<String, Object> expectedInner = new LinkedHashMap<>();
+    expectedInner.put("value", 99);
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("first", 42);
+    expected.put("second", expectedInner);
+    assertThat(result).isEqualTo(expected);
   }
 
   static class Point {

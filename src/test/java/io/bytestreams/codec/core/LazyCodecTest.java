@@ -85,14 +85,15 @@ class LazyCodecTest {
 
   @Test
   void inspect_delegates_to_resolved_codec() {
-    SequentialObjectCodec<Inner> innerCodec =
-        SequentialObjectCodec.<Inner>builder(Inner::new)
-            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        SequentialObjectCodec.<TestFixtures.Inner>builder(TestFixtures.Inner::new)
+            .field(
+                "value", Codecs.uint8(), TestFixtures.Inner::getValue, TestFixtures.Inner::setValue)
             .build();
 
-    Codec<Inner> codec = Codecs.lazy(() -> innerCodec);
+    Codec<TestFixtures.Inner> codec = Codecs.lazy(() -> innerCodec);
 
-    Inner inner = new Inner();
+    TestFixtures.Inner inner = new TestFixtures.Inner();
     inner.setValue(55);
 
     Object result = Inspector.inspect((Inspector<?>) codec, inner);
@@ -118,18 +119,6 @@ class LazyCodecTest {
     Node(int value, List<Node> children) {
       this.value = value;
       this.children = children;
-    }
-  }
-
-  static class Inner {
-    private int value;
-
-    int getValue() {
-      return value;
-    }
-
-    void setValue(int value) {
-      this.value = value;
     }
   }
 }

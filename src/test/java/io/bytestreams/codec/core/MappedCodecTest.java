@@ -9,6 +9,7 @@ import io.bytestreams.codec.core.util.Converters;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -99,5 +100,45 @@ class MappedCodecTest {
     assertThat(output.toString(US_ASCII)).isEqualTo("hi   ");
     ByteArrayInputStream input = new ByteArrayInputStream("hello".getBytes(US_ASCII));
     assertThat(codec.decode(input)).isEqualTo("HELLO");
+  }
+
+  @Test
+  void inspect_delegates_through_reverse_map() {
+    SequentialObjectCodec<Inner> innerCodec =
+        SequentialObjectCodec.<Inner>builder(Inner::new)
+            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+            .build();
+
+    Codec<Inner> mapped = innerCodec.xmap(v -> v, v -> v);
+
+    Inner inner = new Inner();
+    inner.setValue(99);
+
+    Object result = Inspector.inspect((Inspector<?>) mapped, inner);
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("value", 99);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void inspect_returns_raw_when_inner_not_introspectable() {
+    Codec<String> mapped = Codecs.uint8().xmap(String::valueOf, Integer::parseInt);
+
+    Object result = Inspector.inspect((Inspector<?>) mapped, "42");
+
+    assertThat(result).isEqualTo("42");
+  }
+
+  static class Inner {
+    private int value;
+
+    int getValue() {
+      return value;
+    }
+
+    void setValue(int value) {
+      this.value = value;
+    }
   }
 }

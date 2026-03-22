@@ -12,6 +12,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -114,5 +116,45 @@ class VariableByteLengthCodecTest {
     assertThatThrownBy(() -> new VariableByteLengthCodec<>(uint8, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("valueCodec");
+  }
+
+  @Test
+  void inspect_delegates_to_inner() {
+    SequentialObjectCodec<Inner> innerCodec =
+        SequentialObjectCodec.<Inner>builder(Inner::new)
+            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+            .build();
+
+    Codec<Inner> codec = Codecs.prefixed(Codecs.uint16(), innerCodec);
+
+    Inner inner = new Inner();
+    inner.setValue(42);
+
+    Object result = Inspector.inspect((Inspector<?>) codec, inner);
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("value", 42);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void inspect_returns_raw_when_inner_not_introspectable() {
+    Codec<String> codec = Codecs.prefixed(Codecs.uint16(), Codecs.ascii(5));
+
+    Object result = Inspector.inspect((Inspector<?>) codec, "hello");
+
+    assertThat(result).isEqualTo("hello");
+  }
+
+  static class Inner {
+    private int value;
+
+    int getValue() {
+      return value;
+    }
+
+    void setValue(int value) {
+      this.value = value;
+    }
   }
 }

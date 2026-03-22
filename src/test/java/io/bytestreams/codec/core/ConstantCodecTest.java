@@ -89,4 +89,14 @@ class ConstantCodecTest {
     assertThatThrownBy(() -> new ConstantCodec(new byte[0]))
         .isInstanceOf(IllegalArgumentException.class);
   }
+
+  @Test
+  void inspect_returns_expected_bytes() {
+    byte[] expectedBytes = {0x01, 0x02, 0x03};
+    Codec<byte[]> codec = Codecs.constant(expectedBytes);
+
+    Object result = Inspector.inspect((Inspector<?>) codec, new byte[3]);
+
+    assertThat(result).isEqualTo(expectedBytes).isNotSameAs(expectedBytes);
+  }
 }

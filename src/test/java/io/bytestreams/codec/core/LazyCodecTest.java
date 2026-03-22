@@ -6,7 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class LazyCodecTest {
@@ -81,6 +83,34 @@ class LazyCodecTest {
         .hasMessageContaining("supplier.get()");
   }
 
+  @Test
+  void inspect_delegates_to_resolved_codec() {
+    SequentialObjectCodec<Inner> innerCodec =
+        SequentialObjectCodec.<Inner>builder(Inner::new)
+            .field("value", Codecs.uint8(), Inner::getValue, Inner::setValue)
+            .build();
+
+    Codec<Inner> codec = Codecs.lazy(() -> innerCodec);
+
+    Inner inner = new Inner();
+    inner.setValue(55);
+
+    Object result = Inspector.inspect((Inspector<?>) codec, inner);
+
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("value", 55);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void inspect_returns_raw_when_resolved_not_introspectable() {
+    Codec<Integer> codec = Codecs.lazy(Codecs::uint8);
+
+    Object result = Inspector.inspect((Inspector<?>) codec, 10);
+
+    assertThat(result).isEqualTo(10);
+  }
+
   static class Node {
     final int value;
     final List<Node> children;
@@ -88,6 +118,18 @@ class LazyCodecTest {
     Node(int value, List<Node> children) {
       this.value = value;
       this.children = children;
+    }
+  }
+
+  static class Inner {
+    private int value;
+
+    int getValue() {
+      return value;
+    }
+
+    void setValue(int value) {
+      this.value = value;
     }
   }
 }

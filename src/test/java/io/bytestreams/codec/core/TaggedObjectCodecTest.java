@@ -374,6 +374,73 @@ class TaggedObjectCodecTest {
     assertThat(obj.<Integer>getAll("missing")).isEmpty();
   }
 
+  @Test
+  void inspect_returns_map_of_tag_to_values() {
+    TaggedObjectCodec<TestTagged, String> codec =
+        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+            .tag("code", Codecs.uint16())
+            .tag("name", Codecs.ascii(5))
+            .build();
+
+    TestTagged obj = new TestTagged();
+    obj.add("code", 42);
+    obj.add("name", "hello");
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) codec.inspect(obj);
+
+    assertThat(result).containsEntry("code", List.of(42)).containsEntry("name", List.of("hello"));
+  }
+
+  @Test
+  void inspect_recurses_into_introspectable_tag_codec() {
+    SequentialObjectCodec<TestFixtures.Inner> innerCodec =
+        Codecs.<TestFixtures.Inner>sequential(TestFixtures.Inner::new)
+            .field(
+                "value",
+                Codecs.uint16(),
+                TestFixtures.Inner::getValue,
+                TestFixtures.Inner::setValue)
+            .build();
+
+    TaggedObjectCodec<TestTagged, String> codec =
+        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+            .tag("data", innerCodec)
+            .build();
+
+    TestFixtures.Inner inner = new TestFixtures.Inner();
+    inner.setValue(99);
+
+    TestTagged obj = new TestTagged();
+    obj.add("data", inner);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) codec.inspect(obj);
+
+    assertThat(result).containsKey("data");
+    @SuppressWarnings("unchecked")
+    List<Object> dataList = (List<Object>) result.get("data");
+    assertThat(dataList).hasSize(1);
+    assertThat(dataList.get(0)).isEqualTo(Map.of("value", 99));
+  }
+
+  @Test
+  void inspect_handles_duplicate_tags() {
+    TaggedObjectCodec<TestTagged, String> codec =
+        TaggedObjectCodec.<TestTagged, String>builder(TestTagged::new, TAG_CODEC)
+            .tag("code", Codecs.uint16())
+            .build();
+
+    TestTagged obj = new TestTagged();
+    obj.add("code", 1);
+    obj.add("code", 2);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) codec.inspect(obj);
+
+    assertThat(result).containsEntry("code", List.of(1, 2));
+  }
+
   static class AlwaysThrowsCodec<V> implements Codec<V> {
     @Override
     public EncodeResult encode(V value, OutputStream output) {

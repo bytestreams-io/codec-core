@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -28,7 +30,7 @@ import java.util.function.Supplier;
  * @param <T> the type of object to encode/decode
  * @param <K> the tag key type
  */
-public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T> {
+public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, Inspector<T> {
 
   private final Codec<K> tagCodec;
   private final Map<K, Codec<?>> codecs;
@@ -105,6 +107,22 @@ public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T> {
       }
     }
     return instance;
+  }
+
+  @Override
+  public Object inspect(T object) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    for (K tag : object.tags()) {
+      List<Object> values = object.getAll(tag);
+      Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
+      if (codec instanceof Inspector<?> nested) {
+        result.put(
+            String.valueOf(tag), values.stream().map(v -> Inspector.inspect(nested, v)).toList());
+      } else {
+        result.put(String.valueOf(tag), values);
+      }
+    }
+    return result;
   }
 
   /**

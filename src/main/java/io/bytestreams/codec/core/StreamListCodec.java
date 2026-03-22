@@ -30,8 +30,8 @@ import java.util.function.Supplier;
  *
  * @param <V> the type of values in the list
  */
-public class StreamListCodec<V> implements Codec<List<V>> {
-  final Codec<V> itemCodec;
+public class StreamListCodec<V> implements Codec<List<V>>, Inspectable<List<V>> {
+  private final Codec<V> itemCodec;
   private final Supplier<List<V>> listFactory;
 
   /**
@@ -87,5 +87,10 @@ public class StreamListCodec<V> implements Codec<List<V>> {
       values.add(itemCodec.decode(pushback));
     }
     return values;
+  }
+
+  @Override
+  public Object inspect(List<V> values) {
+    return values.stream().map(v -> Inspector.inspect(itemCodec, v)).toList();
   }
 }

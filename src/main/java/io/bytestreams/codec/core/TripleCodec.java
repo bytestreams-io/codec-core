@@ -5,6 +5,8 @@ import io.bytestreams.codec.core.util.Triple;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -26,10 +28,10 @@ import java.util.function.Function;
  * @param <B> the type of the second value
  * @param <C> the type of the third value
  */
-public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>> {
-  final Codec<A> first;
-  final Codec<B> second;
-  final Codec<C> third;
+public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>>, Inspectable<Triple<A, B, C>> {
+  private final Codec<A> first;
+  private final Codec<B> second;
+  private final Codec<C> third;
 
   TripleCodec(Codec<A> first, Codec<B> second, Codec<C> third) {
     this.first = Objects.requireNonNull(first, "first");
@@ -48,6 +50,15 @@ public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>> {
   @Override
   public Triple<A, B, C> decode(InputStream input) throws IOException {
     return new Triple<>(first.decode(input), second.decode(input), third.decode(input));
+  }
+
+  @Override
+  public Object inspect(Triple<A, B, C> value) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("first", Inspector.inspect(first, value.first()));
+    result.put("second", Inspector.inspect(second, value.second()));
+    result.put("third", Inspector.inspect(third, value.third()));
+    return result;
   }
 
   /**

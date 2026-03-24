@@ -40,7 +40,7 @@ import java.util.function.ToIntFunction;
  *
  * // Composition
  * Codec<String> prefixed = Codecs.prefixed(Codecs.uint16(), Codecs.utf8());
- * Codec<List<Integer>> list = Codecs.listOf(Codecs.uint8(), 5);
+ * Codec<List<Integer>> list = Codecs.listOf(5, Codecs.uint8());
  *
  * // Object codecs
  * SequentialObjectCodec<Msg> codec = Codecs.<Msg>sequential(Msg::new)
@@ -551,12 +551,12 @@ public class Codecs {
   /**
    * Creates a fixed-length list codec that encodes/decodes exactly {@code length} items.
    *
-   * @param itemCodec the codec for individual list items
    * @param length the exact number of items
+   * @param itemCodec the codec for individual list items
    * @param <V> the item type
    * @return a new fixed list codec
    */
-  public static <V> Codec<List<V>> listOf(Codec<V> itemCodec, int length) {
+  public static <V> Codec<List<V>> listOf(int length, Codec<V> itemCodec) {
     return new FixedListCodec<>(itemCodec, length);
   }
 
@@ -569,6 +569,18 @@ public class Codecs {
    */
   public static <V> Codec<List<V>> listOf(Codec<V> itemCodec) {
     return new StreamListCodec<>(itemCodec);
+  }
+
+  /**
+   * Creates a variable-length list codec where the item count is encoded as a prefix.
+   *
+   * @param lengthCodec the codec for the item count prefix
+   * @param itemCodec the codec for individual list items
+   * @param <V> the item type
+   * @return a new codec
+   */
+  public static <V> Codec<List<V>> listOf(Codec<Integer> lengthCodec, Codec<V> itemCodec) {
+    return prefixed(lengthCodec, List::size, length -> listOf(length, itemCodec));
   }
 
   // ---------------------------------------------------------------------------
@@ -623,6 +635,25 @@ public class Codecs {
    */
   public static Codec<byte[]> binary(int length) {
     return new BinaryCodec(length);
+  }
+
+  /**
+   * Creates a variable-length binary codec that reads all remaining bytes from the stream.
+   *
+   * @return a new codec
+   */
+  public static Codec<byte[]> binary() {
+    return new StreamBinaryCodec();
+  }
+
+  /**
+   * Creates a variable-length binary codec where the byte count is encoded as a prefix.
+   *
+   * @param lengthCodec the codec for the byte count prefix
+   * @return a new codec
+   */
+  public static Codec<byte[]> binary(Codec<Integer> lengthCodec) {
+    return prefixed(lengthCodec, v -> v.length, Codecs::binary);
   }
 
   /**

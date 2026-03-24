@@ -57,7 +57,7 @@ class InspectorIntegrationTest {
             .build();
 
     Codec<List<TestFixtures.Inner>> prefixedList =
-        Codecs.prefixed(Codecs.uint16(), List::size, length -> Codecs.listOf(innerCodec, length));
+        Codecs.prefixed(Codecs.uint16(), List::size, length -> Codecs.listOf(length, innerCodec));
 
     TestFixtures.Inner a = new TestFixtures.Inner();
     a.setValue(10);

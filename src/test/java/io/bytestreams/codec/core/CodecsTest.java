@@ -552,7 +552,7 @@ class CodecsTest {
 
     @Test
     void listOf_fixed_returns_fixed_list_codec() throws IOException {
-      Codec<List<Integer>> codec = Codecs.listOf(Codecs.uint8(), 3);
+      Codec<List<Integer>> codec = Codecs.listOf(3, Codecs.uint8());
       assertThat(codec).isInstanceOf(FixedListCodec.class);
 
       ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -567,6 +567,17 @@ class CodecsTest {
 
       List<Integer> result = codec.decode(new ByteArrayInputStream(new byte[] {1, 2, 3}));
       assertThat(result).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    void listOf_prefixed_roundtrip() throws IOException {
+      Codec<List<Integer>> codec = Codecs.listOf(Codecs.uint8(), Codecs.uint16());
+
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      codec.encode(List.of(100, 200, 300), out);
+
+      List<Integer> decoded = codec.decode(new ByteArrayInputStream(out.toByteArray()));
+      assertThat(decoded).containsExactly(100, 200, 300);
     }
   }
 
@@ -602,6 +613,30 @@ class CodecsTest {
     @Test
     void binary_returns_binary_codec() {
       assertThat(Codecs.binary(8)).isInstanceOf(BinaryCodec.class);
+    }
+
+    @Test
+    void binary_stream_roundtrip() throws IOException {
+      Codec<byte[]> codec = Codecs.binary();
+
+      byte[] original = {0x01, 0x02, 0x03};
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      codec.encode(original, out);
+
+      byte[] decoded = codec.decode(new ByteArrayInputStream(out.toByteArray()));
+      assertThat(decoded).isEqualTo(original);
+    }
+
+    @Test
+    void binary_prefixed_roundtrip() throws IOException {
+      Codec<byte[]> codec = Codecs.binary(Codecs.uint16());
+
+      byte[] original = {0x01, 0x02, 0x03, 0x04, 0x05};
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      codec.encode(original, out);
+
+      byte[] decoded = codec.decode(new ByteArrayInputStream(out.toByteArray()));
+      assertThat(decoded).isEqualTo(original);
     }
 
     @Test

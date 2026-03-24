@@ -24,7 +24,7 @@ import java.util.function.ToIntFunction;
  * // List with item count prefix
  * Codec<List<Foo>> list = Codecs.prefixed(Codecs.uint16(),
  *     List::size,
- *     length -> Codecs.listOf(fooCodec, length));
+ *     length -> Codecs.listOf(length, fooCodec));
  * }</pre>
  *
  * @param <V> the type of value this codec handles

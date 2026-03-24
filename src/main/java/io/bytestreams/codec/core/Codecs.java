@@ -187,8 +187,7 @@ public class Codecs {
   }
 
   /**
-   * Creates a variable-length UTF-8 string codec where the code point count is encoded as a
-   * prefix.
+   * Creates a variable-length UTF-8 string codec where the code point count is encoded as a prefix.
    *
    * @param lengthCodec the codec for the code point count prefix
    * @return a new codec
@@ -281,7 +280,7 @@ public class Codecs {
   /**
    * Creates a variable-length string codec where the code point count is encoded as a prefix.
    *
-   * <p>For single-byte charsets, uses {@link String#length()} for the count (O(1)). For multi-byte
+   * <p>For single-byte charsets, uses {@link String#length()} for the count (O(1)). For multibyte
    * charsets, uses {@link io.bytestreams.codec.core.util.Strings#codePointCount} (O(n)).
    *
    * @param charset the charset
@@ -653,15 +652,15 @@ public class Codecs {
    * @return a new codec
    */
   public static Codec<byte[]> binary(Codec<Integer> lengthCodec) {
-    return prefixed(lengthCodec, v -> v.length, Codecs::binary);
+    return prefixed(lengthCodec, Codecs.binary());
   }
 
   /**
    * Creates a constant codec that always writes the expected bytes on encode (ignoring the input
    * value) and validates that the bytes match on decode.
    *
-   * <p>Useful for magic numbers, version bytes, and protocol signatures. The value passed to
-   * {@link Codec#encode encode} is ignored; {@code null} is acceptable.
+   * <p>Useful for magic numbers, version bytes, and protocol signatures. The value passed to {@link
+   * Codec#encode encode} is ignored; {@code null} is acceptable.
    *
    * <pre>{@code
    * Codec<byte[]> magic = Codecs.constant(new byte[] {0x4D, 0x5A});

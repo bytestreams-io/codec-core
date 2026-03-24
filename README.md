@@ -157,6 +157,12 @@ Codec<String> hexStream = Codecs.hex();
 // Fixed-length binary data
 Codec<byte[]> binary = Codecs.binary(16);
 
+// Variable-length binary (reads to EOF)
+Codec<byte[]> binaryStream = Codecs.binary();
+
+// Variable-length binary with byte count prefix
+Codec<byte[]> prefixedBinary = Codecs.binary(Codecs.uint16());
+
 // Constant bytes (magic numbers, version bytes, protocol signatures)
 Codec<byte[]> magic = Codecs.constant(new byte[] {0x4D, 0x5A});
 
@@ -364,10 +370,13 @@ When a protocol contains a repeating sequence of identically-typed elements, use
 
 ```java
 // Fixed-length list (exactly 3 items)
-Codec<List<String>> fixed = Codecs.listOf(stringCodec, 3);
+Codec<List<String>> fixed = Codecs.listOf(3, stringCodec);
 
 // Stream list (reads items until EOF)
 Codec<List<String>> stream = Codecs.listOf(stringCodec);
+
+// Variable-length list with item count prefix
+Codec<List<String>> prefixed = Codecs.listOf(Codecs.uint16(), stringCodec);
 ```
 
 Stream lists are typically bounded by a `prefixed` wrapper so they don't consume the entire input.
@@ -379,8 +388,7 @@ Codecs compose naturally — use any codec as a field in an object codec, nest v
 ### Variable-length list inside an object
 
 ```java
-Codec<List<String>> memberListCodec = Codecs.prefixed(Codecs.uint8(),
-    Codecs.listOf(Codecs.ascii(20)));
+Codec<List<String>> memberListCodec = Codecs.listOf(Codecs.uint8(), Codecs.ascii(20));
 
 Codec<Team> teamCodec = Codecs.<Team>sequential(Team::new)
     .field("id", Codecs.int32(), Team::getId, Team::setId)
@@ -434,7 +442,7 @@ holder[0] = Codecs.pair(
 
 ## Stream Codecs
 
-Codecs created without a length parameter — `Codecs.utf8()`, `Codecs.hex()`, `Codecs.listOf(codec)`, `Codecs.tagged(...)` — are **stream codecs**. They consume all remaining bytes from the input stream, which can silently swallow subsequent fields if used incorrectly.
+Codecs created without a length parameter — `Codecs.utf8()`, `Codecs.hex()`, `Codecs.binary()`, `Codecs.listOf(codec)`, `Codecs.tagged(...)` — are **stream codecs**. They consume all remaining bytes from the input stream, which can silently swallow subsequent fields if used incorrectly.
 
 **Safe usage patterns:**
 
@@ -558,10 +566,10 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.ebcdic(n)` / `Codecs.ebcdic()` / `Codecs.ebcdic(lc)` | EBCDIC (IBM1047) string (fixed, stream, or prefixed) |
 | `Codecs.ofCharset(charset, n)` / `Codecs.ofCharset(charset)` / `Codecs.ofCharset(charset, lc)` | String with explicit charset |
 | `Codecs.hex(n)` / `Codecs.hex()` / `Codecs.hex(lc)` | Hexadecimal string (fixed, stream, or prefixed) |
-| `Codecs.binary(n)` | Fixed-length binary data |
+| `Codecs.binary(n)` / `Codecs.binary()` / `Codecs.binary(lc)` | Binary data (fixed, stream, or prefixed) |
 | `Codecs.constant(bytes)` | Constant byte sequence (magic numbers, signatures) |
 | `Codecs.bool()` | Boolean (1 byte: 0x00/0x01) |
-| `Codecs.listOf(codec, n)` / `Codecs.listOf(codec)` | List (fixed-length or stream) |
+| `Codecs.listOf(n, codec)` / `Codecs.listOf(codec)` / `Codecs.listOf(lc, codec)` | List (fixed, stream, or prefixed by item count) |
 | `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
 | `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
 | `Codecs.pair(a, b)` | Pair codec for two sequential values |

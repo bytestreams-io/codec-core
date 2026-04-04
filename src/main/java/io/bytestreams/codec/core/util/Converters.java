@@ -1,5 +1,9 @@
 package io.bytestreams.codec.core.util;
 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQuery;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -248,6 +252,39 @@ public final class Converters {
       @Override
       public String from(Long value) {
         return Strings.padStart(Long.toString(value), '0', digits);
+      }
+    };
+  }
+
+  /**
+   * Returns a converter that parses strings to temporal values on {@link Converter#to(Object) to}
+   * and formats temporal values to strings on {@link Converter#from(Object) from}.
+   *
+   * @param <T> the temporal type
+   * @param format the date-time format pattern (see {@link DateTimeFormatter})
+   * @param query the temporal query for parsing (e.g. {@link java.time.LocalDate#from
+   *     LocalDate::from})
+   * @return a string-to-temporal converter
+   * @throws ConverterException if the string cannot be parsed
+   */
+  public static <T extends TemporalAccessor> Converter<String, T> temporal(
+      String format, TemporalQuery<T> query) {
+    Objects.requireNonNull(format, "format");
+    Objects.requireNonNull(query, "query");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+    return new Converter<>() {
+      @Override
+      public T to(String value) {
+        try {
+          return formatter.parse(value, query);
+        } catch (DateTimeParseException e) {
+          throw new ConverterException("invalid temporal: " + value, e);
+        }
+      }
+
+      @Override
+      public String from(T value) {
+        return formatter.format(value);
       }
     };
   }

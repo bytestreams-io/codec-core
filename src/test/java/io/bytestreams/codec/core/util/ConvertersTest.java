@@ -3,6 +3,10 @@ package io.bytestreams.codec.core.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Test;
 
 class ConvertersTest {
@@ -320,5 +324,67 @@ class ConvertersTest {
   @Test
   void toLong_invalid_digits() {
     assertThatThrownBy(() -> Converters.toLong(0)).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  // temporal
+
+  @Test
+  void temporal_to_localDate() {
+    Converter<String, LocalDate> converter = Converters.temporal("yyyyMMdd", LocalDate::from);
+    assertThat(converter.to("20250115")).isEqualTo(LocalDate.of(2025, 1, 15));
+  }
+
+  @Test
+  void temporal_from_localDate() {
+    Converter<String, LocalDate> converter = Converters.temporal("yyyyMMdd", LocalDate::from);
+    assertThat(converter.from(LocalDate.of(2025, 1, 15))).isEqualTo("20250115");
+  }
+
+  @Test
+  void temporal_to_localTime() {
+    Converter<String, LocalTime> converter = Converters.temporal("HHmmss", LocalTime::from);
+    assertThat(converter.to("143052")).isEqualTo(LocalTime.of(14, 30, 52));
+  }
+
+  @Test
+  void temporal_from_localTime() {
+    Converter<String, LocalTime> converter = Converters.temporal("HHmmss", LocalTime::from);
+    assertThat(converter.from(LocalTime.of(14, 30, 52))).isEqualTo("143052");
+  }
+
+  @Test
+  void temporal_to_localDateTime() {
+    Converter<String, LocalDateTime> converter =
+        Converters.temporal("yyyyMMddHHmmss", LocalDateTime::from);
+    assertThat(converter.to("20250115143052")).isEqualTo(LocalDateTime.of(2025, 1, 15, 14, 30, 52));
+  }
+
+  @Test
+  void temporal_from_localDateTime() {
+    Converter<String, LocalDateTime> converter =
+        Converters.temporal("yyyyMMddHHmmss", LocalDateTime::from);
+    assertThat(converter.from(LocalDateTime.of(2025, 1, 15, 14, 30, 52)))
+        .isEqualTo("20250115143052");
+  }
+
+  @Test
+  void temporal_to_invalid() {
+    Converter<String, LocalDate> converter = Converters.temporal("yyyyMMdd", LocalDate::from);
+    assertThatThrownBy(() -> converter.to("notadate"))
+        .isInstanceOf(ConverterException.class)
+        .hasMessageContaining("invalid temporal: notadate")
+        .hasCauseInstanceOf(DateTimeParseException.class);
+  }
+
+  @Test
+  void temporal_null_format() {
+    assertThatThrownBy(() -> Converters.temporal(null, LocalDate::from))
+        .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void temporal_null_query() {
+    assertThatThrownBy(() -> Converters.temporal("yyyyMMdd", null))
+        .isInstanceOf(NullPointerException.class);
   }
 }

@@ -233,6 +233,7 @@ The `Converter` interface bundles the forward and reverse functions into a singl
 ```java
 Codec<Integer> numericCodec = Codecs.ascii(4).xmap(Converters.toInt(4));
 Codec<Long> longCodec = Codecs.ascii(10).xmap(Converters.toLong(10));
+Codec<LocalDate> dateCodec = Codecs.ascii(8).xmap(Converters.temporal("yyyyMMdd", LocalDate::from));
 ```
 
 ### With a BiMap
@@ -604,7 +605,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 |-------|-------------|-------------|
 | `Converter` | `to`, `from`, `andThen` | Bidirectional conversion interface |
 | `ConverterException` | — | Exception thrown when a `Converter` conversion fails |
-| `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong` | Converter factories for common string transformations |
+| `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong`, `temporal` | Converter factories for common string transformations |
 | `BiMap` | `of`, `to`, `from` | Immutable bidirectional map implementing `Converter` |
 | `Strings` | `padStart`, `padEnd`, `stripStart`, `stripEnd`, `codePointCount`, `hexByteCount` | String padding, stripping, and counting utilities |
 | `InputStreams` | `readFully` | Read exactly N bytes from an input stream |

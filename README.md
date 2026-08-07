@@ -234,6 +234,11 @@ The `Converter` interface bundles the forward and reverse functions into a singl
 Codec<Integer> numericCodec = Codecs.ascii(4).xmap(Converters.toInt(4));
 Codec<Long> longCodec = Codecs.ascii(10).xmap(Converters.toLong(10));
 Codec<LocalDate> dateCodec = Codecs.ascii(8).xmap(Converters.temporal("yyyyMMdd", LocalDate::from));
+
+// The pattern overload uses SMART resolution, which adjusts invalid dates (e.g. 02/31 -> 02/28).
+// Pass a DateTimeFormatter for full control, such as STRICT resolution that rejects invalid dates.
+Codec<LocalDate> strictDateCodec = Codecs.ascii(8).xmap(Converters.temporal(
+    DateTimeFormatter.ofPattern("uuuuMMdd").withResolverStyle(ResolverStyle.STRICT), LocalDate::from));
 ```
 
 ### With a BiMap

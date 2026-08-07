@@ -260,6 +260,13 @@ public final class Converters {
    * Returns a converter that parses strings to temporal values on {@link Converter#to(Object) to}
    * and formats temporal values to strings on {@link Converter#from(Object) from}.
    *
+   * <p>The pattern is compiled with {@link DateTimeFormatter#ofPattern(String)}, which uses the
+   * {@link java.time.format.ResolverStyle#SMART SMART} resolver style. Under SMART resolution an
+   * out-of-range date such as {@code 02/31} is adjusted to the last valid day of the month rather
+   * than rejected. Use {@link #temporal(DateTimeFormatter, TemporalQuery)} to supply a formatter
+   * with different behaviour, such as {@link java.time.format.ResolverStyle#STRICT STRICT}
+   * resolution or a specific locale.
+   *
    * @param <T> the temporal type
    * @param format the date-time format pattern (see {@link DateTimeFormatter})
    * @param query the temporal query for parsing (e.g. {@link java.time.LocalDate#from
@@ -270,8 +277,30 @@ public final class Converters {
   public static <T extends TemporalAccessor> Converter<String, T> temporal(
       String format, TemporalQuery<T> query) {
     Objects.requireNonNull(format, "format");
+    return temporal(DateTimeFormatter.ofPattern(format), query);
+  }
+
+  /**
+   * Returns a converter that parses strings to temporal values on {@link Converter#to(Object) to}
+   * and formats temporal values to strings on {@link Converter#from(Object) from} using the given
+   * formatter.
+   *
+   * <p>Supplying a pre-built formatter gives full control over parsing behaviour, including {@link
+   * java.time.format.ResolverStyle resolver style} and locale. For example, a formatter with {@link
+   * java.time.format.ResolverStyle#STRICT STRICT} resolution rejects an invalid date such as {@code
+   * 02/31} instead of adjusting it.
+   *
+   * @param <T> the temporal type
+   * @param formatter the date-time formatter
+   * @param query the temporal query for parsing (e.g. {@link java.time.LocalDate#from
+   *     LocalDate::from})
+   * @return a string-to-temporal converter
+   * @throws ConverterException if the string cannot be parsed
+   */
+  public static <T extends TemporalAccessor> Converter<String, T> temporal(
+      DateTimeFormatter formatter, TemporalQuery<T> query) {
+    Objects.requireNonNull(formatter, "formatter");
     Objects.requireNonNull(query, "query");
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
     return new Converter<>() {
       @Override
       public T to(String value) {

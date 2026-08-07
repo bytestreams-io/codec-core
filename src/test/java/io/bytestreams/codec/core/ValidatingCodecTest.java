@@ -76,7 +76,7 @@ class ValidatingCodecTest {
   @Test
   void validate_message_function_decode_describes_rejected_value() {
     Codec<Integer> codec =
-        Codecs.uint8().validate(v -> v > 0, v -> "value [%d] must be positive".formatted(v));
+        Codecs.uint8().validate(v -> v > 0, "value [%d] must be positive"::formatted);
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0});
 
     assertThatThrownBy(() -> codec.decode(input))
@@ -87,7 +87,7 @@ class ValidatingCodecTest {
   @Test
   void validate_message_function_encode_describes_rejected_value() {
     Codec<Integer> codec =
-        Codecs.uint8().validate(v -> v > 0, v -> "value [%d] must be positive".formatted(v));
+        Codecs.uint8().validate(v -> v > 0, "value [%d] must be positive"::formatted);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     assertThatThrownBy(() -> codec.encode(0, output))

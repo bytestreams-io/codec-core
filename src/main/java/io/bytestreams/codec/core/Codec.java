@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Interface for encoding and decoding values to and from byte streams.
@@ -74,5 +75,45 @@ public interface Codec<V> {
   default <U> Codec<U> xmap(Converter<V, U> converter) {
     Objects.requireNonNull(converter, "converter");
     return xmap(converter::to, converter::from);
+  }
+
+  /**
+   * Returns a new codec that checks the value on both encode and decode.
+   *
+   * <p>The check runs before writing on encode and after reading on decode. A failed check throws
+   * {@link IllegalArgumentException} on encode and {@link CodecException} on decode.
+   *
+   * <pre>{@code
+   * Codec<Integer> amount = Codecs.uint16().validate(v -> v > 0, "amount must be positive");
+   * }</pre>
+   *
+   * @param check the condition the value must satisfy
+   * @param message the error message used when the check fails
+   * @return a new codec that validates values passing through it
+   * @throws NullPointerException if any argument is null
+   */
+  default Codec<V> validate(Predicate<V> check, String message) {
+    Objects.requireNonNull(message, "message");
+    return validate(check, value -> message);
+  }
+
+  /**
+   * Returns a new codec that checks the value on both encode and decode, deriving the error message
+   * from the rejected value.
+   *
+   * <p>The message function is applied only when the check fails.
+   *
+   * <pre>{@code
+   * Codec<String> type = Codecs.ascii(2).validate("BT"::equals,
+   *     actual -> "expected constant [BT] but got [%s]".formatted(actual));
+   * }</pre>
+   *
+   * @param check the condition the value must satisfy
+   * @param message produces the error message from the rejected value
+   * @return a new codec that validates values passing through it
+   * @throws NullPointerException if any argument is null
+   */
+  default Codec<V> validate(Predicate<V> check, Function<V, String> message) {
+    return new ValidatingCodec<>(this, check, message);
   }
 }

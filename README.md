@@ -68,6 +68,8 @@ Codecs signal errors through three exception types:
 - **`CodecException`** — encoding or decoding errors detected by the codec itself, such as invalid BCD nibbles or malformed data. For nested object codecs, `CodecException` accumulates a field path as it propagates, producing messages like `field [order.customer.name]: End of stream reached`. The path is available via `getFieldPath()`.
 - **`IllegalArgumentException`** — constraint violations caught before writing, such as a string with the wrong number of code points or a value out of range.
 
+Both of the latter two are what a failed [`validate`](#validation) check throws — `IllegalArgumentException` on encode, `CodecException` on decode.
+
 `CodecException` and `IllegalArgumentException` are unchecked, so you only need to handle them explicitly when you want to recover from bad data. `ConverterException` (a `RuntimeException` in the `util` package) is thrown when a `Converter` conversion fails, for example when `Converters.toInt()` receives a non-numeric string.
 
 ## Number Codecs
@@ -253,6 +255,42 @@ BiMap<Integer, Color> colors = BiMap.of(
 );
 Codec<Color> colorCodec = Codecs.uint8().xmap(colors);
 ```
+
+## Validation
+
+`validate` returns a codec that checks values against a condition as they pass through. The check runs before writing on encode and after reading on decode, so a constraint is enforced in both directions from a single declaration.
+
+```java
+Codec<Integer> amount = Codecs.uint16().validate(v -> v > 0, "amount must be positive");
+```
+
+The exception type follows the direction, matching the error contract above: `IllegalArgumentException` on encode, because the value violates a constraint before anything is written, and `CodecException` on decode, because the bytes on the wire are bad. Nothing is written to the output stream when an encode check fails.
+
+Use the second overload when the message should describe the rejected value. It is applied only on failure, so building the message costs nothing on the happy path.
+
+```java
+Codec<String> recordType = Codecs.ascii(2).validate(
+    "BT"::equals,
+    actual -> "expected record type [BT] but got [%s]".formatted(actual));
+```
+
+Inside an object codec, a failed check picks up the field path like any other `CodecException`:
+
+```
+field [batch.trailer.count]: count must be positive
+```
+
+Validation composes with `xmap`, and order matters — validate against the type you want to constrain:
+
+```java
+// checks the parsed integer
+Codecs.ascii(6).xmap(Converters.toInt(6)).validate(v -> v > 0, "count must be positive");
+
+// checks the raw string
+Codecs.ascii(6).validate(s -> !s.isBlank(), "count must not be blank").xmap(Converters.toInt(6));
+```
+
+`inspect()` is unaffected: it delegates to the wrapped codec without running the check, so inspecting a malformed value stays safe.
 
 ## Object Codecs
 
@@ -487,7 +525,7 @@ Object structure = Inspector.inspect(codec, msg);
 // {name=Alice, age=30, address={street=123 Main St, city=Springfield}}
 ```
 
-`Inspector.inspect()` recurses through nested codecs automatically — sequential fields, lists, pairs, triples, tagged fields, and through wrapper codecs like `prefixed()` and `xmap()`. Primitive codecs return the value as-is.
+`Inspector.inspect()` recurses through nested codecs automatically — sequential fields, lists, pairs, triples, tagged fields, and through wrapper codecs like `prefixed()`, `xmap()`, and `validate()`. Primitive codecs return the value as-is.
 
 | Codec type | `inspect()` returns |
 |------------|-------------------|
@@ -497,7 +535,7 @@ Object structure = Inspector.inspect(codec, msg);
 | Pair | `Map<String, Object>` — `"first"` and `"second"` keys |
 | Triple | `Map<String, Object>` — `"first"`, `"second"`, and `"third"` keys |
 | Choice | Delegates to the matched branch codec |
-| Wrapper (prefixed, xmap, lazy) | Delegates to the inner codec |
+| Wrapper (prefixed, xmap, validate, lazy) | Delegates to the inner codec |
 | Constant | Returns the expected byte array |
 | Primitive (uint8, ascii, etc.) | Returns value as-is |
 
@@ -588,6 +626,7 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `DataObject.field(name, codec)` | Create a `FieldSpec` for map-backed data objects |
 | `DataObject.field(name, codec, presence)` | Create a `FieldSpec` with a presence predicate |
 | `codec.xmap(decoder, encoder)` / `codec.xmap(converter)` | Bidirectional type mapping |
+| `codec.validate(check, message)` / `codec.validate(check, messageFn)` | Check values on encode and decode |
 
 ## Interfaces and Data Object Classes
 

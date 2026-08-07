@@ -6,7 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import org.junit.jupiter.api.Test;
 
 class ConvertersTest {
@@ -378,13 +380,51 @@ class ConvertersTest {
 
   @Test
   void temporal_null_format() {
-    assertThatThrownBy(() -> Converters.temporal(null, LocalDate::from))
+    assertThatThrownBy(() -> Converters.temporal((String) null, LocalDate::from))
         .isInstanceOf(NullPointerException.class);
   }
 
   @Test
   void temporal_null_query() {
     assertThatThrownBy(() -> Converters.temporal("yyyyMMdd", null))
+        .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void temporal_formatter_to_localDate() {
+    Converter<String, LocalDate> converter =
+        Converters.temporal(DateTimeFormatter.ofPattern("MM/dd/uuuu"), LocalDate::from);
+    assertThat(converter.to("01/15/2025")).isEqualTo(LocalDate.of(2025, 1, 15));
+  }
+
+  @Test
+  void temporal_formatter_from_localDate() {
+    Converter<String, LocalDate> converter =
+        Converters.temporal(DateTimeFormatter.ofPattern("MM/dd/uuuu"), LocalDate::from);
+    assertThat(converter.from(LocalDate.of(2025, 1, 15))).isEqualTo("01/15/2025");
+  }
+
+  @Test
+  void temporal_formatter_strict_rejectsInvalidDate() {
+    Converter<String, LocalDate> converter =
+        Converters.temporal(
+            DateTimeFormatter.ofPattern("MM/dd/uuuu").withResolverStyle(ResolverStyle.STRICT),
+            LocalDate::from);
+    assertThatThrownBy(() -> converter.to("02/31/2025"))
+        .isInstanceOf(ConverterException.class)
+        .hasMessageContaining("invalid temporal: 02/31/2025")
+        .hasCauseInstanceOf(DateTimeParseException.class);
+  }
+
+  @Test
+  void temporal_smart_clampsInvalidDate() {
+    Converter<String, LocalDate> converter = Converters.temporal("MM/dd/uuuu", LocalDate::from);
+    assertThat(converter.to("02/31/2025")).isEqualTo(LocalDate.of(2025, 2, 28));
+  }
+
+  @Test
+  void temporal_null_formatter() {
+    assertThatThrownBy(() -> Converters.temporal((DateTimeFormatter) null, LocalDate::from))
         .isInstanceOf(NullPointerException.class);
   }
 }

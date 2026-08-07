@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class ValidatingCodecTest {
 
   @Test
-  void validate_decode_rejectsFailingValue() {
+  void validate_decode_rejects_failing_value() {
     Codec<Integer> codec = Codecs.uint8().validate(v -> v > 0, "value must be positive");
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0});
 
@@ -24,7 +24,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_decode_passesAcceptedValue() throws IOException {
+  void validate_decode_passes_accepted_value() throws IOException {
     Codec<Integer> codec = Codecs.uint8().validate(v -> v > 0, "value must be positive");
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {7});
 
@@ -32,7 +32,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_encode_rejectsFailingValue() {
+  void validate_encode_rejects_failing_value() {
     Codec<Integer> codec = Codecs.uint8().validate(v -> v > 0, "value must be positive");
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -42,7 +42,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_encode_writesNothingWhenRejected() {
+  void validate_encode_writes_nothing_when_rejected() {
     Codec<Integer> codec = Codecs.uint8().validate(v -> v > 0, "value must be positive");
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -52,7 +52,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_encode_passesAcceptedValue() throws IOException {
+  void validate_encode_passes_accepted_value() throws IOException {
     Codec<Integer> codec = Codecs.uint8().validate(v -> v > 0, "value must be positive");
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -63,7 +63,18 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_messageFunction_decode_describesRejectedValue() {
+  void validate_encode_preserves_encode_result() throws IOException {
+    Codec<Integer> codec = Codecs.bcdInt(4).validate(v -> v > 0, "value must be positive");
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    EncodeResult result = codec.encode(1234, output);
+
+    assertThat(result.count()).isEqualTo(4);
+    assertThat(result.bytes()).isEqualTo(2);
+  }
+
+  @Test
+  void validate_message_function_decode_describes_rejected_value() {
     Codec<Integer> codec =
         Codecs.uint8().validate(v -> v > 0, v -> "value [%d] must be positive".formatted(v));
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {0});
@@ -74,7 +85,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_messageFunction_encode_describesRejectedValue() {
+  void validate_message_function_encode_describes_rejected_value() {
     Codec<Integer> codec =
         Codecs.uint8().validate(v -> v > 0, v -> "value [%d] must be positive".formatted(v));
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -85,7 +96,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_messageFunction_notAppliedWhenCheckPasses() throws IOException {
+  void validate_message_function_not_applied_when_check_passes() throws IOException {
     AtomicInteger calls = new AtomicInteger();
     Codec<Integer> codec =
         Codecs.uint8()
@@ -103,7 +114,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_inspect_delegatesToBaseCodec() {
+  void validate_inspect_delegates_to_base_codec() {
     SequentialObjectCodec<TestFixtures.Inner> inner =
         Codecs.<TestFixtures.Inner>sequential(TestFixtures.Inner::new)
             .field(
@@ -120,7 +131,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_decode_failureCarriesFieldPath() {
+  void validate_decode_failure_carries_field_path() {
     SequentialObjectCodec<TestFixtures.Inner> codec =
         Codecs.<TestFixtures.Inner>sequential(TestFixtures.Inner::new)
             .field(
@@ -137,7 +148,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_rejectsNullCheck() {
+  void validate_null_check() {
     Codec<Integer> codec = Codecs.uint8();
 
     assertThatThrownBy(() -> codec.validate(null, "message"))
@@ -146,7 +157,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_rejectsNullMessage() {
+  void validate_null_message() {
     Codec<Integer> codec = Codecs.uint8();
 
     assertThatThrownBy(() -> codec.validate(v -> true, (String) null))
@@ -155,7 +166,7 @@ class ValidatingCodecTest {
   }
 
   @Test
-  void validate_rejectsNullMessageFunction() {
+  void validate_null_messageFunction() {
     Codec<Integer> codec = Codecs.uint8();
 
     assertThatThrownBy(() -> codec.validate(v -> true, (Function<Integer, String>) null))

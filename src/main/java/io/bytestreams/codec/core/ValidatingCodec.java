@@ -10,7 +10,14 @@ import java.util.function.Predicate;
 /**
  * A codec that checks values against a condition as they pass through.
  *
- * <p>Wraps a base {@link Codec Codec&lt;V&gt;} and applies the check on decode.
+ * <p>Wraps a base {@link Codec Codec&lt;V&gt;} and applies the check in both directions: before
+ * writing on encode, and after reading on decode. A failed check throws {@link
+ * IllegalArgumentException} on encode and {@link CodecException} on decode.
+ *
+ * <p>Inspection delegates to the base codec without running the check, so inspecting a value that
+ * would fail validation is safe.
+ *
+ * <p>Created via {@link Codec#validate(Predicate, Function)}.
  *
  * @param <V> the value type
  */

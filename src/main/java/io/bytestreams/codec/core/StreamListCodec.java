@@ -64,8 +64,10 @@ public class StreamListCodec<V> implements Codec<List<V>>, Inspectable<List<V>> 
   @Override
   public EncodeResult encode(List<V> values, OutputStream output) throws IOException {
     int totalBytes = 0;
+    int index = 0;
+    // Iterate rather than index into the list, so encoding stays linear for any List.
     for (V value : values) {
-      totalBytes += itemCodec.encode(value, output).bytes();
+      totalBytes += Parts.encodeAt(index++, itemCodec, value, output).bytes();
     }
     return new EncodeResult(values.size(), totalBytes);
   }
@@ -82,7 +84,7 @@ public class StreamListCodec<V> implements Codec<List<V>>, Inspectable<List<V>> 
     List<V> values = Objects.requireNonNull(listFactory.get(), "listFactory.get() returned null");
     InputStream stream = InputStreams.markable(input);
     while (!InputStreams.atEndOfStream(stream)) {
-      values.add(itemCodec.decode(stream));
+      values.add(Parts.decodeAt(values.size(), itemCodec, stream));
     }
     return values;
   }

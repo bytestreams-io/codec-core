@@ -40,8 +40,10 @@ class RepeatWhileCodec<T, V> implements Codec<List<V>>, Inspectable<List<V>> {
   @Override
   public EncodeResult encode(List<V> values, OutputStream output) throws IOException {
     int totalBytes = 0;
+    int index = 0;
+    // Iterate rather than index into the list, so encoding stays linear for any List.
     for (V value : values) {
-      totalBytes += itemCodec.encode(value, output).bytes();
+      totalBytes += Parts.encodeAt(index++, itemCodec, value, output).bytes();
     }
     return new EncodeResult(values.size(), totalBytes);
   }
@@ -53,7 +55,7 @@ class RepeatWhileCodec<T, V> implements Codec<List<V>>, Inspectable<List<V>> {
         input.markSupported(), "input stream must support mark; wrap it in a BufferedInputStream");
     List<V> values = new ArrayList<>();
     while (matchesNext(input)) {
-      values.add(itemCodec.decode(input));
+      values.add(Parts.decodeAt(values.size(), itemCodec, input));
     }
     return values;
   }

@@ -27,31 +27,36 @@ import java.util.function.Function;
  * @param <B> the type of the second value
  */
 public class PairCodec<A, B> implements Codec<Pair<A, B>>, Inspectable<Pair<A, B>> {
-  private final Codec<A> first;
-  private final Codec<B> second;
+  private static final String FIRST = "first";
+  private static final String SECOND = "second";
+
+  private final Codec<A> firstCodec;
+  private final Codec<B> secondCodec;
 
   PairCodec(Codec<A> first, Codec<B> second) {
-    this.first = Objects.requireNonNull(first, "first");
-    this.second = Objects.requireNonNull(second, "second");
+    this.firstCodec = Objects.requireNonNull(first, FIRST);
+    this.secondCodec = Objects.requireNonNull(second, SECOND);
   }
 
   @Override
   public EncodeResult encode(Pair<A, B> value, OutputStream output) throws IOException {
-    EncodeResult r1 = first.encode(value.first(), output);
-    EncodeResult r2 = second.encode(value.second(), output);
+    EncodeResult r1 = Parts.encode(FIRST, firstCodec, value.first(), output);
+    EncodeResult r2 = Parts.encode(SECOND, secondCodec, value.second(), output);
     return new EncodeResult(1, r1.bytes() + r2.bytes());
   }
 
   @Override
   public Pair<A, B> decode(InputStream input) throws IOException {
-    return new Pair<>(first.decode(input), second.decode(input));
+    A a = Parts.decode(FIRST, firstCodec, input);
+    B b = Parts.decode(SECOND, secondCodec, input);
+    return new Pair<>(a, b);
   }
 
   @Override
   public Object inspect(Pair<A, B> value) {
     Map<String, Object> result = new LinkedHashMap<>();
-    result.put("first", Inspector.inspect(first, value.first()));
-    result.put("second", Inspector.inspect(second, value.second()));
+    result.put(FIRST, Inspector.inspect(firstCodec, value.first()));
+    result.put(SECOND, Inspector.inspect(secondCodec, value.second()));
     return result;
   }
 

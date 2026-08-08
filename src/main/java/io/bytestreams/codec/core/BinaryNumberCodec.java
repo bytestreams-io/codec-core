@@ -6,18 +6,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Codec for {@link Number}s encoded as fixed-length big-endian binary.
+ * Codec for {@link Number}s encoded as fixed-length binary, big-endian unless
+ * {@link #withOrder(ByteOrder)} says otherwise.
  *
  * <p>Example usage:
  *
  * <pre>{@code
  * Codec<Integer> int32 = Codecs.int32();
  * Codec<Long> uint32 = Codecs.uint32();
+ * Codec<Long> uint32le = Codecs.uint32(ByteOrder.LITTLE_ENDIAN);
  * }</pre>
  *
  * @param <V> the {@link Number} type this codec handles
@@ -27,6 +31,7 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
   private final BiConsumer<ByteBuffer, V> writer;
   private final Function<ByteBuffer, V> reader;
   private final Consumer<V> validator;
+  private final ByteOrder byteOrder;
 
   BinaryNumberCodec(
       int byteLength, BiConsumer<ByteBuffer, V> writer, Function<ByteBuffer, V> reader) {
@@ -38,14 +43,40 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
       BiConsumer<ByteBuffer, V> writer,
       Function<ByteBuffer, V> reader,
       Consumer<V> validator) {
+    this(byteLength, writer, reader, validator, ByteOrder.BIG_ENDIAN);
+  }
+
+  private BinaryNumberCodec(
+      int byteLength,
+      BiConsumer<ByteBuffer, V> writer,
+      Function<ByteBuffer, V> reader,
+      Consumer<V> validator,
+      ByteOrder byteOrder) {
     this.byteLength = byteLength;
     this.writer = writer;
     this.reader = reader;
     this.validator = validator;
+    this.byteOrder = byteOrder;
+  }
+
+  /**
+   * Returns a codec that reads and writes the same value in the given byte order.
+   *
+   * <p>Single-byte codecs are unaffected, since there is no order to choose.
+   *
+   * @param order the byte order to use
+   * @return a codec equivalent to this one but using {@code order}
+   * @throws NullPointerException if order is null
+   */
+  public BinaryNumberCodec<V> withOrder(ByteOrder order) {
+    Objects.requireNonNull(order, "order");
+    return new BinaryNumberCodec<>(byteLength, writer, reader, validator, order);
   }
 
   /**
    * Creates a codec for signed integer values (-2147483648 to 2147483647).
+   *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
    *
    * @return a new codec for signed integers
    */
@@ -56,6 +87,8 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
   /**
    * Creates a codec for signed long values (-9223372036854775808 to 9223372036854775807).
    *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
+   *
    * @return a new codec for signed longs
    */
   public static BinaryNumberCodec<Long> ofLong() {
@@ -64,6 +97,8 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
 
   /**
    * Creates a codec for signed short values (-32768 to 32767).
+   *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
    *
    * @return a new codec for signed shorts
    */
@@ -74,6 +109,8 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
   /**
    * Creates a codec for double values (IEEE 754 double-precision, 8 bytes).
    *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
+   *
    * @return a new codec for doubles
    */
   public static BinaryNumberCodec<Double> ofDouble() {
@@ -83,6 +120,8 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
   /**
    * Creates a codec for float values (IEEE 754 single-precision, 4 bytes).
    *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
+   *
    * @return a new codec for floats
    */
   public static BinaryNumberCodec<Float> ofFloat() {
@@ -91,6 +130,8 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
 
   /**
    * Creates a codec for unsigned byte values (0 to 255).
+   *
+   * <p>Byte order does not apply to a single byte.
    *
    * @return a new codec for unsigned bytes
    */
@@ -105,6 +146,8 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
   /**
    * Creates a codec for unsigned short values (0 to 65535).
    *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
+   *
    * @return a new codec for unsigned shorts
    */
   public static BinaryNumberCodec<Integer> ofUnsignedShort() {
@@ -117,6 +160,8 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
 
   /**
    * Creates a codec for unsigned integer values (0 to 4294967295).
+   *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
    *
    * @return a new codec for unsigned integers
    */
@@ -143,7 +188,7 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
   @Override
   public EncodeResult encode(V value, OutputStream output) throws IOException {
     validator.accept(value);
-    ByteBuffer buffer = ByteBuffer.allocate(byteLength);
+    ByteBuffer buffer = ByteBuffer.allocate(byteLength).order(byteOrder);
     writer.accept(buffer, value);
     output.write(buffer.array());
     return EncodeResult.ofBytes(byteLength);
@@ -156,6 +201,7 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
    */
   @Override
   public V decode(InputStream input) throws IOException {
-    return reader.apply(ByteBuffer.wrap(InputStreams.readFully(input, byteLength)));
+    return reader.apply(
+        ByteBuffer.wrap(InputStreams.readFully(input, byteLength)).order(byteOrder));
   }
 }

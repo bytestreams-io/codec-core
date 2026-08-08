@@ -1,9 +1,9 @@
 package io.bytestreams.codec.core;
 
+import io.bytestreams.codec.core.util.InputStreams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PushbackInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -80,11 +80,9 @@ public class StreamListCodec<V> implements Codec<List<V>>, Inspectable<List<V>> 
   @Override
   public List<V> decode(InputStream input) throws IOException {
     List<V> values = Objects.requireNonNull(listFactory.get(), "listFactory.get() returned null");
-    PushbackInputStream pushback = new PushbackInputStream(input);
-    int next;
-    while ((next = pushback.read()) != -1) {
-      pushback.unread(next);
-      values.add(itemCodec.decode(pushback));
+    InputStream stream = InputStreams.markable(input);
+    while (!InputStreams.atEndOfStream(stream)) {
+      values.add(itemCodec.decode(stream));
     }
     return values;
   }

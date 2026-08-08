@@ -360,6 +360,39 @@ Codec<Message> messageCodec = Codecs.<Message>sequential(Message::new)
     .build();
 ```
 
+#### Constant fields
+
+Many formats begin a record with a literal marker — a record type indicator, a magic number, a protocol version. These belong on the wire but not on your domain object. `constant` writes the value on encode, verifies it on decode, and discards it, so nothing carries a field that is always the same.
+
+```java
+Codec<BatchTrailer> trailer = Codecs.<BatchTrailer>sequential(BatchTrailer::new)
+    .constant("type", Codecs.ascii(2), "BT")
+    .field("count", Codecs.uint16(), BatchTrailer::getCount, BatchTrailer::setCount)
+    .build();
+```
+
+The decode-side check is the point: a record that arrives where it shouldn't fails immediately, with the field path and both values in the message rather than a mis-parse further downstream.
+
+```
+field [batch.trailer.type]: expected constant [BT] but got [XX]
+```
+
+Constants compare by content, so binary markers work as expected and are reported as hex:
+
+```java
+.constant("magic", Codecs.binary(2), new byte[] {(byte) 0xCA, (byte) 0xFE})
+
+// field [magic]: expected constant [CAFE] but got [BAD0]
+```
+
+When a format tolerates variants of the same marker — a fixed-width type indicator that may or may not be padded — the fourth parameter accepts them while `value` remains what gets written:
+
+```java
+.constant("type", Codecs.ascii(2), "H ", t -> t.strip().equals("H"))
+```
+
+`constant` is `validate` applied to a field whose value comes from the format rather than the object, so failures behave like any other validation failure.
+
 ### Tagged
 
 `Codecs.tagged()` reads fields identified by a tag value rather than position. Each field on the wire is a tag-value pair: the tag is decoded first to determine which codec to use for the value. Fields can appear in any order, may repeat, and are read until EOF.
@@ -669,6 +702,7 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.listOf(n, codec)` / `Codecs.listOf(codec)` / `Codecs.listOf(lc, codec)` | List (fixed, stream, or prefixed by item count) |
 | `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
 | `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
+| `Codecs.terminated(terminator, vc)` / `Codecs.terminated(terminator, vc, termination)` | Variable-length value ended by a sentinel |
 | `Codecs.pair(a, b)` | Pair codec for two sequential values |
 | `Codecs.triple(a, b, c)` | Triple codec for three sequential values |
 | `Codecs.lazy(supplier)` | Lazy codec for recursive definitions |
@@ -678,9 +712,9 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.tagged(tagCodec)` | Tagged object codec builder using `TaggedData` |
 | `DataObject.field(name, codec)` | Create a `FieldSpec` for map-backed data objects |
 | `DataObject.field(name, codec, presence)` | Create a `FieldSpec` with a presence predicate |
+| `builder.constant(name, codec, value)` / `builder.constant(name, codec, value, accepts)` | Fixed wire value not stored on the object |
 | `codec.xmap(decoder, encoder)` / `codec.xmap(converter)` | Bidirectional type mapping |
 | `codec.validate(check, message)` / `codec.validate(check, messageFn)` | Check values on encode and decode |
-| `Codecs.terminated(terminator, valueCodec)` | Variable-length value ended by a sentinel |
 
 ## Interfaces and Data Object Classes
 

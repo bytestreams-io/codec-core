@@ -209,6 +209,59 @@ Codec<String> llvar = Codecs.prefixed(Codecs.asciiInt(2), Codecs.ascii());
 Codec<String> lllvar = Codecs.prefixed(Codecs.asciiInt(3), Codecs.ascii());
 ```
 
+### Terminated by a sentinel
+
+Not every variable-length field carries its length up front. Text-oriented formats mark the end instead, with a newline or a separator byte. `terminated` bounds a value the same way `prefixed` does — a length in front versus a sentinel behind — so the same value codecs work inside either.
+
+```java
+byte[] lf = "\n".getBytes(US_ASCII);
+
+Codec<String> line = Codecs.terminated(lf, Codecs.ascii());
+```
+
+The terminator is a `byte[]`, not a `String`, because the right bytes depend on the encoding — a newline is `0x0A` in ASCII but `0x25` in EBCDIC. Writing `"\n".getBytes(charset)` at the call site keeps that choice visible and correct for either.
+
+On decode, the bytes before the terminator are handed to the value codec as a bounded stream, and the terminator is consumed. That is what makes read-until-EOF codecs usable inside it:
+
+```java
+// each line holds a list of fixed-width fields
+Codec<List<String>> row = Codecs.terminated(lf, Codecs.listOf(Codecs.ascii(4)));
+```
+
+On encode the value is written followed by the terminator. A value whose encoded bytes contain the terminator is rejected with `IllegalArgumentException` before anything is written, since such a value could not be decoded back. There is no escaping mechanism.
+
+#### Missing terminator on the last value
+
+Formats disagree about whether the final value must be terminated. File formats usually treat it as optional — end-of-stream already marks the end — while message formats usually require it. The default is `OPTIONAL`:
+
+```java
+Codec<String> lenient = Codecs.terminated(lf, Codecs.ascii());
+Codec<String> strict  = Codecs.terminated(lf, Codecs.ascii(), Codecs.Termination.REQUIRED);
+```
+
+Under `REQUIRED`, reaching end-of-stream without a terminator throws `CodecException`. Under `OPTIONAL`, whatever was read is passed to the value codec — including nothing at all, which lets the value codec decide whether empty is valid. `Codecs.ascii()` returns `""`; `Codecs.ascii(5)` still throws `EOFException`.
+
+Encoding always writes the terminator regardless of this setting, so decoding an unterminated final value and re-encoding it adds one. Use `RecordingCodec` when the original bytes must be preserved exactly.
+
+#### Delimiter-separated fields
+
+A fixed group of fields separated by a delimiter is expressed by terminating all but the last, inside a bounded scope. This is the ISO 8583 pattern where a length-prefixed field holds backslash-separated parts:
+
+```java
+byte[] backslash = "\\".getBytes(US_ASCII);
+
+Codec<Address> address = Codecs.<Address>sequential(Address::new)
+    .field("name",    Codecs.terminated(backslash, Codecs.ascii()), Address::getName,    Address::setName)
+    .field("street",  Codecs.terminated(backslash, Codecs.ascii()), Address::getStreet,  Address::setStreet)
+    .field("city",    Codecs.terminated(backslash, Codecs.ascii()), Address::getCity,    Address::setCity)
+    .field("country", Codecs.ascii(),                               Address::getCountry, Address::setCountry)
+    .build();
+
+Codec<Address> field59 = Codecs.prefixed(Codecs.asciiInt(2), address);
+```
+
+The final field is not terminated — the enclosing LLVAR scope ends it. Empty parts need no special handling: a zero-length chunk becomes an empty stream, which `Codecs.ascii()` decodes as `""`.
+
 ## Type Mapping
 
 Sometimes a codec reads the right bytes but produces the wrong type. `xmap` transforms a `Codec<A>` into a `Codec<B>` by supplying functions that convert between `A` and `B`.
@@ -525,7 +578,7 @@ Object structure = Inspector.inspect(codec, msg);
 // {name=Alice, age=30, address={street=123 Main St, city=Springfield}}
 ```
 
-`Inspector.inspect()` recurses through nested codecs automatically — sequential fields, lists, pairs, triples, tagged fields, and through wrapper codecs like `prefixed()`, `xmap()`, and `validate()`. Primitive codecs return the value as-is.
+`Inspector.inspect()` recurses through nested codecs automatically — sequential fields, lists, pairs, triples, tagged fields, and through wrapper codecs like `prefixed()`, `terminated()`, `xmap()`, and `validate()`. Primitive codecs return the value as-is.
 
 | Codec type | `inspect()` returns |
 |------------|-------------------|
@@ -535,7 +588,7 @@ Object structure = Inspector.inspect(codec, msg);
 | Pair | `Map<String, Object>` — `"first"` and `"second"` keys |
 | Triple | `Map<String, Object>` — `"first"`, `"second"`, and `"third"` keys |
 | Choice | Delegates to the matched branch codec |
-| Wrapper (prefixed, xmap, validate, lazy) | Delegates to the inner codec |
+| Wrapper (prefixed, terminated, xmap, validate, lazy) | Delegates to the inner codec |
 | Constant | Returns the expected byte array |
 | Primitive (uint8, ascii, etc.) | Returns value as-is |
 
@@ -627,6 +680,7 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `DataObject.field(name, codec, presence)` | Create a `FieldSpec` with a presence predicate |
 | `codec.xmap(decoder, encoder)` / `codec.xmap(converter)` | Bidirectional type mapping |
 | `codec.validate(check, message)` / `codec.validate(check, messageFn)` | Check values on encode and decode |
+| `Codecs.terminated(terminator, valueCodec)` | Variable-length value ended by a sentinel |
 
 ## Interfaces and Data Object Classes
 

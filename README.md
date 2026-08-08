@@ -511,6 +511,48 @@ Codec<List<String>> prefixed = Codecs.listOf(Codecs.uint16(), stringCodec);
 
 Stream lists are typically bounded by a `prefixed` wrapper so they don't consume the entire input.
 
+## Record Runs
+
+Record-oriented files hold runs of one record type followed by a different one — details until a trailer, batches until a file trailer. Nothing in the bytes says how many, so the only way to know a run has ended is to look at what comes next without consuming it.
+
+`repeatWhile` decodes a lookahead value before each item and lets a predicate decide whether another follows, rewinding so the item codec sees those bytes again.
+
+```java
+byte[] lf = "\n".getBytes(US_ASCII);
+Codec<String> recordType = Codecs.ascii(2);
+
+Codec<Batch> batch = Codecs.<Batch>sequential(Batch::new)
+    .constant("header", Codecs.terminated(lf, Codecs.ascii(2)), "BH")
+    .field("details",
+           Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(lf, detailCodec)),
+           Batch::getDetails, Batch::setDetails)
+    .constant("trailer", Codecs.terminated(lf, Codecs.ascii(2)), "BT")
+    .build();
+```
+
+The run ends at the first record the predicate rejects, and the stream is left positioned at that record — so the `trailer` field reads the `BT` line the loop stopped at.
+
+Because the lookahead is a codec rather than a byte pattern, the discriminator carries its own encoding: `Codecs.ascii(2)` for text records, `Codecs.uint8()` for a binary type byte. Mixed-width markers are handled by the predicate — `"BH"::equals` for an exact match, `s -> s.startsWith("D")` where the second character varies.
+
+**The input stream must support `mark`.** Wrap unbuffered sources such as `FileInputStream` in a `BufferedInputStream`; in-memory streams and the bounded scopes created by `prefixed` and `terminated` already qualify. Decoding an unmarkable stream throws `IllegalArgumentException` rather than misreading.
+
+The run ends at end of stream, or at the first record the predicate rejects — consuming nothing either way, so the field that follows reports a stray record against the bytes it expected.
+
+```
+field [trailer]: expected constant [BT] but got [XX]
+```
+
+Any *other* failure while reading the lookahead propagates. A discriminator that cannot be decoded is an error rather than a terminator, and an `IOException` from a failing disk or a dropped connection is never mistaken for the end of a run.
+
+An empty run is valid. To require at least one item, compose with `validate`:
+
+```java
+Codecs.repeatWhile(recordType, "D "::equals, detailLine)
+      .validate(list -> !list.isEmpty(), "batch must contain at least one detail");
+```
+
+Encoding writes the items and nothing else, so each item's own encoding must include the discriminator the predicate looks for — a `constant` field on the record codec is the usual way.
+
 ## Composition
 
 Codecs compose naturally — use any codec as a field in an object codec, nest variable-length wrappers, or combine lists with objects.
@@ -622,6 +664,7 @@ Object structure = Inspector.inspect(codec, msg);
 | Triple | `Map<String, Object>` — `"first"`, `"second"`, and `"third"` keys |
 | Choice | Delegates to the matched branch codec |
 | Wrapper (prefixed, terminated, xmap, validate, lazy) | Delegates to the inner codec |
+| Repeat-while run | `List<Object>` — recurses items |
 | Constant | Returns the expected byte array |
 | Primitive (uint8, ascii, etc.) | Returns value as-is |
 
@@ -700,6 +743,7 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.constant(bytes)` | Constant byte sequence (magic numbers, signatures) |
 | `Codecs.bool()` | Boolean (1 byte: 0x00/0x01) |
 | `Codecs.listOf(n, codec)` / `Codecs.listOf(codec)` / `Codecs.listOf(lc, codec)` | List (fixed, stream, or prefixed by item count) |
+| `Codecs.repeatWhile(peekCodec, accepts, itemCodec)` | Run of items that continues while a lookahead matches |
 | `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
 | `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
 | `Codecs.terminated(terminator, vc)` / `Codecs.terminated(terminator, vc, termination)` | Variable-length value ended by a sentinel |

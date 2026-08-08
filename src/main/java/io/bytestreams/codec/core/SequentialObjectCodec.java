@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
   private static final Logger logger = LoggerFactory.getLogger(SequentialObjectCodec.class);
   private static final String MDC_KEY = "codec.field";
   private static final String LOG_KEY_FIELD = "field";
+  private static final HexFormat HEX = HexFormat.of().withUpperCase();
 
   private final List<FieldCodec<T, ?>> fields;
   private final Supplier<T> factory;
@@ -126,6 +128,84 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
     public <V> Builder<T> field(
         String name, Codec<V> codec, Function<T, V> getter, BiConsumer<T, V> setter) {
       return field(name, codec, getter, setter, Predicates.alwaysTrue());
+    }
+
+    /**
+     * Adds a fixed-value field that is present on the wire but not stored on the object.
+     *
+     * <p>Writes {@code value} on encode. On decode, reads a value, verifies it matches, and
+     * discards it. Intended for record type indicators, magic numbers and protocol version markers
+     * — values the format requires but the domain object has no reason to carry.
+     *
+     * <pre>{@code
+     * Codecs.<BatchTrailer>sequential(BatchTrailer::new)
+     *     .constant("type", Codecs.ascii(2), "BT")
+     *     .field("count", Codecs.uint16(), BatchTrailer::getCount, BatchTrailer::setCount)
+     *     .build();
+     * }</pre>
+     *
+     * <p>Comparison is by content, so {@code byte[]} constants behave as expected and are reported
+     * as hex on mismatch. A failure carries the field path like any other decode error:
+     * {@code field [batch.trailer.type]: expected constant [BT] but got [XX]}.
+     *
+     * <p>The constant is held by reference and never copied, since an arbitrary {@code V} cannot
+     * be. Mutating it after the codec is built changes what the codec writes and accepts, so pass a
+     * value nothing else will modify.
+     *
+     * @param name the field name (used in error messages)
+     * @param codec the codec for the constant's wire format
+     * @param value the expected constant value
+     * @param <V> the constant's value type
+     * @return this builder
+     * @throws NullPointerException if any argument is null
+     */
+    public <V> Builder<T> constant(String name, Codec<V> codec, V value) {
+      return constant(name, codec, value, v -> Objects.deepEquals(value, v));
+    }
+
+    /**
+     * Adds a fixed-value field that is written on encode but matched loosely on decode.
+     *
+     * <p>Use when the wire format tolerates variants of the same constant, such as a fixed-width
+     * type indicator that may or may not be padded. {@code value} is always what gets written.
+     *
+     * <p>{@code value} must itself satisfy {@code accepts}, since it is checked on encode like any
+     * other value. This is verified here rather than left to fail at encode time.
+     *
+     * @param name the field name (used in error messages)
+     * @param codec the codec for the constant's wire format
+     * @param value the value written on encode
+     * @param accepts the condition a decoded value must satisfy
+     * @param <V> the constant's value type
+     * @return this builder
+     * @throws NullPointerException if any argument is null
+     * @throws IllegalArgumentException if {@code value} does not satisfy {@code accepts}
+     */
+    public <V> Builder<T> constant(String name, Codec<V> codec, V value, Predicate<V> accepts) {
+      Objects.requireNonNull(codec, "codec");
+      Objects.requireNonNull(value, "value");
+      Objects.requireNonNull(accepts, "accepts");
+      Preconditions.check(
+          accepts.test(value),
+          "constant [%s] must satisfy its own accepts predicate",
+          render(value));
+      Codec<V> verifying =
+          codec.validate(
+              accepts,
+              actual ->
+                  "expected constant [%s] but got [%s]".formatted(render(value), render(actual)));
+      return field(
+          name,
+          verifying,
+          object -> value,
+          (object, ignored) -> {
+            /* not stored */
+          });
+    }
+
+    /** Renders a constant for an error message, since {@code byte[]} has no useful toString. */
+    private static String render(Object value) {
+      return value instanceof byte[] bytes ? HEX.formatHex(bytes) : String.valueOf(value);
     }
 
     /**

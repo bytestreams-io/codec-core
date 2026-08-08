@@ -10,6 +10,7 @@ import io.bytestreams.codec.core.util.Strings;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 
@@ -638,6 +639,51 @@ public class Codecs {
   }
 
   /**
+   * Creates a codec for a run of items that continues while a lookahead matches.
+   *
+   * <p>Before each item, {@code peekCodec} decodes a value and {@code accepts} decides whether
+   * another item follows; the stream is then rewound so the item codec sees those bytes again. The
+   * run ends at the first value the predicate rejects, leaving the stream positioned at that value
+   * for whatever reads next.
+   *
+   * <pre>{@code
+   * Codec<String> recordType = Codecs.ascii(2);
+   *
+   * Codec<List<Detail>> details =
+   *     Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(lf, detailCodec));
+   * }</pre>
+   *
+   * <p>The input stream must support {@link java.io.InputStream#mark(int) mark}; wrap unbuffered
+   * sources such as {@link java.io.FileInputStream} in a {@link java.io.BufferedInputStream}. A
+   * run ends at end of stream or at the first value the predicate rejects, consuming nothing in
+   * either case, so whatever reads next sees those bytes. Any other failure while reading the
+   * lookahead propagates — a discriminator that cannot be decoded is an error, not a terminator.
+   * The lookahead may read up to 8192 bytes; a codec that reads further cannot be rewound and is
+   * reported as an error.
+   *
+   * <p>The item codec must consume input. One that does not would leave the lookahead unchanged and
+   * the run would not terminate.
+   *
+   * <p>An empty run is valid. To require at least one item, add
+   * {@code .validate(list -> !list.isEmpty(), "…")}.
+   *
+   * <p>Encoding writes the items and nothing else — the discriminator must be part of each item's
+   * own encoding, or the result will not decode back.
+   *
+   * @param peekCodec the codec for the lookahead value
+   * @param accepts the condition indicating another item follows
+   * @param itemCodec the codec for a single item
+   * @param <T> the lookahead value type
+   * @param <V> the item type
+   * @return a new codec for the run
+   * @throws NullPointerException if any argument is null
+   */
+  public static <T, V> Codec<List<V>> repeatWhile(
+      Codec<T> peekCodec, Predicate<T> accepts, Codec<V> itemCodec) {
+    return new RepeatWhileCodec<>(peekCodec, accepts, itemCodec);
+  }
+
+  /**
    * Creates a fixed-length list codec that encodes/decodes exactly {@code length} items.
    *
    * @param length the exact number of items
@@ -651,6 +697,9 @@ public class Codecs {
 
   /**
    * Creates a stream list codec that reads items until EOF.
+   *
+   * <p>The item codec must consume input. One that does not would leave the stream unchanged and
+   * the read would not terminate.
    *
    * @param itemCodec the codec for individual list items
    * @param <V> the item type

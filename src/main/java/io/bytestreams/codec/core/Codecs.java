@@ -534,6 +534,96 @@ public class Codecs {
   }
 
   /**
+   * Creates a variable-length codec where the value is followed by a terminator.
+   *
+   * <p>Bounds a value the same way {@link #prefixed(Codec, Codec)} does — a length in front versus
+   * a sentinel behind — so the same value codecs work inside either. On decode, the bytes before
+   * the terminator are passed to the value codec as a bounded stream and the terminator is
+   * consumed, which is what makes read-until-EOF codecs such as {@link #ascii()} and {@link
+   * #listOf(Codec)} usable inside it.
+   *
+   * <pre>{@code
+   * byte[] lf = "\n".getBytes(US_ASCII);
+   * Codec<String> line = Codecs.terminated(lf, Codecs.ascii());
+   * }</pre>
+   *
+   * <p>The terminator is a {@code byte[]} rather than a {@code String} because the correct bytes
+   * depend on the encoding: a newline is {@code 0x0A} in ASCII but {@code 0x25} in EBCDIC.
+   *
+   * <p>Decoding reads one byte at a time, since the end of the value is not known in advance and
+   * outer codecs continue reading the same stream. Wrap unbuffered sources such as {@link
+   * java.io.FileInputStream} in a {@link java.io.BufferedInputStream}.
+   *
+   * <p>On encode the value is written followed by the terminator. A value whose encoded bytes
+   * contain the terminator could not be decoded back, so it is rejected before anything is written.
+   * There is no escaping mechanism.
+   *
+   * <p>Uses {@link Termination#OPTIONAL}. For a fixed sequence of fields separated by a delimiter,
+   * prefer leaving the last field unwrapped over relying on this policy — the enclosing scope ends
+   * it, the wire format is then stated in the structure, and encoding round-trips exactly.
+   *
+   * @param terminator the terminating byte sequence (must be non-empty)
+   * @param valueCodec the codec for the value
+   * @param <V> the value type
+   * @return a new terminated codec
+   * @throws NullPointerException if any argument is null
+   * @throws IllegalArgumentException if the terminator is empty
+   */
+  public static <V> Codec<V> terminated(byte[] terminator, Codec<V> valueCodec) {
+    return terminated(terminator, valueCodec, Termination.OPTIONAL);
+  }
+
+  /**
+   * Creates a variable-length codec where the value is followed by a terminator, with an explicit
+   * policy for a final value that is not terminated.
+   *
+   * <p>The policy matters when the same codec is applied repeatedly and no position identifies the
+   * last value, such as reading a document as a list of lines where the final line may not be
+   * terminated:
+   *
+   * <pre>{@code
+   * Codec<List<String>> lines = Codecs.listOf(Codecs.terminated(lf, Codecs.ascii()));
+   * }</pre>
+   *
+   * @param terminator the terminating byte sequence (must be non-empty)
+   * @param valueCodec the codec for the value
+   * @param termination whether the terminator is required on decode
+   * @param <V> the value type
+   * @return a new terminated codec
+   * @throws NullPointerException if any argument is null
+   * @throws IllegalArgumentException if the terminator is empty
+   */
+  public static <V> Codec<V> terminated(
+      byte[] terminator, Codec<V> valueCodec, Termination termination) {
+    return new TerminatedCodec<>(terminator, valueCodec, termination);
+  }
+
+  /**
+   * Policy for decoding a value whose terminator is absent at the end of the stream.
+   *
+   * <p>Encoding always writes the terminator regardless of this setting, so decoding an
+   * unterminated final value and re-encoding it adds one. Use {@link RecordingCodec} when the
+   * original bytes must be preserved exactly.
+   */
+  public enum Termination {
+    /**
+     * A final value without a terminator is valid. Suitable for file formats, where end-of-stream
+     * already marks the end of the last value.
+     *
+     * <p>Whatever was read is passed to the value codec, including nothing at all, so the value
+     * codec decides whether empty is valid — {@link #ascii()} yields an empty string, while {@link
+     * #ascii(int)} still reports end-of-stream.
+     */
+    OPTIONAL,
+
+    /**
+     * Every value must be terminated. Suitable for message formats, where the terminator is how the
+     * end of a value is known.
+     */
+    REQUIRED
+  }
+
+  /**
    * Creates a variable-length codec where the item count is encoded as a prefix.
    *
    * @param lengthCodec the codec for the item count prefix

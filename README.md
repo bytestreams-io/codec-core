@@ -65,10 +65,12 @@ Every codec in the library follows this same interface. The examples below build
 Codecs signal errors through three exception types:
 
 - **`IOException`** — I/O failures and unexpected end-of-stream (`EOFException`). Thrown when the underlying stream cannot be read or written.
-- **`CodecException`** — encoding or decoding errors detected by the codec itself, such as invalid BCD nibbles or malformed data. For nested object codecs, `CodecException` accumulates a field path as it propagates, producing messages like `field [order.customer.name]: End of stream reached`. The path is available via `getFieldPath()`.
+- **`CodecException`** — encoding or decoding errors detected by the codec itself, such as invalid BCD nibbles or malformed data. For nested object codecs, `CodecException` accumulates a field path as it propagates, producing messages like `field [order.customer.name]: End of stream reached`. List codecs add the index of the failing item, and pair and triple codecs name the failing part, so a bad amount in the 113th detail of the 4th batch reads `field [batches[3].details[112].amount]: amount must be positive`, and a failure in the second half of a pair reads `field [size.second]: …`. The path is available via `getFieldPath()`.
 - **`IllegalArgumentException`** — constraint violations caught before writing, such as a string with the wrong number of code points or a value out of range.
 
 Both of the latter two are what a failed [`validate`](#validation) check throws — `IllegalArgumentException` on encode, `CodecException` on decode.
+
+An `IOException` keeps its type as it propagates and carries no field path — end-of-stream during a list is always the last item, where an index would say nothing anyway.
 
 `CodecException` and `IllegalArgumentException` are unchecked, so you only need to handle them explicitly when you want to recover from bad data. `ConverterException` (a `RuntimeException` in the `util` package) is thrown when a `Converter` conversion fails, for example when `Converters.toInt()` receives a non-numeric string.
 

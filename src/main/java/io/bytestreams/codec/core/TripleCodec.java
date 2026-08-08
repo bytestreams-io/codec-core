@@ -29,35 +29,42 @@ import java.util.function.Function;
  * @param <C> the type of the third value
  */
 public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>>, Inspectable<Triple<A, B, C>> {
-  private final Codec<A> first;
-  private final Codec<B> second;
-  private final Codec<C> third;
+  private static final String FIRST = "first";
+  private static final String SECOND = "second";
+  private static final String THIRD = "third";
+
+  private final Codec<A> firstCodec;
+  private final Codec<B> secondCodec;
+  private final Codec<C> thirdCodec;
 
   TripleCodec(Codec<A> first, Codec<B> second, Codec<C> third) {
-    this.first = Objects.requireNonNull(first, "first");
-    this.second = Objects.requireNonNull(second, "second");
-    this.third = Objects.requireNonNull(third, "third");
+    this.firstCodec = Objects.requireNonNull(first, FIRST);
+    this.secondCodec = Objects.requireNonNull(second, SECOND);
+    this.thirdCodec = Objects.requireNonNull(third, THIRD);
   }
 
   @Override
   public EncodeResult encode(Triple<A, B, C> value, OutputStream output) throws IOException {
-    EncodeResult r1 = first.encode(value.first(), output);
-    EncodeResult r2 = second.encode(value.second(), output);
-    EncodeResult r3 = third.encode(value.third(), output);
+    EncodeResult r1 = Parts.encode(FIRST, firstCodec, value.first(), output);
+    EncodeResult r2 = Parts.encode(SECOND, secondCodec, value.second(), output);
+    EncodeResult r3 = Parts.encode(THIRD, thirdCodec, value.third(), output);
     return new EncodeResult(1, r1.bytes() + r2.bytes() + r3.bytes());
   }
 
   @Override
   public Triple<A, B, C> decode(InputStream input) throws IOException {
-    return new Triple<>(first.decode(input), second.decode(input), third.decode(input));
+    A a = Parts.decode(FIRST, firstCodec, input);
+    B b = Parts.decode(SECOND, secondCodec, input);
+    C c = Parts.decode(THIRD, thirdCodec, input);
+    return new Triple<>(a, b, c);
   }
 
   @Override
   public Object inspect(Triple<A, B, C> value) {
     Map<String, Object> result = new LinkedHashMap<>();
-    result.put("first", Inspector.inspect(first, value.first()));
-    result.put("second", Inspector.inspect(second, value.second()));
-    result.put("third", Inspector.inspect(third, value.third()));
+    result.put(FIRST, Inspector.inspect(firstCodec, value.first()));
+    result.put(SECOND, Inspector.inspect(secondCodec, value.second()));
+    result.put(THIRD, Inspector.inspect(thirdCodec, value.third()));
     return result;
   }
 

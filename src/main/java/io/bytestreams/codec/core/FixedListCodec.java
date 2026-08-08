@@ -71,8 +71,10 @@ public class FixedListCodec<V> implements Codec<List<V>>, Inspectable<List<V>> {
     Preconditions.check(
         values.size() == length, "list must have %d items, but had [%d]", length, values.size());
     int totalBytes = 0;
+    int index = 0;
+    // Iterate rather than index into the list, so encoding stays linear for any List.
     for (V value : values) {
-      totalBytes += itemCodec.encode(value, output).bytes();
+      totalBytes += Parts.encodeAt(index++, itemCodec, value, output).bytes();
     }
     return new EncodeResult(length, totalBytes);
   }
@@ -88,7 +90,7 @@ public class FixedListCodec<V> implements Codec<List<V>>, Inspectable<List<V>> {
   public List<V> decode(InputStream input) throws IOException {
     List<V> values = Objects.requireNonNull(listFactory.get(), "listFactory.get() returned null");
     for (int i = 0; i < length; i++) {
-      values.add(itemCodec.decode(input));
+      values.add(Parts.decodeAt(i, itemCodec, input));
     }
     return values;
   }

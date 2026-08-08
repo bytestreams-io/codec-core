@@ -41,12 +41,33 @@ public class CodecException extends RuntimeException {
   }
 
   /**
-   * Returns the field path as a dot-separated string.
+   * Creates a new CodecException with a list index prepended to the path.
    *
-   * @return the field path, or empty string if no path
+   * <p>Indices attach to the preceding field name rather than forming their own segment, so a
+   * failure in the third item of {@code batches} reads {@code batches[2]}.
+   *
+   * @param index the zero-based index of the failing item
+   * @return a new CodecException with the updated field path
+   */
+  public CodecException withIndex(int index) {
+    return withField("[" + index + "]");
+  }
+
+  /**
+   * Returns the field path, with list indices attached to the field they belong to.
+   *
+   * @return the field path such as {@code batches[3].details[112].amount}, or empty string if no
+   *     path
    */
   public String getFieldPath() {
-    return String.join(".", fieldPath);
+    StringBuilder path = new StringBuilder();
+    for (String segment : fieldPath) {
+      if (!path.isEmpty() && !segment.startsWith("[")) {
+        path.append('.');
+      }
+      path.append(segment);
+    }
+    return path.toString();
   }
 
   @Override

@@ -1,9 +1,9 @@
 package io.bytestreams.codec.core;
 
+import io.bytestreams.codec.core.util.InputStreams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PushbackInputStream;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -122,12 +122,10 @@ public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, I
   @Override
   public T decode(InputStream input) throws IOException {
     T instance = Objects.requireNonNull(factory.get(), "factory.get() returned null");
-    PushbackInputStream pushback = new PushbackInputStream(input);
-    int next;
+    InputStream stream = InputStreams.markable(input);
     int count = 0;
-    while ((next = pushback.read()) != -1) {
-      pushback.unread(next);
-      decodeTag(instance, pushback);
+    while (!InputStreams.atEndOfStream(stream)) {
+      decodeTag(instance, stream);
       count++;
     }
     logger
@@ -138,17 +136,17 @@ public class TaggedObjectCodec<T extends Tagged<T, K>, K> implements Codec<T>, I
     return instance;
   }
 
-  private void decodeTag(T instance, PushbackInputStream pushback) throws IOException {
+  private void decodeTag(T instance, InputStream input) throws IOException {
     K tag = null;
     String tagStr = null;
     try {
-      tag = tagCodec.decode(pushback);
+      tag = tagCodec.decode(input);
       tagStr = String.valueOf(tag);
       boolean trace = logger.isTraceEnabled();
       String previousPath = trace ? pushFieldPath(tagStr) : null;
       try {
         Codec<?> codec = codecs.getOrDefault(tag, defaultCodec);
-        Object tagValue = codec.decode(pushback);
+        Object tagValue = codec.decode(input);
         instance.add(tag, tagValue);
         if (trace) {
           logger.atTrace().addKeyValue(LOG_KEY_FIELD, MDC.get(MDC_KEY)).log("decoded");

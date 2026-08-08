@@ -740,7 +740,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 | `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong`, `temporal` | Converter factories for common string transformations |
 | `BiMap` | `of`, `to`, `from` | Immutable bidirectional map implementing `Converter` |
 | `Strings` | `padStart`, `padEnd`, `stripStart`, `stripEnd`, `codePointCount`, `hexByteCount` | String padding, stripping, and counting utilities |
-| `InputStreams` | `readFully` | Read exactly N bytes from an input stream |
+| `InputStreams` | `readFully`, `markable`, `atEndOfStream` | Read exactly N bytes; ensure mark support; test for end of stream without consuming |
 | `Preconditions` | `check` | Validate conditions, throwing `IllegalArgumentException` on failure |
 | `Predicates` | `alwaysTrue`, `alwaysFalse` | Common predicate factories |
 | `CodePointReader` | `create`, `read` | Read Unicode code points from an input stream using a charset decoder |

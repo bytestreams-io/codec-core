@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class InputStreamsTest {
@@ -55,5 +56,44 @@ class InputStreamsTest {
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 
     assertThatThrownBy(() -> InputStreams.readFully(input, 5)).isInstanceOf(EOFException.class);
+  }
+
+  @Test
+  void markable_returns_a_markable_stream_unchanged() {
+    ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {1, 2});
+
+    assertThat(InputStreams.markable(input)).isSameAs(input);
+  }
+
+  @Test
+  void markable_wraps_a_stream_that_refuses_mark() {
+    MarkNotSupportedInputStream input = new MarkNotSupportedInputStream(new byte[] {1, 2});
+
+    InputStream result = InputStreams.markable(input);
+
+    assertThat(result).isNotSameAs(input);
+    assertThat(result.markSupported()).isTrue();
+  }
+
+  @Test
+  void markable_rejects_null() {
+    assertThatThrownBy(() -> InputStreams.markable(null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("input");
+  }
+
+  @Test
+  void atEndOfStream_consumes_nothing_when_bytes_remain() throws IOException {
+    ByteArrayInputStream input = new ByteArrayInputStream(new byte[] {7, 8});
+
+    assertThat(InputStreams.atEndOfStream(input)).isFalse();
+    assertThat(input.readAllBytes()).containsExactly(7, 8);
+  }
+
+  @Test
+  void atEndOfStream_reports_an_exhausted_stream() throws IOException {
+    ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+
+    assertThat(InputStreams.atEndOfStream(input)).isTrue();
   }
 }

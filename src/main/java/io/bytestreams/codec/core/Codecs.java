@@ -529,6 +529,52 @@ public class Codecs {
     return new PackedDecimalCodec(digits);
   }
 
+  /**
+   * Creates a codec for EBCDIC zoned decimal integers, the format COBOL declares as
+   * {@code DISPLAY}.
+   *
+   * <p>One digit per byte as EBCDIC characters, with the sign held in the high nibble (the "zone")
+   * of the final byte:
+   *
+   * <pre>{@code
+   * Codec<Integer> quantity = Codecs.zonedInt(3);
+   * quantity.encode(-123, out);   // writes F1 F2 D3
+   * }</pre>
+   *
+   * <p>Unlike {@link #ebcdicInt(int)}, which reads the same bytes as text and cannot represent a
+   * sign. Reading a signed field that way is the trap this codec closes: {@code F1 F2 D3} is the
+   * EBCDIC string {@code "12L"}, so the value decodes to something plausible with no error and the
+   * sign silently lost.
+   *
+   * @param digits the number of digits (1 to 9)
+   * @return a new zoned decimal integer codec
+   * @throws IllegalArgumentException if digits is outside 1 to 9
+   */
+  public static Codec<Integer> zonedInt(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 9, INT_DIGITS_MSG, digits);
+    return new ZonedDecimalCodec(digits).xmap(Long::intValue, Integer::longValue);
+  }
+
+  /**
+   * Creates a codec for EBCDIC zoned decimal longs, the format COBOL declares as {@code DISPLAY}.
+   *
+   * <p>One digit per byte as EBCDIC characters, with the sign held in the high nibble of the final
+   * byte. Encoding writes zone {@code C} for positive and {@code D} for negative; decoding also
+   * accepts {@code A}, {@code E} and {@code F} as positive and {@code B} as negative.
+   *
+   * <p>Leading bytes must carry the digit zone {@code F}, which rejects ASCII digits read as
+   * EBCDIC — they would otherwise decode to the right number by accident, both encodings holding
+   * the digit in the low nibble.
+   *
+   * @param digits the number of digits (1 to 18)
+   * @return a new zoned decimal long codec
+   * @throws IllegalArgumentException if digits is outside 1 to 18
+   */
+  public static Codec<Long> zonedLong(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 18, LONG_DIGITS_MSG, digits);
+    return new ZonedDecimalCodec(digits);
+  }
+
   // ---------------------------------------------------------------------------
   // ASCII numeric codecs
   // ---------------------------------------------------------------------------

@@ -2,7 +2,6 @@ package io.bytestreams.codec.core;
 
 import io.bytestreams.codec.core.util.InputStreams;
 import io.bytestreams.codec.core.util.Preconditions;
-import io.bytestreams.codec.core.util.Strings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,11 +34,6 @@ import java.util.regex.Pattern;
 class PackedDecimalCodec implements Codec<Long> {
   private static final HexFormat HEX_FORMAT = HexFormat.of().withUpperCase();
   private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d*");
-  private static final String POSITIVE_SIGNS = "ACEF";
-  private static final String NEGATIVE_SIGNS = "BD";
-  private static final char POSITIVE = 'C';
-  private static final char NEGATIVE = 'D';
-
   private final int digits;
   private final int byteCount;
   private final long limit;
@@ -51,28 +45,14 @@ class PackedDecimalCodec implements Codec<Long> {
     this.digits = digits;
     // digits plus one sign nibble, rounded up to whole bytes
     this.byteCount = digits / 2 + 1;
-    this.limit = pow10(digits);
-  }
-
-  private static long pow10(int exponent) {
-    long result = 1;
-    for (int i = 0; i < exponent; i++) {
-      result *= 10;
-    }
-    return result;
+    this.limit = SignedDecimals.limitFor(digits);
   }
 
   /** {@inheritDoc} */
   @Override
   public EncodeResult encode(Long value, OutputStream output) throws IOException {
-    Preconditions.check(
-        value > -limit && value < limit,
-        "value must have at most %d digits, but was [%d]",
-        digits,
-        value);
-    String magnitude = Long.toString(Math.abs(value));
-    char sign = value < 0 ? NEGATIVE : POSITIVE;
-    String hex = Strings.padStart(magnitude, '0', byteCount * 2 - 1) + sign;
+    SignedDecimals.checkRange(value, limit, digits);
+    String hex = SignedDecimals.padded(value, byteCount * 2 - 1) + SignedDecimals.signFor(value);
     output.write(HEX_FORMAT.parseHex(hex));
     return new EncodeResult(digits, byteCount);
   }
@@ -97,10 +77,10 @@ class PackedDecimalCodec implements Codec<Long> {
     // constructor caps `digits` at 18, and 10^18 - 1 is below Long.MAX_VALUE. Removing either check
     // would let a wider field reach here and fail as NumberFormatException rather than
     // CodecException.
-    if (POSITIVE_SIGNS.indexOf(sign) >= 0) {
+    if (SignedDecimals.isPositive(sign)) {
       return Long.parseLong(magnitude);
     }
-    if (NEGATIVE_SIGNS.indexOf(sign) >= 0) {
+    if (SignedDecimals.isNegative(sign)) {
       return -Long.parseLong(magnitude);
     }
     throw new CodecException("invalid packed decimal sign nibble: %s".formatted(hex), null);

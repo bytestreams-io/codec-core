@@ -158,6 +158,31 @@ invalid packed decimal digits: 1A3C
 invalid packed decimal sign nibble: 1230
 ```
 
+### Zoned decimal (COBOL DISPLAY)
+
+The other mainframe signed format writes one digit per byte as EBCDIC characters, with the sign held in the high nibble — the **zone** — of the final byte. It is what `PIC S9(n) DISPLAY` compiles to.
+
+```java
+Codec<Integer> quantity = Codecs.zonedInt(3);
+quantity.encode(-123, out);   // writes F1 F2 D3
+                              //           ↑ zone carries the sign
+
+Codec<Long> total = Codecs.zonedLong(15);
+```
+
+Encoding writes zone `C` for positive and `D` for negative on the last byte, `F` on the rest. Decoding also accepts `A`, `E` and `F` as positive and `B` as negative, since `F` is what a producer writes for a field it treats as unsigned.
+
+**Do not read these fields as text.** `ebcdic(3)` on `F1 F2 D3` returns the string `"12L"` — `0xD3` is the letter `L` in EBCDIC — so a negative amount becomes a plausible-looking value with no error raised and the sign silently lost. That mis-read is what this codec exists to prevent.
+
+Leading bytes must carry the digit zone `F`. That rejects ASCII digits read as EBCDIC — `0x31` and `0xF1` both hold `1` in the low nibble, so without the check a whole ASCII field would decode to the *right number* and quietly hide the fact that the file is not EBCDIC at all:
+
+```
+zonedLong(2) on 3132  ->  invalid zoned decimal zone: 3132
+zonedLong(2) on F132  ->  invalid zoned decimal sign zone: F132
+```
+
+Blank-filled fields are rejected on the same grounds: EBCDIC space is `0x40`, whose zone is not `F`. A field that may legitimately be blank wants a presence predicate rather than a numeric codec.
+
 ### ASCII and EBCDIC numerics
 
 Other protocols encode numbers as text — zero-padded decimal strings in ASCII or EBCDIC. These codecs handle the string encoding and numeric parsing in one step.
@@ -784,6 +809,8 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.bcdLong(n)` | BCD-encoded long (n digits, 1-18) |
 | `Codecs.packedInt(n)` | Signed packed decimal integer, COBOL COMP-3 (n digits, 1-9) |
 | `Codecs.packedLong(n)` | Signed packed decimal long, COBOL COMP-3 (n digits, 1-18) |
+| `Codecs.zonedInt(n)` | EBCDIC zoned decimal integer, COBOL DISPLAY (n digits, 1-9) |
+| `Codecs.zonedLong(n)` | EBCDIC zoned decimal long, COBOL DISPLAY (n digits, 1-18) |
 | `Codecs.asciiInt(n)` | ASCII numeric integer (n digits, 1-9) |
 | `Codecs.asciiLong(n)` | ASCII numeric long (n digits, 1-18) |
 | `Codecs.ebcdicInt(n)` | EBCDIC numeric integer (n digits, 1-9) |

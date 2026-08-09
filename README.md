@@ -197,6 +197,18 @@ Codec<Integer> ebcdicInt = Codecs.ebcdicInt(4);   // "0042" in EBCDIC ↔ 42
 Codec<Long> ebcdicLong = Codecs.ebcdicLong(10);   // "1234567890" in EBCDIC ↔ 1234567890L
 ```
 
+#### Wider than a long
+
+The `Int` factories stop at 9 digits and the `Long` ones at 18, which is what those types carry. Fields do exceed that — COBOL allows `PIC 9(31)`, and long reference numbers routinely run past 18 digits. The `BigInt` factories have no such limit:
+
+```java
+Codec<BigInteger> reference = Codecs.asciiBigInt(25);
+Codec<BigInteger> total = Codecs.ebcdicBigInt(21);
+Codec<BigInteger> packed = Codecs.bcdBigInt(24);    // 24 digits in 12 bytes
+```
+
+These are zero-padded numerics, so they are unsigned like their narrower siblings. A field carrying a sign wants packed or zoned decimal.
+
 ### Scaled amounts
 
 Money is usually stored as an integer of minor units, with the decimal point coming from the specification rather than the data. ISO 8583 field 4 is twelve digits of minor units; COBOL writes `PIC S9(7)V99`, where `V` marks a point that occupies no storage.
@@ -840,14 +852,17 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.float64()` / `Codecs.float64(order)` | IEEE 754 double (8 bytes, big-endian by default) |
 | `Codecs.bcdInt(n)` | BCD-encoded integer (n digits, 1-9) |
 | `Codecs.bcdLong(n)` | BCD-encoded long (n digits, 1-18) |
+| `Codecs.bcdBigInt(n)` | BCD-encoded value of any width |
 | `Codecs.packedInt(n)` | Signed packed decimal integer, COBOL COMP-3 (n digits, 1-9) |
 | `Codecs.packedLong(n)` | Signed packed decimal long, COBOL COMP-3 (n digits, 1-18) |
 | `Codecs.zonedInt(n)` | EBCDIC zoned decimal integer, COBOL DISPLAY (n digits, 1-9) |
 | `Codecs.zonedLong(n)` | EBCDIC zoned decimal long, COBOL DISPLAY (n digits, 1-18) |
 | `Codecs.asciiInt(n)` | ASCII numeric integer (n digits, 1-9) |
 | `Codecs.asciiLong(n)` | ASCII numeric long (n digits, 1-18) |
+| `Codecs.asciiBigInt(n)` | ASCII numeric of any width |
 | `Codecs.ebcdicInt(n)` | EBCDIC numeric integer (n digits, 1-9) |
 | `Codecs.ebcdicLong(n)` | EBCDIC numeric long (n digits, 1-18) |
+| `Codecs.ebcdicBigInt(n)` | EBCDIC numeric of any width |
 | `Codecs.ascii(n)` / `Codecs.ascii()` / `Codecs.ascii(lc)` | US-ASCII string (fixed, stream, or prefixed) |
 | `Codecs.utf8(n)` / `Codecs.utf8()` / `Codecs.utf8(lc)` | UTF-8 string (fixed, stream, or prefixed) |
 | `Codecs.latin1(n)` / `Codecs.latin1()` / `Codecs.latin1(lc)` | ISO-8859-1 string (fixed, stream, or prefixed) |
@@ -896,7 +911,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 |-------|-------------|-------------|
 | `Converter` | `to`, `from`, `andThen` | Bidirectional conversion interface |
 | `ConverterException` | — | Exception thrown when a `Converter` conversion fails |
-| `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong`, `scaled`, `temporal` | Converter factories for common string and numeric transformations |
+| `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong`, `toBigInt`, `scaled`, `temporal` | Converter factories for common string and numeric transformations |
 | `BiMap` | `of`, `to`, `from` | Immutable bidirectional map implementing `Converter` |
 | `Strings` | `padStart`, `padEnd`, `stripStart`, `stripEnd`, `codePointCount`, `hexByteCount` | String padding, stripping, and counting utilities |
 | `InputStreams` | `readFully`, `markable`, `atEndOfStream` | Read exactly N bytes; ensure mark support; test for end of stream without consuming |

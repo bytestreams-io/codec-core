@@ -1,6 +1,7 @@
 package io.bytestreams.codec.core.util;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
@@ -207,11 +208,56 @@ public final class Converters {
    * A zero-padded numeric field has nowhere to put a sign: padding a negative value would leave the
    * minus inside the zeros, producing bytes that cannot be read back.
    */
-  private static void checkNotNegative(Number value) {
+  private static void checkNotNegative(BigInteger value) {
     Preconditions.check(
-        value.longValue() >= 0,
-        "zero-padded numerics are unsigned, but value was [%d]",
-        value.longValue());
+        value.signum() >= 0, "zero-padded numerics are unsigned, but value was [%s]", value);
+  }
+
+  private static void checkNotNegative(long value) {
+    Preconditions.check(value >= 0, "zero-padded numerics are unsigned, but value was [%d]", value);
+  }
+
+  /**
+   * Returns a converter that parses strings to {@link BigInteger}s on
+   * {@link Converter#to(Object) to} and formats them to zero-padded strings on
+   * {@link Converter#from(Object) from}.
+   *
+   * <p>For numeric fields wider than a {@code long} holds. COBOL allows {@code PIC 9(31)}, and
+   * {@link #toLong(int)} stops at eighteen digits.
+   *
+   * <pre>{@code
+   * Codec<BigInteger> reference = Codecs.ascii(25).xmap(Converters.toBigInt(25));
+   * }</pre>
+   *
+   * <p>Zero-padded numerics are unsigned. A negative value is rejected on
+   * {@link Converter#from(Object) from}, since padding it would put the minus sign inside the
+   * zeros. Use a zoned or packed decimal codec for a field that carries a sign.
+   *
+   * <p>Decoding is more permissive and accepts a leading sign, so a non-conforming field can
+   * be read but not written back unchanged.
+   *
+   * @param digits the number of digits for zero-padded formatting
+   * @return a string-to-BigInteger converter
+   * @throws IllegalArgumentException if digits is not positive
+   */
+  public static Converter<String, BigInteger> toBigInt(int digits) {
+    Preconditions.check(digits > 0, LENGTH_MUST_BE_POSITIVE, digits);
+    return new Converter<>() {
+      @Override
+      public BigInteger to(String value) {
+        try {
+          return new BigInteger(value);
+        } catch (NumberFormatException e) {
+          throw new ConverterException("invalid big integer: " + value, e);
+        }
+      }
+
+      @Override
+      public String from(BigInteger value) {
+        checkNotNegative(value);
+        return Strings.padStart(value.toString(), '0', digits);
+      }
+    };
   }
 
   /**
@@ -266,6 +312,9 @@ public final class Converters {
    * {@link Converter#from(Object) from}, since padding it would put the minus sign inside the
    * zeros. Use a zoned or packed decimal codec for a field that carries a sign.
    *
+   * <p>Decoding is more permissive and accepts a leading sign, so a non-conforming field can
+   * be read but not written back unchanged.
+   *
    * @param digits the number of digits for zero-padded formatting
    * @return a string-to-integer converter
    * @throws IllegalArgumentException if digits is not positive
@@ -297,6 +346,9 @@ public final class Converters {
    * <p>Zero-padded numerics are unsigned. A negative value is rejected on
    * {@link Converter#from(Object) from}, since padding it would put the minus sign inside the
    * zeros. Use a zoned or packed decimal codec for a field that carries a sign.
+   *
+   * <p>Decoding is more permissive and accepts a leading sign, so a non-conforming field can
+   * be read but not written back unchanged.
    *
    * @param digits the number of digits for zero-padded formatting
    * @return a string-to-long converter

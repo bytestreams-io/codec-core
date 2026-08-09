@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -509,5 +510,56 @@ class ConvertersTest {
     assertThatThrownBy(() -> converter.from(-123L))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("unsigned");
+  }
+
+  @Test
+  void toBigInt_parses_and_pads() {
+    Converter<String, BigInteger> converter = Converters.toBigInt(10);
+
+    assertThat(converter.to("0000012345")).isEqualTo(new BigInteger("12345"));
+    assertThat(converter.from(new BigInteger("12345"))).isEqualTo("0000012345");
+  }
+
+  @Test
+  void toBigInt_carries_values_beyond_a_long() {
+    Converter<String, BigInteger> converter = Converters.toBigInt(25);
+    BigInteger wide = new BigInteger("1234567890123456789012345");
+
+    assertThat(converter.to("1234567890123456789012345")).isEqualTo(wide);
+    assertThat(converter.from(wide)).isEqualTo("1234567890123456789012345");
+  }
+
+  @Test
+  void toBigInt_accepts_a_positive_value_whose_low_bits_look_negative() {
+    // 2^63 truncates to Long.MIN_VALUE, so a longValue-based sign check would reject it
+    Converter<String, BigInteger> converter = Converters.toBigInt(19);
+    BigInteger justOverLong = new BigInteger("9223372036854775808");
+
+    assertThat(justOverLong.longValue()).isNegative();
+    assertThat(converter.from(justOverLong)).isEqualTo("9223372036854775808");
+  }
+
+  @Test
+  void toBigInt_rejects_a_negative_value() {
+    Converter<String, BigInteger> converter = Converters.toBigInt(10);
+    BigInteger negative = new BigInteger("-5");
+
+    assertThatThrownBy(() -> converter.from(negative))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("unsigned");
+  }
+
+  @Test
+  void toBigInt_rejects_a_non_numeric_string() {
+    Converter<String, BigInteger> converter = Converters.toBigInt(4);
+
+    assertThatThrownBy(() -> converter.to("12x4"))
+        .isInstanceOf(ConverterException.class)
+        .hasMessageContaining("12x4");
+  }
+
+  @Test
+  void toBigInt_rejects_a_non_positive_digit_count() {
+    assertThatThrownBy(() -> Converters.toBigInt(0)).isInstanceOf(IllegalArgumentException.class);
   }
 }

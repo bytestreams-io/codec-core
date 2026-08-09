@@ -482,6 +482,53 @@ public class Codecs {
     return new BcdCodec(digits).xmap(Converters.toLong(digits));
   }
 
+  /**
+   * Creates a codec for signed packed decimal integers, the format COBOL declares as
+   * {@code COMP-3}.
+   *
+   * <p>Digits occupy a nibble each, two to a byte, with the final nibble carrying the sign. A
+   * five-digit field takes three bytes:
+   *
+   * <pre>{@code
+   * Codec<Integer> amount = Codecs.packedInt(5);
+   * amount.encode(-12345, out);   // writes 12 34 5D
+   * }</pre>
+   *
+   * <p>Unlike {@link #bcdInt(int)}, which packs digits the same way but has no sign nibble and so
+   * cannot represent a negative value.
+   *
+   * @param digits the number of digits (1 to 9)
+   * @return a new packed decimal integer codec
+   * @throws IllegalArgumentException if digits is outside 1 to 9
+   */
+  public static Codec<Integer> packedInt(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 9, INT_DIGITS_MSG, digits);
+    return new PackedDecimalCodec(digits).xmap(Long::intValue, Integer::longValue);
+  }
+
+  /**
+   * Creates a codec for signed packed decimal longs, the format COBOL declares as {@code COMP-3}.
+   *
+   * <p>Digits occupy a nibble each, two to a byte, with the final nibble carrying the sign.
+   * Encoding writes {@code C} for positive and {@code D} for negative; decoding also accepts
+   * {@code A}, {@code E} and {@code F} as positive and {@code B} as negative.
+   *
+   * <pre>{@code
+   * Codec<Long> balance = Codecs.packedLong(11);
+   * }</pre>
+   *
+   * <p>Unlike {@link #bcdLong(int)}, which packs digits the same way but has no sign nibble and so
+   * cannot represent a negative value.
+   *
+   * @param digits the number of digits (1 to 18)
+   * @return a new packed decimal long codec
+   * @throws IllegalArgumentException if digits is outside 1 to 18
+   */
+  public static Codec<Long> packedLong(int digits) {
+    Preconditions.check(digits >= 1 && digits <= 18, LONG_DIGITS_MSG, digits);
+    return new PackedDecimalCodec(digits);
+  }
+
   // ---------------------------------------------------------------------------
   // ASCII numeric codecs
   // ---------------------------------------------------------------------------

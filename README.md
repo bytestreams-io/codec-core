@@ -133,6 +133,31 @@ Codec<Long> bcdLongCodec = Codecs.bcdLong(10);   // 10 digits, 5 bytes
 
 Because two digits pack into one byte, `count` and `bytes` differ: encoding `42` with `bcdInt(4)` writes 2 bytes (`0x00 0x42`) but returns `count=4` (digits) and `bytes=2`. Odd digit counts are left-padded with a zero nibble.
 
+BCD has no sign, so it cannot hold a negative value.
+
+### Packed decimal (COBOL COMP-3)
+
+Mainframe files store signed numbers as packed decimal — the same nibble packing as BCD, except the **final nibble carries the sign** instead of a digit. It is what COBOL's `PIC S9(n) COMP-3` compiles to.
+
+```java
+Codec<Integer> amount = Codecs.packedInt(5);
+amount.encode(-12345, out);   // writes 12 34 5D
+                              //              ↑ sign nibble
+
+Codec<Long> balance = Codecs.packedLong(11);
+```
+
+A field of `n` digits takes `n / 2 + 1` bytes, since the sign needs a nibble of its own. Where the digit count is even, the leading nibble is an unused zero.
+
+Encoding writes `C` for positive and `D` for negative. Decoding accepts the wider set IBM defines — `A`, `C`, `E` and `F` positive, `B` and `D` negative — because `F` is common for fields the producer treats as unsigned.
+
+A sign nibble where a digit belongs, or a digit where the sign belongs, is rejected:
+
+```
+invalid packed decimal digits: 1A3C
+invalid packed decimal sign nibble: 1230
+```
+
 ### ASCII and EBCDIC numerics
 
 Other protocols encode numbers as text — zero-padded decimal strings in ASCII or EBCDIC. These codecs handle the string encoding and numeric parsing in one step.
@@ -757,6 +782,8 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.float64()` / `Codecs.float64(order)` | IEEE 754 double (8 bytes, big-endian by default) |
 | `Codecs.bcdInt(n)` | BCD-encoded integer (n digits, 1-9) |
 | `Codecs.bcdLong(n)` | BCD-encoded long (n digits, 1-18) |
+| `Codecs.packedInt(n)` | Signed packed decimal integer, COBOL COMP-3 (n digits, 1-9) |
+| `Codecs.packedLong(n)` | Signed packed decimal long, COBOL COMP-3 (n digits, 1-18) |
 | `Codecs.asciiInt(n)` | ASCII numeric integer (n digits, 1-9) |
 | `Codecs.asciiLong(n)` | ASCII numeric long (n digits, 1-18) |
 | `Codecs.ebcdicInt(n)` | EBCDIC numeric integer (n digits, 1-9) |

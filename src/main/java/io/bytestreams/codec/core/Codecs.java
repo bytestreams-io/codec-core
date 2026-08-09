@@ -7,6 +7,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.bytestreams.codec.core.util.Converters;
 import io.bytestreams.codec.core.util.Preconditions;
 import io.bytestreams.codec.core.util.Strings;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -54,6 +55,7 @@ public class Codecs {
   private static final Charset EBCDIC = Charset.forName("IBM1047");
   private static final String INT_DIGITS_MSG = "digits must be between 1 and 9, but was [%d]";
   private static final String LONG_DIGITS_MSG = "digits must be between 1 and 18, but was [%d]";
+  private static final String POSITIVE_DIGITS_MSG = "digits must be positive, but was [%d]";
 
   private Codecs() {}
 
@@ -462,6 +464,21 @@ public class Codecs {
   }
 
   /**
+   * Creates a BCD codec for values wider than a {@code long} holds.
+   *
+   * <p>{@link #bcdLong(int)} stops at eighteen digits, which is what a {@code long} carries. This
+   * has no such limit.
+   *
+   * @param digits the number of digits
+   * @return a new BCD big integer codec
+   * @throws IllegalArgumentException if digits is not positive
+   */
+  public static Codec<BigInteger> bcdBigInt(int digits) {
+    Preconditions.check(digits > 0, POSITIVE_DIGITS_MSG, digits);
+    return new BcdCodec(digits).xmap(Converters.toBigInt(digits));
+  }
+
+  /**
    * Creates a fixed-length BCD (Binary Coded Decimal) codec that decodes to {@link Long}.
    *
    * <p>Each byte holds two decimal digits (0–9) in its high and low nibbles. Odd-length digit
@@ -619,6 +636,21 @@ public class Codecs {
     return ascii(digits).xmap(Converters.toLong(digits));
   }
 
+  /**
+   * Creates an ASCII numeric codec for values wider than a {@code long} holds.
+   *
+   * <p>{@link #asciiLong(int)} stops at eighteen digits. COBOL allows {@code PIC 9(31)}, and long
+   * reference numbers exceed a long routinely.
+   *
+   * @param digits the number of digits
+   * @return a new ASCII big integer codec
+   * @throws IllegalArgumentException if digits is not positive
+   */
+  public static Codec<BigInteger> asciiBigInt(int digits) {
+    Preconditions.check(digits > 0, POSITIVE_DIGITS_MSG, digits);
+    return ascii(digits).xmap(Converters.toBigInt(digits));
+  }
+
   // ---------------------------------------------------------------------------
   // EBCDIC numeric codecs
   // ---------------------------------------------------------------------------
@@ -661,6 +693,20 @@ public class Codecs {
   public static Codec<Long> ebcdicLong(int digits) {
     Preconditions.check(digits >= 1 && digits <= 18, LONG_DIGITS_MSG, digits);
     return ebcdic(digits).xmap(Converters.toLong(digits));
+  }
+
+  /**
+   * Creates an EBCDIC numeric codec for values wider than a {@code long} holds.
+   *
+   * <p>{@link #ebcdicLong(int)} stops at eighteen digits, which is what a {@code long} carries.
+   *
+   * @param digits the number of digits
+   * @return a new EBCDIC big integer codec
+   * @throws IllegalArgumentException if digits is not positive
+   */
+  public static Codec<BigInteger> ebcdicBigInt(int digits) {
+    Preconditions.check(digits > 0, POSITIVE_DIGITS_MSG, digits);
+    return ebcdic(digits).xmap(Converters.toBigInt(digits));
   }
 
   // ---------------------------------------------------------------------------

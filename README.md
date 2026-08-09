@@ -89,6 +89,32 @@ Codec<Integer> signedInt = Codecs.int32();        // 4 bytes big-endian
 Codec<Long> signedLong = Codecs.int64();          // 8 bytes big-endian
 ```
 
+#### Byte order
+
+Network and mainframe protocols are usually big-endian, which is the default. Formats of PC and embedded origin — ZIP, RIFF, BMP, PE — are little-endian. Every multi-byte number codec takes an optional `ByteOrder`:
+
+```java
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+
+Codec<Long> size = Codecs.uint32(LITTLE_ENDIAN);
+Codec<Float> ratio = Codecs.float32(LITTLE_ENDIAN);
+```
+
+For a format that is little-endian throughout, name the codecs once and reuse them:
+
+```java
+Codec<Integer> u16 = Codecs.uint16(LITTLE_ENDIAN);
+Codec<Long> u32 = Codecs.uint32(LITTLE_ENDIAN);
+
+Codec<LocalFileHeader> header = Codecs.<LocalFileHeader>sequential(LocalFileHeader::new)
+    .constant("signature", Codecs.binary(4), new byte[] {0x50, 0x4B, 0x03, 0x04})
+    .field("version", u16, LocalFileHeader::getVersion, LocalFileHeader::setVersion)
+    .field("compressedSize", u32, LocalFileHeader::getCompressedSize, LocalFileHeader::setCompressedSize)
+    .build();
+```
+
+`uint8` takes no order — a single byte has none. BCD and text-encoded numerics are unaffected, since their digit order is fixed by the encoding rather than by the machine.
+
 ### Floating-point
 
 ```java
@@ -722,13 +748,13 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | Method | Description |
 |--------|-------------|
 | `Codecs.uint8()` | Unsigned byte (1 byte) |
-| `Codecs.uint16()` | Unsigned short (2 bytes big-endian) |
-| `Codecs.uint32()` | Unsigned integer (4 bytes big-endian) |
-| `Codecs.int16()` | Signed short (2 bytes big-endian) |
-| `Codecs.int32()` | Signed integer (4 bytes big-endian) |
-| `Codecs.int64()` | Signed long (8 bytes big-endian) |
-| `Codecs.float32()` | IEEE 754 float (4 bytes) |
-| `Codecs.float64()` | IEEE 754 double (8 bytes) |
+| `Codecs.uint16()` / `Codecs.uint16(order)` | Unsigned short (2 bytes, big-endian by default) |
+| `Codecs.uint32()` / `Codecs.uint32(order)` | Unsigned integer (4 bytes, big-endian by default) |
+| `Codecs.int16()` / `Codecs.int16(order)` | Signed short (2 bytes, big-endian by default) |
+| `Codecs.int32()` / `Codecs.int32(order)` | Signed integer (4 bytes, big-endian by default) |
+| `Codecs.int64()` / `Codecs.int64(order)` | Signed long (8 bytes, big-endian by default) |
+| `Codecs.float32()` / `Codecs.float32(order)` | IEEE 754 float (4 bytes, big-endian by default) |
+| `Codecs.float64()` / `Codecs.float64(order)` | IEEE 754 double (8 bytes, big-endian by default) |
 | `Codecs.bcdInt(n)` | BCD-encoded integer (n digits, 1-9) |
 | `Codecs.bcdLong(n)` | BCD-encoded long (n digits, 1-18) |
 | `Codecs.asciiInt(n)` | ASCII numeric integer (n digits, 1-9) |

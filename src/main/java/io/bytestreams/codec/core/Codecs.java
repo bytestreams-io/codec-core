@@ -7,6 +7,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.bytestreams.codec.core.util.Converters;
 import io.bytestreams.codec.core.util.Preconditions;
 import io.bytestreams.codec.core.util.Strings;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -73,9 +74,24 @@ public class Codecs {
    * Creates a codec for unsigned short values (0 to 65535), encoded as 2-byte big-endian binary.
    *
    * @return a new unsigned short codec
+   * @see #uint16(ByteOrder)
    */
   public static Codec<Integer> uint16() {
     return BinaryNumberCodec.ofUnsignedShort();
+  }
+
+  /**
+   * Creates a codec for unsigned short values (0 to 65535), encoded as 2-byte binary in the given byte order.
+   *
+   * <p>The no-argument factory is big-endian. Little-endian is common in formats of PC and
+   * embedded origin, such as ZIP, RIFF and PE.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Integer> uint16(ByteOrder order) {
+    return BinaryNumberCodec.ofUnsignedShort().withOrder(order);
   }
 
   /**
@@ -83,18 +99,48 @@ public class Codecs {
    * binary.
    *
    * @return a new unsigned integer codec
+   * @see #uint32(ByteOrder)
    */
   public static Codec<Long> uint32() {
     return BinaryNumberCodec.ofUnsignedInt();
   }
 
   /**
+   * Creates a codec for unsigned integer values (0 to 4294967295), encoded as 4-byte binary in the given byte order.
+   *
+   * <p>The no-argument factory is big-endian. Little-endian is common in formats of PC and
+   * embedded origin, such as ZIP, RIFF and PE.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Long> uint32(ByteOrder order) {
+    return BinaryNumberCodec.ofUnsignedInt().withOrder(order);
+  }
+
+  /**
    * Creates a codec for signed short values (-32768 to 32767), encoded as 2-byte big-endian binary.
    *
    * @return a new signed short codec
+   * @see #int16(ByteOrder)
    */
   public static Codec<Short> int16() {
     return BinaryNumberCodec.ofShort();
+  }
+
+  /**
+   * Creates a codec for signed short values (-32768 to 32767), encoded as 2-byte binary in the given byte order.
+   *
+   * <p>The no-argument factory is big-endian. Little-endian is common in formats of PC and
+   * embedded origin, such as ZIP, RIFF and PE.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Short> int16(ByteOrder order) {
+    return BinaryNumberCodec.ofShort().withOrder(order);
   }
 
   /**
@@ -102,36 +148,96 @@ public class Codecs {
    * big-endian binary.
    *
    * @return a new signed integer codec
+   * @see #int32(ByteOrder)
    */
   public static Codec<Integer> int32() {
     return BinaryNumberCodec.ofInt();
   }
 
   /**
+   * Creates a codec for signed integer values (-2147483648 to 2147483647), encoded as 4-byte binary in the given byte order.
+   *
+   * <p>The no-argument factory is big-endian. Little-endian is common in formats of PC and
+   * embedded origin, such as ZIP, RIFF and PE.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Integer> int32(ByteOrder order) {
+    return BinaryNumberCodec.ofInt().withOrder(order);
+  }
+
+  /**
    * Creates a codec for signed long values, encoded as 8-byte big-endian binary.
    *
    * @return a new signed long codec
+   * @see #int64(ByteOrder)
    */
   public static Codec<Long> int64() {
     return BinaryNumberCodec.ofLong();
   }
 
   /**
+   * Creates a codec for signed long values, encoded as 8-byte binary in the given byte order.
+   *
+   * <p>The no-argument factory is big-endian. Little-endian is common in formats of PC and
+   * embedded origin, such as ZIP, RIFF and PE.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Long> int64(ByteOrder order) {
+    return BinaryNumberCodec.ofLong().withOrder(order);
+  }
+
+  /**
    * Creates a codec for float values (IEEE 754 single-precision, 4 bytes).
    *
    * @return a new float codec
+   * @see #float32(ByteOrder)
    */
   public static Codec<Float> float32() {
     return BinaryNumberCodec.ofFloat();
   }
 
   /**
+   * Creates a codec for IEEE 754 single-precision values, encoded as 4-byte binary in the given byte order.
+   *
+   * <p>The no-argument factory is big-endian. Little-endian is common in formats of PC and
+   * embedded origin, such as ZIP, RIFF and PE.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Float> float32(ByteOrder order) {
+    return BinaryNumberCodec.ofFloat().withOrder(order);
+  }
+
+  /**
    * Creates a codec for double values (IEEE 754 double-precision, 8 bytes).
    *
    * @return a new double codec
+   * @see #float64(ByteOrder)
    */
   public static Codec<Double> float64() {
     return BinaryNumberCodec.ofDouble();
+  }
+
+  /**
+   * Creates a codec for IEEE 754 double-precision values, encoded as 8-byte binary in the given byte order.
+   *
+   * <p>The no-argument factory is big-endian. Little-endian is common in formats of PC and
+   * embedded origin, such as ZIP, RIFF and PE.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Double> float64(ByteOrder order) {
+    return BinaryNumberCodec.ofDouble().withOrder(order);
   }
 
   // ---------------------------------------------------------------------------

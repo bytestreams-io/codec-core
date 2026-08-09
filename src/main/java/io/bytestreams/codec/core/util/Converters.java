@@ -1,5 +1,6 @@
 package io.bytestreams.codec.core.util;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
@@ -203,8 +204,67 @@ public final class Converters {
   }
 
   /**
+   * A zero-padded numeric field has nowhere to put a sign: padding a negative value would leave the
+   * minus inside the zeros, producing bytes that cannot be read back.
+   */
+  private static void checkNotNegative(Number value) {
+    Preconditions.check(
+        value.longValue() >= 0,
+        "zero-padded numerics are unsigned, but value was [%d]",
+        value.longValue());
+  }
+
+  /**
+   * Returns a converter between an integer of minor units and a {@link BigDecimal} with an implied
+   * decimal point.
+   *
+   * <p>Many formats store a number as an integer whose decimal point position comes from the
+   * specification rather than the data: ISO 8583 field 4 is twelve digits of minor units, and COBOL
+   * writes {@code PIC S9(7)V99} with the {@code V} marking a point that occupies no storage.
+   *
+   * <pre>{@code
+   * Codec<BigDecimal> amount = Codecs.packedLong(9).xmap(Converters.scaled(2));
+   * Codec<BigDecimal> field4 = Codecs.asciiLong(12).xmap(Converters.scaled(2));
+   * }</pre>
+   *
+   * <p>Conversion is exact in both directions and never goes through {@code double}, which cannot
+   * represent most decimal fractions.
+   *
+   * <p>{@link Converter#from(Object) from} rejects a value carrying more precision than the scale
+   * allows rather than discarding it: {@code 123.456} at scale 2 is an error, not {@code 123.45}.
+   * Round explicitly beforehand if that is what you want.
+   *
+   * @param scale the number of implied decimal places
+   * @return a converter between minor units and a decimal amount
+   * @throws IllegalArgumentException if scale is negative
+   */
+  public static Converter<Long, BigDecimal> scaled(int scale) {
+    Preconditions.check(scale >= 0, "scale must not be negative, but was [%d]", scale);
+    return new Converter<>() {
+      @Override
+      public BigDecimal to(Long minorUnits) {
+        return BigDecimal.valueOf(minorUnits, scale);
+      }
+
+      @Override
+      public Long from(BigDecimal value) {
+        try {
+          return value.movePointRight(scale).longValueExact();
+        } catch (ArithmeticException e) {
+          throw new ConverterException(
+              "value [%s] does not fit %d decimal places".formatted(value, scale), e);
+        }
+      }
+    };
+  }
+
+  /**
    * Returns a converter that parses strings to integers on {@link Converter#to(Object) to} and
    * formats integers to zero-padded strings on {@link Converter#from(Object) from}.
+   *
+   * <p>Zero-padded numerics are unsigned. A negative value is rejected on
+   * {@link Converter#from(Object) from}, since padding it would put the minus sign inside the
+   * zeros. Use a zoned or packed decimal codec for a field that carries a sign.
    *
    * @param digits the number of digits for zero-padded formatting
    * @return a string-to-integer converter
@@ -224,6 +284,7 @@ public final class Converters {
 
       @Override
       public String from(Integer value) {
+        checkNotNegative(value);
         return Strings.padStart(Integer.toString(value), '0', digits);
       }
     };
@@ -232,6 +293,10 @@ public final class Converters {
   /**
    * Returns a converter that parses strings to longs on {@link Converter#to(Object) to} and
    * formats longs to zero-padded strings on {@link Converter#from(Object) from}.
+   *
+   * <p>Zero-padded numerics are unsigned. A negative value is rejected on
+   * {@link Converter#from(Object) from}, since padding it would put the minus sign inside the
+   * zeros. Use a zoned or packed decimal codec for a field that carries a sign.
    *
    * @param digits the number of digits for zero-padded formatting
    * @return a string-to-long converter
@@ -251,6 +316,7 @@ public final class Converters {
 
       @Override
       public String from(Long value) {
+        checkNotNegative(value);
         return Strings.padStart(Long.toString(value), '0', digits);
       }
     };

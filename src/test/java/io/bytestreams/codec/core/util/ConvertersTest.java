@@ -3,6 +3,7 @@ package io.bytestreams.codec.core.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -426,5 +427,87 @@ class ConvertersTest {
   void temporal_null_formatter() {
     assertThatThrownBy(() -> Converters.temporal((DateTimeFormatter) null, LocalDate::from))
         .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void scaled_applies_the_implied_decimal_point() {
+    Converter<Long, BigDecimal> scaled = Converters.scaled(2);
+
+    assertThat(scaled.to(12345L)).isEqualTo(new BigDecimal("123.45"));
+    assertThat(scaled.to(12345L).scale()).isEqualTo(2);
+    assertThat(scaled.from(new BigDecimal("123.45"))).isEqualTo(12345L);
+  }
+
+  @Test
+  void scaled_is_exact_rather_than_floating_point() {
+    // dividing by 100.0 first and wrapping the double keeps the binary expansion:
+    // 123.4500000000000028421709430404007434844970703125
+    assertThat(Converters.scaled(2).to(12345L)).isEqualByComparingTo("123.45");
+    assertThat(new BigDecimal(12345 / 100.0)).isNotEqualByComparingTo("123.45");
+  }
+
+  @Test
+  void scaled_handles_negative_values() {
+    Converter<Long, BigDecimal> scaled = Converters.scaled(2);
+
+    assertThat(scaled.to(-12345L)).isEqualTo(new BigDecimal("-123.45"));
+    assertThat(scaled.from(new BigDecimal("-123.45"))).isEqualTo(-12345L);
+  }
+
+  @Test
+  void scaled_accepts_a_value_with_fewer_decimals_than_the_scale() {
+    assertThat(Converters.scaled(2).from(new BigDecimal("123.4"))).isEqualTo(12340L);
+    assertThat(Converters.scaled(2).from(new BigDecimal("123"))).isEqualTo(12300L);
+  }
+
+  @Test
+  void scaled_rejects_a_value_needing_rounding() {
+    Converter<Long, BigDecimal> scaled = Converters.scaled(2);
+    BigDecimal tooPrecise = new BigDecimal("123.456");
+
+    assertThatThrownBy(() -> scaled.from(tooPrecise))
+        .isInstanceOf(ConverterException.class)
+        .hasMessageContaining("123.456");
+  }
+
+  @Test
+  void scaled_rejects_a_value_too_large_for_a_long() {
+    Converter<Long, BigDecimal> scaled = Converters.scaled(2);
+    BigDecimal huge = new BigDecimal("999999999999999999999");
+
+    assertThatThrownBy(() -> scaled.from(huge)).isInstanceOf(ConverterException.class);
+  }
+
+  @Test
+  void scaled_with_zero_scale_is_a_plain_integer() {
+    Converter<Long, BigDecimal> scaled = Converters.scaled(0);
+
+    assertThat(scaled.to(12345L)).isEqualTo(new BigDecimal("12345"));
+    assertThat(scaled.from(new BigDecimal("12345"))).isEqualTo(12345L);
+  }
+
+  @Test
+  void scaled_rejects_a_negative_scale() {
+    assertThatThrownBy(() -> Converters.scaled(-1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("scale");
+  }
+
+  @Test
+  void toInt_rejects_a_negative_value() {
+    Converter<String, Integer> converter = Converters.toInt(6);
+
+    assertThatThrownBy(() -> converter.from(-123))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("unsigned");
+  }
+
+  @Test
+  void toLong_rejects_a_negative_value() {
+    Converter<String, Long> converter = Converters.toLong(12);
+
+    assertThatThrownBy(() -> converter.from(-123L))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("unsigned");
   }
 }

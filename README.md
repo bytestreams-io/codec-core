@@ -197,6 +197,39 @@ Codec<Integer> ebcdicInt = Codecs.ebcdicInt(4);   // "0042" in EBCDIC ↔ 42
 Codec<Long> ebcdicLong = Codecs.ebcdicLong(10);   // "1234567890" in EBCDIC ↔ 1234567890L
 ```
 
+### Scaled amounts
+
+Money is usually stored as an integer of minor units, with the decimal point coming from the specification rather than the data. ISO 8583 field 4 is twelve digits of minor units; COBOL writes `PIC S9(7)V99`, where `V` marks a point that occupies no storage.
+
+`Converters.scaled` supplies that point, and works with whichever integer encoding the format uses:
+
+```java
+import java.math.BigDecimal;
+
+Codec<BigDecimal> comp3  = Codecs.packedLong(9).xmap(Converters.scaled(2));   // PIC S9(7)V99 COMP-3
+Codec<BigDecimal> display = Codecs.zonedLong(9).xmap(Converters.scaled(2));   // PIC S9(7)V99 DISPLAY
+Codec<BigDecimal> field4 = Codecs.asciiLong(12).xmap(Converters.scaled(2));   // ISO 8583 n12
+```
+
+Conversion is exact in both directions and never goes through `double`. That matters more than it looks: `new BigDecimal(12345 / 100.0)` is `123.4500000000000028421709430404007434844970703125`, and a thousand amounts accumulated as `double` drift by measurable fractions of a cent.
+
+**Encoding rejects a value carrying more precision than the field holds**, rather than discarding it:
+
+```java
+codec.encode(new BigDecimal("123.45"), out);    // 12345
+codec.encode(new BigDecimal("123.456"), out);   // field [amount]: value [123.456] does not fit 2 decimal places
+```
+
+Truncating would write the same bytes as `123.45` and lose six tenths of a cent with nothing to show for it. Round explicitly when that is what you want:
+
+```java
+codec.encode(amount.setScale(2, RoundingMode.HALF_UP), out);
+```
+
+A zero-padded numeric field has nowhere to put a sign, so `asciiInt`, `asciiLong`, `ebcdicInt` and `ebcdicLong` reject negative values — padding one would leave the minus inside the zeros. Use packed or zoned decimal for a field that carries a sign.
+
+The scale is a parameter rather than something derived from the data. Which exponent a currency uses — 2 for USD, 0 for JPY, 3 for BHD — is an ISO 4217 table, and belongs with the caller rather than in the codec.
+
 ## String Codecs
 
 Strings appear in almost every protocol. codec-core supports fixed-length, variable-length, and multiple character encodings.
@@ -863,7 +896,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 |-------|-------------|-------------|
 | `Converter` | `to`, `from`, `andThen` | Bidirectional conversion interface |
 | `ConverterException` | — | Exception thrown when a `Converter` conversion fails |
-| `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong`, `temporal` | Converter factories for common string transformations |
+| `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong`, `scaled`, `temporal` | Converter factories for common string and numeric transformations |
 | `BiMap` | `of`, `to`, `from` | Immutable bidirectional map implementing `Converter` |
 | `Strings` | `padStart`, `padEnd`, `stripStart`, `stripEnd`, `codePointCount`, `hexByteCount` | String padding, stripping, and counting utilities |
 | `InputStreams` | `readFully`, `markable`, `atEndOfStream` | Read exactly N bytes; ensure mark support; test for end of stream without consuming |

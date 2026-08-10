@@ -58,4 +58,14 @@ class BooleanCodecTest {
     assertThat(codec.decode(input)).isTrue();
     assertThat(input.available()).isEqualTo(2);
   }
+
+  @Test
+  void encode_rejects_null() {
+    // Boolean.TRUE.equals(null) is false, which would silently write a false value
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    assertThatThrownBy(() -> codec.encode(null, output))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("value");
+  }
 }

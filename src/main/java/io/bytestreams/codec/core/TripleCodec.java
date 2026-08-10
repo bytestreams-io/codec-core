@@ -48,7 +48,7 @@ public class TripleCodec<A, B, C> implements Codec<Triple<A, B, C>>, Inspectable
     EncodeResult r1 = Parts.encode(FIRST, firstCodec, value.first(), output);
     EncodeResult r2 = Parts.encode(SECOND, secondCodec, value.second(), output);
     EncodeResult r3 = Parts.encode(THIRD, thirdCodec, value.third(), output);
-    return new EncodeResult(1, r1.bytes() + r2.bytes() + r3.bytes());
+    return new EncodeResult(3, r1.bytes() + r2.bytes() + r3.bytes());
   }
 
   @Override

@@ -3,27 +3,34 @@ package io.bytestreams.codec.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.bytestreams.codec.core.util.BiMap;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ChoiceCodecTest {
 
-  private static final BiMap<Integer, Class<? extends Shape>> TAGS =
-      BiMap.of(Map.entry(1, Circle.class), Map.entry(2, Rectangle.class));
-  private static final Codec<Class<? extends Shape>> CLASS_CODEC = Codecs.uint8().xmap(TAGS);
   private static final Codec<Circle> CIRCLE_CODEC = Codecs.uint8().xmap(Circle::new, c -> c.radius);
   private static final Codec<Rectangle> RECTANGLE_CODEC =
       Codecs.pair(Codecs.uint8(), Codecs.uint8()).as(Rectangle::new, r -> r.width, r -> r.height);
 
   private static Codec<Shape> shapeCodec() {
-    return Codecs.choice(CLASS_CODEC)
-        .on(Circle.class, CIRCLE_CODEC)
-        .on(Rectangle.class, RECTANGLE_CODEC)
+    return Codecs.<Integer, Shape>choice(Codecs.uint8())
+        .on(1, Circle.class, CIRCLE_CODEC)
+        .on(2, Rectangle.class, RECTANGLE_CODEC)
+        .build();
+  }
+
+  private static Codec<Shape> shapeCodecWithFallback() {
+    return Codecs.<Integer, Shape>choice(Codecs.uint8())
+        .on(1, Circle.class, CIRCLE_CODEC)
+        .on(2, Rectangle.class, RECTANGLE_CODEC)
+        .otherwise(new RawFallback())
         .build();
   }
 
@@ -73,61 +80,151 @@ class ChoiceCodecTest {
   }
 
   @Test
-  void decode_unregistered_class() {
-    BiMap<Integer, Class<? extends Shape>> tagsWithTriangle =
-        BiMap.of(
-            Map.entry(1, Circle.class),
-            Map.entry(2, Rectangle.class),
-            Map.entry(3, Triangle.class));
-    Codec<Shape> codec =
-        Codecs.<Shape>choice(Codecs.uint8().xmap(tagsWithTriangle))
-            .on(Circle.class, CIRCLE_CODEC)
-            .on(Rectangle.class, RECTANGLE_CODEC)
-            .build();
-
+  void decode_unknown_tag() {
+    Codec<Shape> codec = shapeCodec();
     var input = new ByteArrayInputStream(new byte[] {3});
+
+    // Previously an IllegalArgumentException raised inside the BiMap, with no field path
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(CodecException.class)
-        .hasMessageContaining("no codec registered for");
+        .hasMessageContaining("no codec registered for tag 3");
+  }
+
+  @Test
+  void decode_unknown_tag_uses_fallback() throws IOException {
+    Codec<Shape> codec = shapeCodecWithFallback();
+    var input = new ByteArrayInputStream(new byte[] {9, 0x0A, 0x0B});
+
+    Shape shape = codec.decode(input);
+
+    assertThat(shape).isInstanceOf(UnknownShape.class);
+    UnknownShape unknown = (UnknownShape) shape;
+    assertThat(unknown.tag).isEqualTo(9);
+    assertThat(unknown.body).containsExactly(0x0A, 0x0B);
+  }
+
+  @Test
+  void encode_unregistered_class_uses_fallback() throws IOException {
+    Codec<Shape> codec = shapeCodecWithFallback();
+    var output = new ByteArrayOutputStream();
+
+    EncodeResult result = codec.encode(new UnknownShape(9, new byte[] {0x0A, 0x0B}), output);
+
+    assertThat(output.toByteArray()).containsExactly(9, 0x0A, 0x0B);
+    assertThat(result.count()).isEqualTo(2); // delegated from the fallback body
+    assertThat(result.bytes()).isEqualTo(3); // 1 tag + 2 body bytes
+  }
+
+  @Test
+  void fallback_round_trips() throws IOException {
+    Codec<Shape> codec = shapeCodecWithFallback();
+    byte[] wire = {9, 0x0A, 0x0B};
+
+    Shape decoded = codec.decode(new ByteArrayInputStream(wire));
+    var output = new ByteArrayOutputStream();
+    codec.encode(decoded, output);
+
+    assertThat(output.toByteArray()).isEqualTo(wire);
+  }
+
+  @Test
+  void fallback_does_not_mask_a_corrupt_known_type() {
+    Codec<Circle> failing =
+        new Codec<>() {
+          @Override
+          public EncodeResult encode(Circle value, OutputStream output) {
+            // not used in this test
+            return new EncodeResult(0, 0);
+          }
+
+          @Override
+          public Circle decode(InputStream input) {
+            throw new CodecException("corrupt circle", null);
+          }
+        };
+    Codec<Shape> codec =
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .on(1, Circle.class, failing)
+            .otherwise(new RawFallback())
+            .build();
+
+    // A registered tag whose body fails must stay an error, not silently become an UnknownShape
+    var input = new ByteArrayInputStream(new byte[] {1, 42});
+    assertThatThrownBy(() -> codec.decode(input))
+        .isInstanceOf(CodecException.class)
+        .hasMessageContaining("corrupt circle");
+  }
+
+  @Test
+  void builder_duplicate_tag() {
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8()).on(1, Circle.class, CIRCLE_CODEC);
+    assertThatThrownBy(() -> builder.on(1, Rectangle.class, RECTANGLE_CODEC))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("duplicate tag");
   }
 
   @Test
   void builder_duplicate_class() {
-    var builder = Codecs.choice(CLASS_CODEC).on(Circle.class, CIRCLE_CODEC);
-    assertThatThrownBy(() -> builder.on(Circle.class, CIRCLE_CODEC))
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8()).on(1, Circle.class, CIRCLE_CODEC);
+    assertThatThrownBy(() -> builder.on(2, Circle.class, CIRCLE_CODEC))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("duplicate");
+        .hasMessageContaining("duplicate type");
+  }
+
+  @Test
+  void builder_rejects_array_tag() {
+    var builder = Codecs.<byte[], Shape>choice(Codecs.binary(2));
+    // byte[] keys compare by identity, so a lookup by a freshly decoded tag would never match
+    assertThatThrownBy(() -> builder.on(new byte[] {1}, Circle.class, CIRCLE_CODEC))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("array");
   }
 
   @Test
   void builder_empty() {
-    var builder = Codecs.choice(CLASS_CODEC);
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
     assertThatThrownBy(builder::build)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("at least one");
   }
 
   @Test
+  void builder_null_tag() {
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
+    assertThatThrownBy(() -> builder.on(null, Circle.class, CIRCLE_CODEC))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("tag");
+  }
+
+  @Test
   void builder_null_type() {
-    var builder = Codecs.choice(CLASS_CODEC);
-    assertThatThrownBy(() -> builder.on(null, CIRCLE_CODEC))
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
+    assertThatThrownBy(() -> builder.on(1, null, CIRCLE_CODEC))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("type");
   }
 
   @Test
   void builder_null_codec() {
-    var builder = Codecs.choice(CLASS_CODEC);
-    assertThatThrownBy(() -> builder.on(Circle.class, null))
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
+    assertThatThrownBy(() -> builder.on(1, Circle.class, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("codec");
   }
 
   @Test
-  void builder_null_classCodec() {
-    assertThatThrownBy(() -> Codecs.<Shape>choice(null))
+  void builder_null_fallback() {
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
+    assertThatThrownBy(() -> builder.otherwise(null))
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("classCodec");
+        .hasMessageContaining("fallback");
+  }
+
+  @Test
+  void builder_null_tagCodec() {
+    assertThatThrownBy(() -> Codecs.<Integer, Shape>choice(null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("tagCodec");
   }
 
   @Test
@@ -136,12 +233,10 @@ class ChoiceCodecTest {
         SequentialObjectCodec.<InnerCircle>builder(InnerCircle::new)
             .field("radius", Codecs.uint8(), InnerCircle::getRadius, InnerCircle::setRadius)
             .build();
-    BiMap<Integer, Class<? extends Shape>> tags =
-        BiMap.of(Map.entry(1, InnerCircle.class), Map.entry(2, Rectangle.class));
     Codec<Shape> codec =
-        Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
-            .on(InnerCircle.class, introspectableCircleCodec)
-            .on(Rectangle.class, RECTANGLE_CODEC)
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .on(1, InnerCircle.class, introspectableCircleCodec)
+            .on(2, Rectangle.class, RECTANGLE_CODEC)
             .build();
 
     InnerCircle circle = new InnerCircle();
@@ -168,28 +263,46 @@ class ChoiceCodecTest {
     Codec<Circle> plainCircleCodec =
         new Codec<>() {
           @Override
-          public EncodeResult encode(Circle value, java.io.OutputStream output) {
+          public EncodeResult encode(Circle value, OutputStream output) {
             // not used in this test
             return new EncodeResult(0, 0);
           }
 
           @Override
-          public Circle decode(java.io.InputStream input) {
+          public Circle decode(InputStream input) {
             // not used in this test
             return null;
           }
         };
-    BiMap<Integer, Class<? extends Shape>> tags =
-        BiMap.of(Map.entry(1, Circle.class), Map.entry(2, Rectangle.class));
     Codec<Shape> codec =
-        Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
-            .on(Circle.class, plainCircleCodec)
-            .on(Rectangle.class, RECTANGLE_CODEC)
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .on(1, Circle.class, plainCircleCodec)
+            .on(2, Rectangle.class, RECTANGLE_CODEC)
             .build();
 
     Object result = Inspector.inspect(codec, new Circle(42));
 
     assertThat(result).isInstanceOf(Circle.class);
+  }
+
+  /** Captures an unrecognised alternative as its tag plus the raw body bytes. */
+  private static final class RawFallback implements ChoiceCodec.Fallback<Integer, Shape> {
+    @Override
+    public Shape decode(Integer tag, InputStream input) throws IOException {
+      return new UnknownShape(tag, input.readAllBytes());
+    }
+
+    @Override
+    public Integer tagOf(Shape value) {
+      return ((UnknownShape) value).tag;
+    }
+
+    @Override
+    public EncodeResult encodeBody(Shape value, OutputStream output) throws IOException {
+      byte[] body = ((UnknownShape) value).body;
+      output.write(body);
+      return EncodeResult.ofBytes(body.length);
+    }
   }
 
   abstract static class Shape {}
@@ -213,6 +326,16 @@ class ChoiceCodecTest {
   }
 
   static class Triangle extends Shape {}
+
+  static class UnknownShape extends Shape {
+    final int tag;
+    final byte[] body;
+
+    UnknownShape(int tag, byte[] body) {
+      this.tag = tag;
+      this.body = Arrays.copyOf(body, body.length);
+    }
+  }
 
   static class InnerCircle extends Shape {
     private int radius;

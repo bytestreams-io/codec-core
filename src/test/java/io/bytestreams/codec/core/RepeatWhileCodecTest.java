@@ -18,7 +18,7 @@ class RepeatWhileCodecTest {
   private static final byte[] LF = {0x0A};
 
   private static Codec<List<String>> detailLines() {
-    return Codecs.repeatWhile(Codecs.ascii(1), "D"::equals, Codecs.terminated(LF, Codecs.ascii()));
+    return Codecs.repeatWhile(Codecs.ascii(1), "D"::equals, Codecs.terminated(Codecs.ascii(), LF));
   }
 
   @Test
@@ -164,13 +164,13 @@ class RepeatWhileCodecTest {
 
     Codec<Batch> batch =
         Codecs.<Batch>sequential(Batch::new)
-            .constant("type", Codecs.terminated(LF, Codecs.ascii(2)), "BH")
+            .constant("type", Codecs.terminated(Codecs.ascii(2), LF), "BH")
             .field(
                 "details",
-                Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(LF, detail)),
+                Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(detail, LF)),
                 Batch::getDetails,
                 Batch::setDetails)
-            .constant("trailer", Codecs.terminated(LF, Codecs.ascii(2)), "BT")
+            .constant("trailer", Codecs.terminated(Codecs.ascii(2), LF), "BT")
             .build();
 
     ByteArrayInputStream input =
@@ -190,10 +190,10 @@ class RepeatWhileCodecTest {
         Codecs.<Batch>sequential(Batch::new)
             .field(
                 "details",
-                Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(LF, Codecs.ascii())),
+                Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(Codecs.ascii(), LF)),
                 Batch::getRawDetails,
                 Batch::setRawDetails)
-            .constant("trailer", Codecs.terminated(LF, Codecs.ascii(2)), "BT")
+            .constant("trailer", Codecs.terminated(Codecs.ascii(2), LF), "BT")
             .build();
     ByteArrayInputStream input = new ByteArrayInputStream("D 1\nXX\nBT\n".getBytes(US_ASCII));
 

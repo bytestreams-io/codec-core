@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -816,7 +817,7 @@ public class Codecs {
    *
    * <pre>{@code
    * byte[] lf = "\n".getBytes(US_ASCII);
-   * Codec<String> line = Codecs.terminated(lf, Codecs.ascii());
+   * Codec<String> line = Codecs.terminated(Codecs.ascii(), lf);
    * }</pre>
    *
    * <p>The terminator is a {@code byte[]} rather than a {@code String} because the correct bytes
@@ -834,15 +835,15 @@ public class Codecs {
    * prefer leaving the last field unwrapped over relying on this policy — the enclosing scope ends
    * it, the wire format is then stated in the structure, and encoding round-trips exactly.
    *
-   * @param terminator the terminating byte sequence (must be non-empty)
    * @param valueCodec the codec for the value
+   * @param terminator the terminating byte sequence (must be non-empty)
    * @param <V> the value type
    * @return a new terminated codec
    * @throws NullPointerException if any argument is null
    * @throws IllegalArgumentException if the terminator is empty
    */
-  public static <V> Codec<V> terminated(byte[] terminator, Codec<V> valueCodec) {
-    return terminated(terminator, valueCodec, Termination.OPTIONAL);
+  public static <V> Codec<V> terminated(Codec<V> valueCodec, byte[] terminator) {
+    return terminated(valueCodec, terminator, Termination.OPTIONAL);
   }
 
   /**
@@ -854,11 +855,11 @@ public class Codecs {
    * terminated:
    *
    * <pre>{@code
-   * Codec<List<String>> lines = Codecs.listOf(Codecs.terminated(lf, Codecs.ascii()));
+   * Codec<List<String>> lines = Codecs.listOf(Codecs.terminated(Codecs.ascii(), lf));
    * }</pre>
    *
-   * @param terminator the terminating byte sequence (must be non-empty)
    * @param valueCodec the codec for the value
+   * @param terminator the terminating byte sequence (must be non-empty)
    * @param termination whether the terminator is required on decode
    * @param <V> the value type
    * @return a new terminated codec
@@ -866,8 +867,40 @@ public class Codecs {
    * @throws IllegalArgumentException if the terminator is empty
    */
   public static <V> Codec<V> terminated(
-      byte[] terminator, Codec<V> valueCodec, Termination termination) {
-    return new TerminatedCodec<>(terminator, valueCodec, termination);
+      Codec<V> valueCodec, byte[] terminator, Termination termination) {
+    return new TerminatedCodec<>(valueCodec, terminator, termination);
+  }
+
+  /**
+   * Creates a codec for a value followed by a value computed over its bytes — an LRC, a CRC, a
+   * checksum or a MAC.
+   *
+   * <p>On encode the check is computed over exactly the bytes the value codec wrote. On decode it
+   * is computed over exactly the bytes the value codec read, and the field that follows must match.
+   *
+   * <pre>{@code
+   * Codec<Frame> frame = Codecs.checked(frameCodec, Codecs.uint16(), Crc16::compute);
+   * }</pre>
+   *
+   * <p>The check function is yours to supply. Which polynomial, seed and bit order a protocol uses
+   * is specification knowledge, so no algorithm is built in.
+   *
+   * <p>The value codec must consume exactly its own bytes, since the check field begins immediately
+   * afterwards. A read-until-EOF codec such as {@link #ascii()} would swallow the check unless
+   * placed inside a bounded scope such as {@link #prefixed(Codec, Codec)} or
+   * {@link #terminated(Codec, byte[])}.
+   *
+   * @param valueCodec the codec for the value
+   * @param checkCodec the codec for the check value
+   * @param compute computes the check value from the bytes it covers
+   * @param <T> the check value type
+   * @param <V> the value type
+   * @return a new checked codec
+   * @throws NullPointerException if any argument is null
+   */
+  public static <T, V> Codec<V> checked(
+      Codec<V> valueCodec, Codec<T> checkCodec, Function<byte[], T> compute) {
+    return new CheckedCodec<>(valueCodec, checkCodec, compute);
   }
 
   /**
@@ -921,7 +954,7 @@ public class Codecs {
    * Codec<String> recordType = Codecs.ascii(2);
    *
    * Codec<List<Detail>> details =
-   *     Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(lf, detailCodec));
+   *     Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(detailCodec, lf));
    * }</pre>
    *
    * <p>The input stream must support {@link java.io.InputStream#mark(int) mark}; wrap unbuffered

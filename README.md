@@ -342,7 +342,7 @@ Not every variable-length field carries its length up front. Text-oriented forma
 ```java
 byte[] lf = "\n".getBytes(US_ASCII);
 
-Codec<String> line = Codecs.terminated(lf, Codecs.ascii());
+Codec<String> line = Codecs.terminated(Codecs.ascii(), lf);
 ```
 
 The terminator is a `byte[]`, not a `String`, because the right bytes depend on the encoding — a newline is `0x0A` in ASCII but `0x25` in EBCDIC. Writing `"\n".getBytes(charset)` at the call site keeps that choice visible and correct for either.
@@ -351,7 +351,7 @@ On decode, the bytes before the terminator are handed to the value codec as a bo
 
 ```java
 // each line holds a list of fixed-width fields
-Codec<List<String>> row = Codecs.terminated(lf, Codecs.listOf(Codecs.ascii(4)));
+Codec<List<String>> row = Codecs.terminated(Codecs.listOf(Codecs.ascii(4)), lf);
 ```
 
 On encode the value is written followed by the terminator. A value whose encoded bytes contain the terminator is rejected with `IllegalArgumentException` before anything is written, since such a value could not be decoded back. There is no escaping mechanism.
@@ -361,8 +361,8 @@ On encode the value is written followed by the terminator. A value whose encoded
 Formats disagree about whether the final value must be terminated. File formats usually treat it as optional — end-of-stream already marks the end — while message formats usually require it. The default is `OPTIONAL`:
 
 ```java
-Codec<String> lenient = Codecs.terminated(lf, Codecs.ascii());
-Codec<String> strict  = Codecs.terminated(lf, Codecs.ascii(), Codecs.Termination.REQUIRED);
+Codec<String> lenient = Codecs.terminated(Codecs.ascii(), lf);
+Codec<String> strict  = Codecs.terminated(Codecs.ascii(), lf, Codecs.Termination.REQUIRED);
 ```
 
 Under `REQUIRED`, reaching end-of-stream without a terminator throws `CodecException`. Under `OPTIONAL`, whatever was read is passed to the value codec — including nothing at all, which lets the value codec decide whether empty is valid. `Codecs.ascii()` returns `""`; `Codecs.ascii(5)` still throws `EOFException`.
@@ -377,9 +377,9 @@ A fixed group of fields separated by a delimiter is expressed by terminating all
 byte[] backslash = "\\".getBytes(US_ASCII);
 
 Codec<Address> address = Codecs.<Address>sequential(Address::new)
-    .field("name",    Codecs.terminated(backslash, Codecs.ascii()), Address::getName,    Address::setName)
-    .field("street",  Codecs.terminated(backslash, Codecs.ascii()), Address::getStreet,  Address::setStreet)
-    .field("city",    Codecs.terminated(backslash, Codecs.ascii()), Address::getCity,    Address::setCity)
+    .field("name",    Codecs.terminated(Codecs.ascii(), backslash), Address::getName,    Address::setName)
+    .field("street",  Codecs.terminated(Codecs.ascii(), backslash), Address::getStreet,  Address::setStreet)
+    .field("city",    Codecs.terminated(Codecs.ascii(), backslash), Address::getCity,    Address::setCity)
     .field("country", Codecs.ascii(),                               Address::getCountry, Address::setCountry)
     .build();
 
@@ -387,6 +387,30 @@ Codec<Address> field59 = Codecs.prefixed(Codecs.asciiInt(2), address);
 ```
 
 The final field is not terminated — the enclosing LLVAR scope ends it. Empty parts need no special handling: a zero-length chunk becomes an empty stream, which `Codecs.ascii()` decodes as `""`.
+
+## Check Values
+
+Many protocols end a frame with a value computed over the bytes before it — an LRC, a CRC, a checksum, a MAC. `checked` computes it on encode and verifies it on decode.
+
+```java
+Codec<Frame> frame = Codecs.checked(frameCodec, Codecs.uint16(), Crc16::compute);
+```
+
+The wire format is `[value][check]`. Encoding writes the value to a buffer so the check covers exactly those bytes; decoding reads the value through a recording stream and computes the check over exactly what was read. A mismatch names both values:
+
+```
+field [frame]: check value mismatch: computed [3A] but read [C5]
+```
+
+**The check function is yours to supply.** Which polynomial, seed and bit order a protocol uses is specification knowledge — Modbus, XMODEM and PNG all say CRC and all mean something different — so no algorithm is built in. A `Function<byte[], T>` of your choosing keeps the combinator honest about what it does and does not know.
+
+The check value can be any type its codec handles: `uint8` for an LRC, `uint16` or `uint32` for a CRC, `binary(n)` for a MAC. Comparison is by content, so `byte[]` checks work and are reported as hex.
+
+**The value codec must consume exactly its own bytes**, since the check begins immediately afterwards. A read-until-EOF codec such as `Codecs.ascii()` would swallow the check unless placed inside a bounded scope:
+
+```java
+Codecs.prefixed(Codecs.uint16(), Codecs.checked(Codecs.ascii(), Codecs.uint8(), Lrc::compute));
+```
 
 ## Type Mapping
 
@@ -648,11 +672,11 @@ byte[] lf = "\n".getBytes(US_ASCII);
 Codec<String> recordType = Codecs.ascii(2);
 
 Codec<Batch> batch = Codecs.<Batch>sequential(Batch::new)
-    .constant("header", Codecs.terminated(lf, Codecs.ascii(2)), "BH")
+    .constant("header", Codecs.terminated(Codecs.ascii(2), lf), "BH")
     .field("details",
-           Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(lf, detailCodec)),
+           Codecs.repeatWhile(recordType, "D "::equals, Codecs.terminated(detailCodec, lf)),
            Batch::getDetails, Batch::setDetails)
-    .constant("trailer", Codecs.terminated(lf, Codecs.ascii(2)), "BT")
+    .constant("trailer", Codecs.terminated(Codecs.ascii(2), lf), "BT")
     .build();
 ```
 
@@ -789,7 +813,7 @@ Object structure = Inspector.inspect(codec, msg);
 | Pair | `Map<String, Object>` — `"first"` and `"second"` keys |
 | Triple | `Map<String, Object>` — `"first"`, `"second"`, and `"third"` keys |
 | Choice | Delegates to the matched branch codec |
-| Wrapper (prefixed, terminated, xmap, validate, lazy) | Delegates to the inner codec |
+| Wrapper (prefixed, terminated, checked, xmap, validate, lazy) | Delegates to the inner codec |
 | Repeat-while run | `List<Object>` — recurses items |
 | Constant | Returns the expected byte array |
 | Primitive (uint8, ascii, etc.) | Returns value as-is |
@@ -880,7 +904,8 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.repeatWhile(peekCodec, accepts, itemCodec)` | Run of items that continues while a lookahead matches |
 | `Codecs.prefixed(lc, vc)` | Variable-length with byte count prefix |
 | `Codecs.prefixed(lc, lengthOf, factory)` | Variable-length with item count prefix |
-| `Codecs.terminated(terminator, vc)` / `Codecs.terminated(terminator, vc, termination)` | Variable-length value ended by a sentinel |
+| `Codecs.terminated(vc, terminator)` / `Codecs.terminated(vc, terminator, termination)` | Variable-length value ended by a sentinel |
+| `Codecs.checked(vc, checkCodec, compute)` | Value followed by a check computed over its bytes |
 | `Codecs.pair(a, b)` | Pair codec for two sequential values |
 | `Codecs.triple(a, b, c)` | Triple codec for three sequential values |
 | `Codecs.lazy(supplier)` | Lazy codec for recursive definitions |

@@ -18,7 +18,7 @@ class FieldPathIndexTest {
 
   /** Two ASCII characters per item; an item of "99" is rejected. */
   private static Codec<String> item() {
-    return Codecs.terminated(LF, Codecs.ascii(2).validate(s -> !s.equals("99"), "item rejected"));
+    return Codecs.terminated(Codecs.ascii(2).validate(s -> !s.equals("99"), "item rejected"), LF);
   }
 
   private static Codec<Holder> holderCodec(Codec<List<String>> items) {

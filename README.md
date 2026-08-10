@@ -56,7 +56,9 @@ result.bytes();  // number of bytes written to the stream
 int value = codec.decode(inputStream);
 ```
 
-Every `encode` returns an `EncodeResult` with two values: `count` is the logical size in codec-specific units, and `bytes` is the number of bytes actually written to the stream. For number codecs like `uint8`, the two are the same. They diverge for codecs where the logical unit isn't a byte — BCD counts digits, string codecs count code points, hex codecs count hex digits. This distinction matters when you need to report field lengths in protocol-specific units rather than raw byte counts.
+Every `encode` returns an `EncodeResult` with two values: `count` is the logical size in codec-specific units, and `bytes` is the number of bytes actually written to the stream.
+
+Composite codecs report a count in their own units — a list reports its items, a sequential object its fields, a pair 2 and a triple 3 — while codecs that merely wrap a value pass the inner count through, so `prefixed(uint16(), ascii(4))` still reports `count=4` code points. For number codecs like `uint8`, the two are the same. They diverge for codecs where the logical unit isn't a byte — BCD counts digits, string codecs count code points, hex codecs count hex digits. This distinction matters when you need to report field lengths in protocol-specific units rather than raw byte counts.
 
 Every codec in the library follows this same interface. The examples below build from simple codecs to complex compositions.
 

@@ -42,7 +42,7 @@ public class PairCodec<A, B> implements Codec<Pair<A, B>>, Inspectable<Pair<A, B
   public EncodeResult encode(Pair<A, B> value, OutputStream output) throws IOException {
     EncodeResult r1 = Parts.encode(FIRST, firstCodec, value.first(), output);
     EncodeResult r2 = Parts.encode(SECOND, secondCodec, value.second(), output);
-    return new EncodeResult(1, r1.bytes() + r2.bytes());
+    return new EncodeResult(2, r1.bytes() + r2.bytes());
   }
 
   @Override

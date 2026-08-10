@@ -45,7 +45,7 @@ class TripleCodecTest {
 
     EncodeResult result = codec.encode(new Triple<>(1, 2, 3), output);
 
-    assertThat(result.count()).isEqualTo(1);
+    assertThat(result.count()).isEqualTo(3); // one per component, as lists and sequential report
     assertThat(result.bytes()).isEqualTo(7); // 1 + 2 + 4
   }
 

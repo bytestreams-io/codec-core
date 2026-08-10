@@ -57,7 +57,7 @@ class ChoiceCodecTest {
 
     EncodeResult result = codec.encode(new Rectangle(10, 20), output);
 
-    assertThat(result.count()).isEqualTo(1);
+    assertThat(result.count()).isEqualTo(2); // delegated from the branch codec
     assertThat(result.bytes()).isEqualTo(3); // 1 tag + 2 value bytes
   }
 

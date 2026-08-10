@@ -36,6 +36,15 @@ import org.slf4j.MDC;
  *     .build();
  * }</pre>
  *
+ * <p>Fields are written straight to the output as they are encoded, so a failure partway
+ * through leaves the fields already written on the stream. Codecs that append something derived
+ * from the value — {@link Codecs#terminated(Codec, byte[]) terminated},
+ * {@link Codecs#checked(Codec, Codec, java.util.function.Function) checked} and
+ * {@link Codecs#prefixed(Codec, Codec) prefixed} — buffer instead, since they cannot know what to
+ * append until the value is complete. Buffering every object would double peak memory, so wrap
+ * this codec in one of those, or write to a buffer of your own, where a partly written record
+ * would matter.
+ *
  * @param <T> the type of object to encode/decode
  */
 public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {

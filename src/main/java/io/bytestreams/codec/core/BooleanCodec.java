@@ -4,18 +4,23 @@ import io.bytestreams.codec.core.util.InputStreams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Objects;
 
 /**
  * A codec for boolean values encoded as a single byte.
  *
  * <p>Encodes {@code false} as {@code 0x00} and {@code true} as {@code 0x01}. Decoding is strict:
  * any value other than {@code 0x00} or {@code 0x01} throws a {@link CodecException}.
+ *
+ * <p>Encoding rejects a null value rather than treating it as false.
  */
 public class BooleanCodec implements Codec<Boolean> {
 
   @Override
   public EncodeResult encode(Boolean value, OutputStream output) throws IOException {
-    output.write(Boolean.TRUE.equals(value) ? 0x01 : 0x00);
+    // Not Boolean.TRUE.equals(value): that would silently write false for a null.
+    boolean flag = Objects.requireNonNull(value, "value");
+    output.write(flag ? 0x01 : 0x00);
     return EncodeResult.ofBytes(1);
   }
 

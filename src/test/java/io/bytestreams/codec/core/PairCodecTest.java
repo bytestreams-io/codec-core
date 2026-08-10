@@ -41,7 +41,7 @@ class PairCodecTest {
 
     EncodeResult result = codec.encode(new Pair<>(42, 1000), output);
 
-    assertThat(result.count()).isEqualTo(1);
+    assertThat(result.count()).isEqualTo(2); // one per component, as lists and sequential report
     assertThat(result.bytes()).isEqualTo(3); // 1 + 2
   }
 

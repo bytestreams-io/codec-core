@@ -50,7 +50,7 @@ public class ChoiceCodec<V> implements Codec<V>, Inspectable<V> {
     }
     EncodeResult classResult = classCodec.encode(type, output);
     EncodeResult valueResult = codec.encode(value, output);
-    return new EncodeResult(1, classResult.bytes() + valueResult.bytes());
+    return new EncodeResult(valueResult.count(), classResult.bytes() + valueResult.bytes());
   }
 
   @Override

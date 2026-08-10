@@ -27,6 +27,8 @@ import java.util.function.Function;
  * @param <V> the {@link Number} type this codec handles
  */
 public class BinaryNumberCodec<V extends Number> implements Codec<V> {
+  private static final int MEDIUM_BYTES = 3;
+
   private final int byteLength;
   private final BiConsumer<ByteBuffer, V> writer;
   private final Function<ByteBuffer, V> reader;
@@ -156,6 +158,44 @@ public class BinaryNumberCodec<V extends Number> implements Codec<V> {
         (buf, v) -> buf.putShort(v.shortValue()),
         buf -> Short.toUnsignedInt(buf.getShort()),
         v -> validateRange(v, 0xFFFF));
+  }
+
+  /**
+   * Creates a codec for unsigned three-byte values (0 to 16777215).
+   *
+   * <p>Three bytes has no {@link ByteBuffer} accessor and no Java primitive, so the bytes are
+   * assembled by hand. The buffer's own {@link ByteBuffer#order() order} decides which end the most
+   * significant byte goes, which is what makes {@link #withOrder(ByteOrder)} work here as it does
+   * for the widths the buffer handles natively.
+   *
+   * <p>Big-endian; use {@link #withOrder(ByteOrder)} for little-endian.
+   *
+   * @return a new codec for unsigned three-byte values
+   */
+  public static BinaryNumberCodec<Integer> ofUnsignedMedium() {
+    return new BinaryNumberCodec<>(
+        MEDIUM_BYTES,
+        BinaryNumberCodec::putMedium,
+        BinaryNumberCodec::getMedium,
+        v -> validateRange(v, 0xFFFFFF));
+  }
+
+  private static void putMedium(ByteBuffer buffer, Integer value) {
+    int v = value;
+    if (buffer.order() == ByteOrder.BIG_ENDIAN) {
+      buffer.put((byte) (v >>> 16)).put((byte) (v >>> 8)).put((byte) v);
+    } else {
+      buffer.put((byte) v).put((byte) (v >>> 8)).put((byte) (v >>> 16));
+    }
+  }
+
+  private static Integer getMedium(ByteBuffer buffer) {
+    int first = Byte.toUnsignedInt(buffer.get());
+    int second = Byte.toUnsignedInt(buffer.get());
+    int third = Byte.toUnsignedInt(buffer.get());
+    return buffer.order() == ByteOrder.BIG_ENDIAN
+        ? (first << 16) | (second << 8) | third
+        : (third << 16) | (second << 8) | first;
   }
 
   /**

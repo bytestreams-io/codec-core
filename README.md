@@ -83,6 +83,7 @@ Numbers are the most fundamental building block. codec-core provides codecs for 
 ```java
 Codec<Integer> unsignedByte = Codecs.uint8();    // 1 byte
 Codec<Integer> unsignedShort = Codecs.uint16();   // 2 bytes big-endian
+Codec<Integer> unsignedMedium = Codecs.uint24();  // 3 bytes big-endian
 Codec<Long> unsignedInt = Codecs.uint32();        // 4 bytes big-endian
 Codec<Short> signedShort = Codecs.int16();        // 2 bytes big-endian
 Codec<Integer> signedInt = Codecs.int32();        // 4 bytes big-endian
@@ -112,6 +113,8 @@ Codec<LocalFileHeader> header = Codecs.<LocalFileHeader>sequential(LocalFileHead
     .field("compressedSize", u32, LocalFileHeader::getCompressedSize, LocalFileHeader::setCompressedSize)
     .build();
 ```
+
+`uint24` is worth knowing about: three-byte lengths appear in TLS records, MPEG-TS, RTP and some ISO 8583 length fields, and Java has no primitive that size.
 
 `uint8` takes no order — a single byte has none. BCD and text-encoded numerics are unaffected, since their digit order is fixed by the encoding rather than by the machine.
 
@@ -844,6 +847,7 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 |--------|-------------|
 | `Codecs.uint8()` | Unsigned byte (1 byte) |
 | `Codecs.uint16()` / `Codecs.uint16(order)` | Unsigned short (2 bytes, big-endian by default) |
+| `Codecs.uint24()` / `Codecs.uint24(order)` | Unsigned three-byte value (big-endian by default) |
 | `Codecs.uint32()` / `Codecs.uint32(order)` | Unsigned integer (4 bytes, big-endian by default) |
 | `Codecs.int16()` / `Codecs.int16(order)` | Signed short (2 bytes, big-endian by default) |
 | `Codecs.int32()` / `Codecs.int32(order)` | Signed integer (4 bytes, big-endian by default) |

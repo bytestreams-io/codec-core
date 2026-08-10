@@ -97,6 +97,32 @@ public class Codecs {
   }
 
   /**
+   * Creates a codec for unsigned three-byte values (0 to 16777215), encoded as big-endian binary.
+   *
+   * <p>Three-byte lengths appear in TLS records, MPEG-TS, RTP and some ISO 8583 length fields.
+   *
+   * @return a new unsigned three-byte codec
+   * @see #uint24(ByteOrder)
+   */
+  public static Codec<Integer> uint24() {
+    return BinaryNumberCodec.ofUnsignedMedium();
+  }
+
+  /**
+   * Creates a codec for unsigned three-byte values (0 to 16777215), encoded as binary in the given
+   * byte order.
+   *
+   * <p>The no-argument factory is big-endian.
+   *
+   * @param order the byte order
+   * @return a new codec
+   * @throws NullPointerException if order is null
+   */
+  public static Codec<Integer> uint24(ByteOrder order) {
+    return BinaryNumberCodec.ofUnsignedMedium().withOrder(order);
+  }
+
+  /**
    * Creates a codec for unsigned integer values (0 to 4294967295), encoded as 4-byte big-endian
    * binary.
    *

@@ -20,7 +20,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_reads_up_to_terminator() throws IOException {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF);
     ByteArrayInputStream input = new ByteArrayInputStream("hello\n".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).isEqualTo("hello");
@@ -28,7 +28,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_consumes_terminator_without_over_reading() throws IOException {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF);
     ByteArrayInputStream input = new ByteArrayInputStream("first\nsecond\n".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).isEqualTo("first");
@@ -37,7 +37,7 @@ class TerminatedCodecTest {
 
   @Test
   void encode_appends_terminator() throws IOException {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     codec.encode("hello", output);
@@ -47,7 +47,7 @@ class TerminatedCodecTest {
 
   @Test
   void encode_result_counts_terminator_in_bytes_only() throws IOException {
-    Codec<String> codec = Codecs.terminated(CRLF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), CRLF);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     EncodeResult result = codec.encode("hello", output);
@@ -58,7 +58,7 @@ class TerminatedCodecTest {
 
   @Test
   void encode_rejects_value_containing_terminator() {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     assertThatThrownBy(() -> codec.encode("a\nb", output))
@@ -70,7 +70,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_optional_accepts_missing_terminator_at_eof() throws IOException {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF);
     ByteArrayInputStream input = new ByteArrayInputStream("last".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).isEqualTo("last");
@@ -78,7 +78,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_required_rejects_missing_terminator_at_eof() {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii(), Codecs.Termination.REQUIRED);
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF, Codecs.Termination.REQUIRED);
     ByteArrayInputStream input = new ByteArrayInputStream("last".getBytes(US_ASCII));
 
     assertThatThrownBy(() -> codec.decode(input))
@@ -88,7 +88,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_empty_chunk_delegates_to_value_codec() throws IOException {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF);
     ByteArrayInputStream input = new ByteArrayInputStream("\n".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).isEmpty();
@@ -96,7 +96,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_exhausted_stream_delegates_to_value_codec() throws IOException {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), LF);
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 
     assertThat(codec.decode(input)).isEmpty();
@@ -104,7 +104,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_exhausted_stream_propagates_value_codec_failure() {
-    Codec<String> codec = Codecs.terminated(LF, Codecs.ascii(5));
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(5), LF);
     ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
 
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
@@ -112,7 +112,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_multi_byte_terminator() throws IOException {
-    Codec<String> codec = Codecs.terminated(CRLF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), CRLF);
     ByteArrayInputStream input = new ByteArrayInputStream("a\r\nb\r\n".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).isEqualTo("a");
@@ -121,7 +121,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_self_overlapping_terminator() throws IOException {
-    Codec<String> codec = Codecs.terminated("AAB".getBytes(US_ASCII), Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), "AAB".getBytes(US_ASCII));
     ByteArrayInputStream input = new ByteArrayInputStream("xAAAB".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).isEqualTo("xA");
@@ -129,7 +129,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_bare_terminator_inside_value_is_not_split() throws IOException {
-    Codec<String> codec = Codecs.terminated(CRLF, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), CRLF);
     ByteArrayInputStream input = new ByteArrayInputStream("a\rb\r\n".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).isEqualTo("a\rb");
@@ -145,7 +145,7 @@ class TerminatedCodecTest {
                 TestFixtures.Inner::getValue,
                 TestFixtures.Inner::setValue)
             .build();
-    Codec<TestFixtures.Inner> codec = Codecs.terminated(LF, inner);
+    Codec<TestFixtures.Inner> codec = Codecs.terminated(inner, LF);
     TestFixtures.Inner value = new TestFixtures.Inner();
     value.setValue(7);
 
@@ -154,7 +154,7 @@ class TerminatedCodecTest {
 
   @Test
   void decode_list_of_lines_without_trailing_terminator() throws IOException {
-    Codec<List<String>> codec = Codecs.listOf(Codecs.terminated(LF, Codecs.ascii()));
+    Codec<List<String>> codec = Codecs.listOf(Codecs.terminated(Codecs.ascii(), LF));
     ByteArrayInputStream input = new ByteArrayInputStream("a\nb\nc".getBytes(US_ASCII));
 
     assertThat(codec.decode(input)).containsExactly("a", "b", "c");
@@ -163,7 +163,7 @@ class TerminatedCodecTest {
   @Test
   void decode_list_of_lines_without_trailing_terminator_rejected_when_required() {
     Codec<List<String>> codec =
-        Codecs.listOf(Codecs.terminated(LF, Codecs.ascii(), Codecs.Termination.REQUIRED));
+        Codecs.listOf(Codecs.terminated(Codecs.ascii(), LF, Codecs.Termination.REQUIRED));
     ByteArrayInputStream input = new ByteArrayInputStream("a\nb\nc".getBytes(US_ASCII));
 
     assertThatThrownBy(() -> codec.decode(input))
@@ -177,12 +177,12 @@ class TerminatedCodecTest {
         Codecs.<Address>sequential(Address::new)
             .field(
                 "name",
-                Codecs.terminated(BACKSLASH, Codecs.ascii()),
+                Codecs.terminated(Codecs.ascii(), BACKSLASH),
                 Address::getName,
                 Address::setName)
             .field(
                 "city",
-                Codecs.terminated(BACKSLASH, Codecs.ascii()),
+                Codecs.terminated(Codecs.ascii(), BACKSLASH),
                 Address::getCity,
                 Address::setCity)
             .field("country", Codecs.ascii(), Address::getCountry, Address::setCountry)
@@ -205,12 +205,12 @@ class TerminatedCodecTest {
         Codecs.<Address>sequential(Address::new)
             .field(
                 "name",
-                Codecs.terminated(BACKSLASH, Codecs.ascii()),
+                Codecs.terminated(Codecs.ascii(), BACKSLASH),
                 Address::getName,
                 Address::setName)
             .field(
                 "city",
-                Codecs.terminated(BACKSLASH, Codecs.ascii()),
+                Codecs.terminated(Codecs.ascii(), BACKSLASH),
                 Address::getCity,
                 Address::setCity)
             .field("country", Codecs.ascii(), Address::getCountry, Address::setCountry)
@@ -229,7 +229,7 @@ class TerminatedCodecTest {
         Codecs.<Address>sequential(Address::new)
             .field(
                 "name",
-                Codecs.terminated(BACKSLASH, Codecs.ascii(4)),
+                Codecs.terminated(Codecs.ascii(4), BACKSLASH),
                 Address::getName,
                 Address::setName)
             .build();
@@ -273,7 +273,7 @@ class TerminatedCodecTest {
   @Test
   void constructor_rejects_empty_terminator() {
     Codec<String> ascii = Codecs.ascii();
-    assertThatThrownBy(() -> Codecs.terminated(new byte[0], ascii))
+    assertThatThrownBy(() -> Codecs.terminated(ascii, new byte[0]))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("terminator");
   }
@@ -281,7 +281,7 @@ class TerminatedCodecTest {
   @Test
   void constructor_copies_terminator() throws IOException {
     byte[] terminator = {0x0A};
-    Codec<String> codec = Codecs.terminated(terminator, Codecs.ascii());
+    Codec<String> codec = Codecs.terminated(Codecs.ascii(), terminator);
     terminator[0] = 0x7C;
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -293,14 +293,14 @@ class TerminatedCodecTest {
   @Test
   void constructor_rejects_null_terminator() {
     Codec<String> ascii = Codecs.ascii();
-    assertThatThrownBy(() -> Codecs.terminated(null, ascii))
+    assertThatThrownBy(() -> Codecs.terminated(ascii, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("terminator");
   }
 
   @Test
   void constructor_rejects_null_value_codec() {
-    assertThatThrownBy(() -> Codecs.terminated(LF, null))
+    assertThatThrownBy(() -> Codecs.terminated(null, LF))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("valueCodec");
   }

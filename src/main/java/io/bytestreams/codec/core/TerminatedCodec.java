@@ -30,7 +30,7 @@ import java.util.Objects;
  *
  * <p>Inspection delegates to the value codec.
  *
- * <p>Created via {@link Codecs#terminated(byte[], Codec)}.
+ * <p>Created via {@link Codecs#terminated(Codec, byte[])}.
  *
  * @param <V> the value type
  */
@@ -41,7 +41,7 @@ class TerminatedCodec<V> implements Codec<V>, Inspectable<V> {
   private final Codec<V> valueCodec;
   private final Codecs.Termination termination;
 
-  TerminatedCodec(byte[] terminator, Codec<V> valueCodec, Codecs.Termination termination) {
+  TerminatedCodec(Codec<V> valueCodec, byte[] terminator, Codecs.Termination termination) {
     Objects.requireNonNull(terminator, "terminator");
     Preconditions.check(terminator.length > 0, "terminator must not be empty");
     this.terminator = terminator.clone();

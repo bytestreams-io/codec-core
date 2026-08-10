@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,6 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
   private static final Logger logger = LoggerFactory.getLogger(SequentialObjectCodec.class);
   private static final String MDC_KEY = "codec.field";
   private static final String LOG_KEY_FIELD = "field";
-  private static final HexFormat HEX = HexFormat.of().withUpperCase();
 
   private final List<FieldCodec<T, ?>> fields;
   private final Supplier<T> factory;
@@ -188,12 +186,13 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
       Preconditions.check(
           accepts.test(value),
           "constant [%s] must satisfy its own accepts predicate",
-          render(value));
+          Values.render(value));
       Codec<V> verifying =
           codec.validate(
               accepts,
               actual ->
-                  "expected constant [%s] but got [%s]".formatted(render(value), render(actual)));
+                  "expected constant [%s] but got [%s]"
+                      .formatted(Values.render(value), Values.render(actual)));
       return field(
           name,
           verifying,
@@ -201,11 +200,6 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
           (object, ignored) -> {
             /* not stored */
           });
-    }
-
-    /** Renders a constant for an error message, since {@code byte[]} has no useful toString. */
-    private static String render(Object value) {
-      return value instanceof byte[] bytes ? HEX.formatHex(bytes) : String.valueOf(value);
     }
 
     /**

@@ -32,7 +32,9 @@ class UnbufferedCodePointReader implements CodePointReader {
       return "";
     }
     CharsetDecoder decoder = charset.newDecoder();
-    // max 4 bytes per code point in any Unicode encoding
+    // Holds the bytes of one code point: 4 covers UTF-8, UTF-16 and UTF-32 as well as the
+    // single- and double-byte charsets. A stateful charset such as ISO-2022 fits too, since
+    // the decoder consumes its escape sequences without emitting a character.
     ByteBuffer byteBuffer = ByteBuffer.allocate(4);
     CharBuffer charBuffer = CharBuffer.allocate(2);
     StringBuilder result = new StringBuilder(count);

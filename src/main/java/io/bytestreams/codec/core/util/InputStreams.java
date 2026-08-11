@@ -19,13 +19,19 @@ public final class InputStreams {
    * Returns a stream that supports {@link InputStream#mark(int) mark}, wrapping the given stream
    * only if it does not already.
    *
+   * <p><strong>Only for a codec that reads its input to end-of-stream.</strong> Wrapping buffers
+   * ahead, so a codec that returns while bytes remain would leave them in a wrapper its caller
+   * cannot see, and whatever decodes next would read from the wrong position. A codec that stops
+   * short must instead require {@link InputStream#markSupported() markSupported} of its caller,
+   * as {@code repeatWhile} does, or avoid rewinding altogether, as {@code choice} does.
+   *
    * <p>Composite codecs that peek before decoding an item should pass the result down rather than
    * the original stream, so that combinators needing to rewind can be nested inside them.
    * {@link java.io.ByteArrayInputStream} and {@link BufferedInputStream} already support mark and
    * are returned unchanged; {@link java.io.FileInputStream}, socket streams and
    * {@link java.io.PushbackInputStream} do not.
    *
-   * @param input the stream to make markable
+   * @param input the stream to make markable, read to end-of-stream by the caller
    * @return {@code input} if it supports mark, otherwise a buffered wrapper
    * @throws NullPointerException if input is null
    */

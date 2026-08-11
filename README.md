@@ -782,24 +782,28 @@ By default an unrecognised tag or class throws a `CodecException`. Where a forma
 Codec<Shape> shapeCodec = Codecs.<Integer, Shape>choice(Codecs.uint8())
     .on(1, Circle.class, circleCodec)
     .on(2, Rectangle.class, rectangleCodec)
-    .otherwise(UnknownShape.class, Codecs.binary().xmap(UnknownShape::new, UnknownShape::raw))
+    .otherwise(
+        UnknownShape.class,
+        UnknownShape::tag,
+        tag -> Codecs.binary().xmap(body -> new UnknownShape(tag, body), UnknownShape::body))
     .build();
 ```
 
-A fallback is registered like any other alternative, minus the tag — because an unknown alternative doesn't have one this codec could write back. It therefore covers the whole `[tag][value]` span, which is what makes it an ordinary `Codec` that never has to be told which tag it saw. Keep the tag as a field if you'd rather:
-
 ```java
 record UnknownShape(int tag, byte[] body) implements Shape {}
-
-.otherwise(UnknownShape.class, Codecs.pair(Codecs.uint8(), Codecs.binary())
-    .as(UnknownShape::new, UnknownShape::tag, UnknownShape::body))
 ```
+
+A fallback declares three things, each used in both directions: the class recognises an unknown value when encoding, the second function supplies the tag to write for it, and the third builds the codec for the bytes after that tag.
+
+Carrying the tag as a value rather than as raw bytes is what keeps the choice codec free of stream requirements — it writes the tag in every case, registered or not, so it never has to rewind and never asks the caller for a markable stream.
 
 Three things to know:
 
-- **Declaring the class keeps encoding checked.** A value that is neither registered nor an instance of the fallback type raises a `CodecException` naming it, rather than reaching a codec that cannot handle it.
+- **Declaring the class keeps encoding checked.** A value that is neither registered nor an instance of the fallback type raises a `CodecException` naming it, rather than reaching a codec that cannot handle it. Returning a tag that is already registered is rejected as well — those bytes would decode back as that other alternative.
 - **Only an unrecognised tag reaches the fallback.** A registered alternative whose body fails to decode stays an error — a corrupt `Circle` is reported as one rather than silently becoming an unknown.
-- **A fallback of unknown length needs a bounded scope.** Reading to end-of-stream is correct inside `prefixed` or `terminated`, which hand down a bounded stream. Outside one, a read-to-EOF fallback will swallow the rest of the input.
+- **A body of unknown length needs a bounded scope.** Reading to end-of-stream is correct inside `prefixed` or `terminated`, which hand down a bounded stream. Outside one, a read-to-EOF body codec will swallow the rest of the input.
+
+The tag is re-encoded from the decoded value rather than replayed, so byte-for-byte passthrough of an unknown alternative holds exactly when the tag codec round trips — as every tag codec in this library does.
 
 ## Lazy Codecs
 

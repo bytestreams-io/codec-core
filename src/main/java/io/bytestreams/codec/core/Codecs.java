@@ -743,15 +743,16 @@ public class Codecs {
   /**
    * Creates a new builder for a choice codec that encodes discriminated unions.
    *
-   * <p>The class tag codec determines which alternative to use. The tag-to-class mapping is handled
-   * externally via {@link Codec#xmap xmap}.
+   * <p>Each alternative is registered as a tag, a class and a codec, so decoding dispatches on the
+   * tag and encoding on the class without the two being able to disagree.
    *
-   * @param classCodec the codec for the class tag
+   * @param tagCodec the codec for the tag
+   * @param <T> the tag type
    * @param <V> the base type of the discriminated union
    * @return a new choice codec builder
    */
-  public static <V> ChoiceCodec.Builder<V> choice(Codec<Class<? extends V>> classCodec) {
-    return ChoiceCodec.builder(classCodec);
+  public static <T, V> ChoiceCodec.Builder<T, V> choice(Codec<T> tagCodec) {
+    return ChoiceCodec.builder(tagCodec);
   }
 
   /**

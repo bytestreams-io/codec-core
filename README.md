@@ -761,20 +761,45 @@ Codec<Color> color = Codecs.triple(Codecs.uint8(), Codecs.uint8(), Codecs.uint8(
 
 ## Choice Codecs
 
-Protocols sometimes carry different message types in the same field, distinguished by a tag or type code. A choice codec encodes these discriminated unions — a class tag selects which codec to use.
+Protocols sometimes carry different message types in the same field, distinguished by a tag or type code. A choice codec encodes these discriminated unions — the wire format is `[tag][value]`, and the tag selects which codec to use.
 
 ```java
-// Map integer tags to shape classes
-BiMap<Integer, Class<? extends Shape>> tags = BiMap.of(
-    Map.entry(1, Circle.class),
-    Map.entry(2, Rectangle.class));
-
-// Build the choice codec
-Codec<Shape> shapeCodec = Codecs.<Shape>choice(Codecs.uint8().xmap(tags))
-    .on(Circle.class, circleCodec)
-    .on(Rectangle.class, rectangleCodec)
+Codec<Shape> shapeCodec = Codecs.<Integer, Shape>choice(Codecs.uint8())
+    .on(1, Circle.class, circleCodec)
+    .on(2, Rectangle.class, rectangleCodec)
     .build();
 ```
+
+Each alternative is registered once, as a tag, a class and a codec. Decoding dispatches on the decoded tag, encoding on the value's exact runtime class, and the two cannot disagree — a tag with no codec, or a class with no tag, is rejected when the builder runs rather than at the first message that uses it.
+
+The tag can be any type with a codec: `Codecs.uint8()` for a numeric type code, `Codecs.ascii(2)` for a record-type field like `"BH"` or `"BT"`. Arrays are rejected, because array equality is by identity and a decoded tag would never match a registered one.
+
+### Unknown alternatives
+
+By default an unrecognised tag or class throws a `CodecException`. Where a format is expected to grow — a new message type from a counterparty you must pass through unchanged — register a fallback so unknown values survive a round trip:
+
+```java
+Codec<Shape> shapeCodec = Codecs.<Integer, Shape>choice(Codecs.uint8())
+    .on(1, Circle.class, circleCodec)
+    .on(2, Rectangle.class, rectangleCodec)
+    .otherwise(UnknownShape.class, Codecs.binary().xmap(UnknownShape::new, UnknownShape::raw))
+    .build();
+```
+
+A fallback is registered like any other alternative, minus the tag — because an unknown alternative doesn't have one this codec could write back. It therefore covers the whole `[tag][value]` span, which is what makes it an ordinary `Codec` that never has to be told which tag it saw. Keep the tag as a field if you'd rather:
+
+```java
+record UnknownShape(int tag, byte[] body) implements Shape {}
+
+.otherwise(UnknownShape.class, Codecs.pair(Codecs.uint8(), Codecs.binary())
+    .as(UnknownShape::new, UnknownShape::tag, UnknownShape::body))
+```
+
+Three things to know:
+
+- **Declaring the class keeps encoding checked.** A value that is neither registered nor an instance of the fallback type raises a `CodecException` naming it, rather than reaching a codec that cannot handle it.
+- **Only an unrecognised tag reaches the fallback.** A registered alternative whose body fails to decode stays an error — a corrupt `Circle` is reported as one rather than silently becoming an unknown.
+- **A fallback of unknown length needs a bounded scope.** Reading to end-of-stream is correct inside `prefixed` or `terminated`, which hand down a bounded stream. Outside one, a read-to-EOF fallback will swallow the rest of the input.
 
 ## Lazy Codecs
 
@@ -935,7 +960,7 @@ When codecs are nested, MDC (Mapped Diagnostic Context) tracks the full field pa
 | `Codecs.pair(a, b)` | Pair codec for two sequential values |
 | `Codecs.triple(a, b, c)` | Triple codec for three sequential values |
 | `Codecs.lazy(supplier)` | Lazy codec for recursive definitions |
-| `Codecs.choice(classCodec)` | Discriminated union (choice) codec builder |
+| `Codecs.choice(tagCodec)` | Discriminated union (choice) codec builder |
 | `Codecs.sequential(factory)` | Sequential object codec builder |
 | `Codecs.tagged(factory, tagCodec)` | Tagged object codec builder |
 | `Codecs.tagged(tagCodec)` | Tagged object codec builder using `TaggedData` |

@@ -33,15 +33,18 @@ class ChoiceCodecTest {
    * An unrecognised alternative covers the whole span, tag included, so it is built from ordinary
    * combinators rather than being told which tag it saw.
    */
-  private static Codec<UnknownShape> unknownCodec() {
-    return Codecs.pair(Codecs.uint8(), Codecs.binary())
-        .as(UnknownShape::new, u -> u.tag, u -> u.body);
+  private static Codec<UnknownShape> unknownBody(int tag) {
+    return Codecs.binary().xmap(body -> new UnknownShape(tag, body), u -> u.body);
+  }
+
+  private static Codec<RawShape> rawBody(int tag) {
+    return Codecs.binary().xmap(body -> new RawShape(tag, body), r -> r.body);
   }
 
   private static Codec<Shape> shapeCodecWithRawFallback() {
     return Codecs.<Integer, Shape>choice(Codecs.uint8())
         .on(1, Circle.class, CIRCLE_CODEC)
-        .otherwise(RawShape.class, Codecs.binary().xmap(RawShape::new, r -> r.raw))
+        .otherwise(RawShape.class, r -> r.tag, ChoiceCodecTest::rawBody)
         .build();
   }
 
@@ -49,7 +52,7 @@ class ChoiceCodecTest {
     return Codecs.<Integer, Shape>choice(Codecs.uint8())
         .on(1, Circle.class, CIRCLE_CODEC)
         .on(2, Rectangle.class, RECTANGLE_CODEC)
-        .otherwise(UnknownShape.class, unknownCodec())
+        .otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody)
         .build();
   }
 
@@ -196,7 +199,8 @@ class ChoiceCodecTest {
     Shape shape = scoped.decode(input);
 
     assertThat(shape).isInstanceOf(RawShape.class);
-    assertThat(((RawShape) shape).raw).containsExactly(9, 0x0A, 0x0B);
+    assertThat(((RawShape) shape).tag).isEqualTo(9);
+    assertThat(((RawShape) shape).body).containsExactly(0x0A, 0x0B);
     assertThat(input.read()).isEqualTo(0x77); // the scope ended where the length said it would
 
     var output = new ByteArrayOutputStream();
@@ -211,6 +215,51 @@ class ChoiceCodecTest {
 
     // A truncated stream must stay an EOFException rather than decoding as an unknown
     assertThatThrownBy(() -> codec.decode(input)).isInstanceOf(EOFException.class);
+  }
+
+  @Test
+  void fallback_returning_a_registered_tag_is_rejected() {
+    // Writing a registered tag would round trip the unknown back as that other alternative
+    Codec<Shape> codec =
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .on(1, Circle.class, CIRCLE_CODEC)
+            .otherwise(UnknownShape.class, u -> 1, ChoiceCodecTest::unknownBody)
+            .build();
+    var value = new UnknownShape(9, new byte[] {42});
+    var output = new ByteArrayOutputStream();
+
+    assertThatThrownBy(() -> codec.encode(value, output))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("fallback returned registered tag 1");
+  }
+
+  @Test
+  void fallback_tagOf_returning_null_is_reported() {
+    Codec<Shape> codec =
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .on(1, Circle.class, CIRCLE_CODEC)
+            .otherwise(UnknownShape.class, u -> null, ChoiceCodecTest::unknownBody)
+            .build();
+    var value = new UnknownShape(9, new byte[] {42});
+    var output = new ByteArrayOutputStream();
+
+    assertThatThrownBy(() -> codec.encode(value, output))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("tagOf returned null");
+  }
+
+  @Test
+  void fallback_body_returning_null_is_reported() {
+    Codec<Shape> codec =
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .on(1, Circle.class, CIRCLE_CODEC)
+            .otherwise(UnknownShape.class, u -> u.tag, tag -> null)
+            .build();
+    var input = new ByteArrayInputStream(new byte[] {9, 42});
+
+    assertThatThrownBy(() -> codec.decode(input))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("body returned null");
   }
 
   @Test
@@ -231,7 +280,7 @@ class ChoiceCodecTest {
     Codec<Shape> codec =
         Codecs.<Integer, Shape>choice(Codecs.uint8())
             .on(1, Circle.class, failing)
-            .otherwise(UnknownShape.class, unknownCodec())
+            .otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody)
             .build();
 
     // A registered tag whose body fails must stay an error, not silently become an UnknownShape
@@ -301,18 +350,27 @@ class ChoiceCodecTest {
   @Test
   void builder_null_otherwise_type() {
     var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
-    Codec<UnknownShape> fallback = unknownCodec();
-    assertThatThrownBy(() -> builder.otherwise(null, fallback))
+
+    assertThatThrownBy(() -> builder.otherwise(null, u -> 0, ChoiceCodecTest::unknownBody))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("type");
   }
 
   @Test
-  void builder_null_otherwise_codec() {
+  void builder_null_otherwise_tagOf() {
     var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
-    assertThatThrownBy(() -> builder.otherwise(UnknownShape.class, null))
+    assertThatThrownBy(
+            () -> builder.otherwise(UnknownShape.class, null, ChoiceCodecTest::unknownBody))
         .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("codec");
+        .hasMessageContaining("tagOf");
+  }
+
+  @Test
+  void builder_null_otherwise_body() {
+    var builder = Codecs.<Integer, Shape>choice(Codecs.uint8());
+    assertThatThrownBy(() -> builder.otherwise(UnknownShape.class, u -> u.tag, null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("body");
   }
 
   @Test
@@ -320,19 +378,38 @@ class ChoiceCodecTest {
     var builder =
         Codecs.<Integer, Shape>choice(Codecs.uint8())
             .on(1, Circle.class, CIRCLE_CODEC)
-            .otherwise(UnknownShape.class, unknownCodec());
-    Codec<UnknownShape> another = unknownCodec();
-    assertThatThrownBy(() -> builder.otherwise(UnknownShape.class, another))
+            .otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody);
+
+    assertThatThrownBy(
+            () -> builder.otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("fallback");
   }
 
   @Test
+  void builder_accepts_on_after_otherwise() throws IOException {
+    // Registration order must not matter: a fallback declared first still leaves other
+    // alternatives registrable
+    Codec<Shape> codec =
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody)
+            .on(1, Circle.class, CIRCLE_CODEC)
+            .build();
+
+    assertThat(codec.decode(new ByteArrayInputStream(new byte[] {1, 42})))
+        .isInstanceOf(Circle.class);
+    assertThat(codec.decode(new ByteArrayInputStream(new byte[] {9, 0x0A})))
+        .isInstanceOf(UnknownShape.class);
+  }
+
+  @Test
   void builder_on_type_already_used_by_fallback() {
     var builder =
-        Codecs.<Integer, Shape>choice(Codecs.uint8()).otherwise(UnknownShape.class, unknownCodec());
-    Codec<UnknownShape> another = unknownCodec();
-    assertThatThrownBy(() -> builder.on(1, UnknownShape.class, another))
+        Codecs.<Integer, Shape>choice(Codecs.uint8())
+            .otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody);
+    Codec<UnknownShape> body = unknownBody(1);
+
+    assertThatThrownBy(() -> builder.on(1, UnknownShape.class, body))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("duplicate type");
   }
@@ -340,10 +417,11 @@ class ChoiceCodecTest {
   @Test
   void builder_otherwise_type_already_registered() {
     var builder =
-        Codecs.<Integer, Shape>choice(Codecs.uint8()).on(1, UnknownShape.class, unknownCodec());
-    Codec<UnknownShape> another = unknownCodec();
+        Codecs.<Integer, Shape>choice(Codecs.uint8()).on(1, UnknownShape.class, unknownBody(1));
+
     // Registered would win on encode; rejecting is better than resolving it silently
-    assertThatThrownBy(() -> builder.otherwise(UnknownShape.class, another))
+    assertThatThrownBy(
+            () -> builder.otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("duplicate type");
   }
@@ -388,15 +466,14 @@ class ChoiceCodecTest {
 
   @Test
   void inspect_delegates_to_the_fallback_codec() {
-    Codec<UnknownShape> fallback = unknownCodec();
     Codec<Shape> codec =
         Codecs.<Integer, Shape>choice(Codecs.uint8())
             .on(1, Circle.class, CIRCLE_CODEC)
-            .otherwise(UnknownShape.class, fallback)
+            .otherwise(UnknownShape.class, u -> u.tag, ChoiceCodecTest::unknownBody)
             .build();
     UnknownShape value = new UnknownShape(9, new byte[] {0x0A, 0x0B});
 
-    assertThat(Inspector.inspect(codec, value)).isEqualTo(Inspector.inspect(fallback, value));
+    assertThat(Inspector.inspect(codec, value)).isEqualTo(Inspector.inspect(unknownBody(9), value));
   }
 
   @Test
@@ -470,12 +547,14 @@ class ChoiceCodecTest {
 
   static class Triangle extends Shape {}
 
-  /** Captures an unrecognised alternative as its whole span, tag included. */
+  /** Captures an unrecognised alternative as its tag plus the body bytes. */
   static class RawShape extends Shape {
-    final byte[] raw;
+    final int tag;
+    final byte[] body;
 
-    RawShape(byte[] raw) {
-      this.raw = Arrays.copyOf(raw, raw.length);
+    RawShape(int tag, byte[] body) {
+      this.tag = tag;
+      this.body = Arrays.copyOf(body, body.length);
     }
   }
 

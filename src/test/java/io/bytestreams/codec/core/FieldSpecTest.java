@@ -66,7 +66,7 @@ class FieldSpecTest {
     assertThat(ID.get(obj)).isEqualTo(42);
   }
 
-  // -- FieldSpec.of() factory --
+  // FieldSpec.of() factory
 
   static final FieldSpec<TestObject, Integer> ID_OF =
       FieldSpec.of("id", Codecs.uint8(), TestObject::getId, TestObject::setId);

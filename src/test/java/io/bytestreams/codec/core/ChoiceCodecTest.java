@@ -172,8 +172,8 @@ class ChoiceCodecTest {
 
   @Test
   void fallback_does_not_close_the_caller_stream() throws IOException {
-    // SequenceInputStream closes each stream as it is exhausted; no codec here closes the
-    // caller's stream, and a read-to-end fallback must not become the exception
+    // No codec here closes a stream it was handed, and a read-to-end fallback must not become
+    // the exception — an earlier design closed it by way of the stream it wrapped
     Codec<Shape> codec = shapeCodecWithRawFallback();
     var closed = new AtomicBoolean();
     var input =

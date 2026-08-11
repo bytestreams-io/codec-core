@@ -40,7 +40,7 @@ class PackedDecimalCodec implements Codec<Long> {
 
   PackedDecimalCodec(int digits) {
     Preconditions.check(digits > 0, "digits must be positive, but was [%d]", digits);
-    // The decoded type is long, and 10^19 would overflow the range check below.
+    // The decoded type is long, and 10^19 would overflow the range check in encode.
     Preconditions.check(digits <= 18, "digits must be at most 18, but was [%d]", digits);
     this.digits = digits;
     // digits plus one sign nibble, rounded up to whole bytes

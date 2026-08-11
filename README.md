@@ -485,6 +485,30 @@ Inside an object codec, a failed check picks up the field path like any other `C
 field [batch.trailer.count]: count must be positive
 ```
 
+### Sharing checks
+
+A condition and the message describing its failure belong together. `Validator` pairs them so a check can be named once and reused, rather than the wording being retyped wherever the condition is applied:
+
+```java
+import io.bytestreams.codec.core.util.Validator;
+
+static final Validator<Integer> POSITIVE_AMOUNT =
+    Validator.of(v -> v > 0, "amount must be positive");
+
+Codec<Integer> amount = Codecs.uint16().validate(POSITIVE_AMOUNT);
+Codec<Integer> fee = Codecs.uint32().validate(POSITIVE_AMOUNT);
+```
+
+`and` composes checks, reporting the first failure — a codec raises on the first problem, so there is nowhere for a second message to go:
+
+```java
+Codec<Integer> quantity = Codecs.uint16().validate(POSITIVE_AMOUNT.and(UNDER_LIMIT));
+```
+
+A validator *reports* a failure rather than raising one, returning `Optional<String>`. That is what lets one validator serve both directions: the codec knows which side it is on and picks the exception type, which a check that threw for itself could not do. `Validator` is to `validate` what `Converter` is to `xmap` — both live in `io.bytestreams.codec.core.util`.
+
+Both inline forms above are shorthand for the same thing: `validate(check, message)` builds a `Validator.of(check, message)` for you.
+
 Validation composes with `xmap`, and order matters — validate against the type you want to constrain:
 
 ```java
@@ -944,6 +968,7 @@ The `io.bytestreams.codec.core.util` package provides the following utility clas
 | `ConverterException` | — | Exception thrown when a `Converter` conversion fails |
 | `Converters` | `of`, `leftPad`, `rightPad`, `leftFitPad`, `rightFitPad`, `leftEvenPad`, `rightEvenPad`, `toInt`, `toLong`, `toBigInt`, `scaled`, `temporal` | Converter factories for common string and numeric transformations |
 | `BiMap` | `of`, `to`, `from` | Immutable bidirectional map implementing `Converter` |
+| `Validator` | `check`, `of`, `and` | A check paired with its failure message, for sharing across codecs |
 | `Strings` | `padStart`, `padEnd`, `stripStart`, `stripEnd`, `codePointCount`, `hexByteCount` | String padding, stripping, and counting utilities |
 | `InputStreams` | `readFully`, `markable`, `atEndOfStream` | Read exactly N bytes; ensure mark support; test for end of stream without consuming |
 | `Preconditions` | `check` | Validate conditions, throwing `IllegalArgumentException` on failure |

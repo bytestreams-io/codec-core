@@ -3,6 +3,7 @@ package io.bytestreams.codec.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.bytestreams.codec.core.util.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,6 +13,9 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 class ValidatingCodecTest {
+
+  private static final String MUST_BE_POSITIVE = "value must be positive";
+  private static final Validator<Integer> POSITIVE = Validator.of(v -> v > 0, MUST_BE_POSITIVE);
 
   @Test
   void validate_decode_rejects_failing_value() {
@@ -145,6 +149,57 @@ class ValidatingCodecTest {
     assertThatThrownBy(() -> codec.decode(input))
         .isInstanceOf(CodecException.class)
         .hasMessage("field [value]: value must be positive");
+  }
+
+  @Test
+  void validate_shared_validator_decode() {
+    Codec<Integer> codec = Codecs.uint8().validate(POSITIVE);
+    var input = new ByteArrayInputStream(new byte[] {0});
+
+    assertThatThrownBy(() -> codec.decode(input))
+        .isInstanceOf(CodecException.class)
+        .hasMessageContaining(MUST_BE_POSITIVE);
+  }
+
+  @Test
+  void validate_shared_validator_encode() {
+    Codec<Integer> codec = Codecs.uint8().validate(POSITIVE);
+    var output = new ByteArrayOutputStream();
+
+    assertThatThrownBy(() -> codec.encode(0, output))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(MUST_BE_POSITIVE);
+  }
+
+  @Test
+  void validate_shared_validator_passes() throws IOException {
+    Codec<Integer> codec = Codecs.uint8().validate(POSITIVE);
+    var output = new ByteArrayOutputStream();
+
+    codec.encode(7, output);
+
+    assertThat(output.toByteArray()).containsExactly(7);
+  }
+
+  @Test
+  void validate_composed_validator_reports_the_failing_check() {
+    // The same POSITIVE instance is reused here and above: pairing check with message once is
+    // the point of the type
+    Codec<Integer> codec =
+        Codecs.uint8().validate(POSITIVE.and(Validator.of(v -> v < 100, "value must be small")));
+    var output = new ByteArrayOutputStream();
+
+    assertThatThrownBy(() -> codec.encode(200, output))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("value must be small");
+  }
+
+  @Test
+  void validate_null_validator() {
+    Codec<Integer> codec = Codecs.uint8();
+    assertThatThrownBy(() -> codec.validate((Validator<Integer>) null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("validator");
   }
 
   @Test

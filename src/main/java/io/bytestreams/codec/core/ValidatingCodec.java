@@ -1,11 +1,11 @@
 package io.bytestreams.codec.core;
 
+import io.bytestreams.codec.core.util.Validator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.Optional;
 
 /**
  * A codec that checks values against a condition as they pass through.
@@ -17,26 +17,25 @@ import java.util.function.Predicate;
  * <p>Inspection delegates to the base codec without running the check, so inspecting a value that
  * would fail validation is safe.
  *
- * <p>Created via {@link Codec#validate(Predicate, Function)}.
+ * <p>Created via {@link Codec#validate(Validator)}.
  *
  * @param <V> the value type
  */
 class ValidatingCodec<V> implements Codec<V>, Inspectable<V> {
   private final Codec<V> base;
-  private final Predicate<V> check;
-  private final Function<V, String> message;
+  private final Validator<V> validator;
 
-  ValidatingCodec(Codec<V> base, Predicate<V> check, Function<V, String> message) {
+  ValidatingCodec(Codec<V> base, Validator<V> validator) {
     this.base = Objects.requireNonNull(base, "base");
-    this.check = Objects.requireNonNull(check, "check");
-    this.message = Objects.requireNonNull(message, "message");
+    this.validator = Objects.requireNonNull(validator, "validator");
   }
 
   /** {@inheritDoc} */
   @Override
   public EncodeResult encode(V value, OutputStream output) throws IOException {
-    if (!check.test(value)) {
-      throw new IllegalArgumentException(message.apply(value));
+    Optional<String> failure = validator.check(value);
+    if (failure.isPresent()) {
+      throw new IllegalArgumentException(failure.get());
     }
     return base.encode(value, output);
   }
@@ -45,8 +44,9 @@ class ValidatingCodec<V> implements Codec<V>, Inspectable<V> {
   @Override
   public V decode(InputStream input) throws IOException {
     V value = base.decode(input);
-    if (!check.test(value)) {
-      throw new CodecException(message.apply(value), null);
+    Optional<String> failure = validator.check(value);
+    if (failure.isPresent()) {
+      throw new CodecException(failure.get(), null);
     }
     return value;
   }

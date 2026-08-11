@@ -1,6 +1,7 @@
 package io.bytestreams.codec.core;
 
 import io.bytestreams.codec.core.util.Converter;
+import io.bytestreams.codec.core.util.Validator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -93,6 +94,7 @@ public interface Codec<V> {
    * @throws NullPointerException if any argument is null
    */
   default Codec<V> validate(Predicate<V> check, String message) {
+    Objects.requireNonNull(check, "check");
     Objects.requireNonNull(message, "message");
     return validate(check, value -> message);
   }
@@ -114,6 +116,28 @@ public interface Codec<V> {
    * @throws NullPointerException if any argument is null
    */
   default Codec<V> validate(Predicate<V> check, Function<V, String> message) {
-    return new ValidatingCodec<>(this, check, message);
+    return validate(Validator.of(check, message));
+  }
+
+  /**
+   * Returns a new codec that applies a {@link Validator} on both encode and decode.
+   *
+   * <p>A validator pairs the condition with its message, so a check can be named once and shared
+   * across the codecs that need it rather than restated at each call site:
+   *
+   * <pre>{@code
+   * static final Validator<Integer> POSITIVE_AMOUNT =
+   *     Validator.of(v -> v > 0, "amount must be positive");
+   *
+   * Codec<Integer> amount = Codecs.uint16().validate(POSITIVE_AMOUNT);
+   * Codec<Integer> fee = Codecs.uint32().validate(POSITIVE_AMOUNT.and(UNDER_LIMIT));
+   * }</pre>
+   *
+   * @param validator the check to apply
+   * @return a new codec that validates values passing through it
+   * @throws NullPointerException if validator is null
+   */
+  default Codec<V> validate(Validator<V> validator) {
+    return new ValidatingCodec<>(this, validator);
   }
 }

@@ -133,7 +133,10 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
      * @return this builder
      */
     public <V> Builder<T> field(
-        String name, Codec<V> codec, Function<T, V> getter, BiConsumer<T, V> setter) {
+        String name,
+        Codec<V> codec,
+        Function<? super T, V> getter,
+        BiConsumer<? super T, V> setter) {
       return field(name, codec, getter, setter, Predicates.alwaysTrue());
     }
 
@@ -229,9 +232,9 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
     public <V> Builder<T> field(
         String name,
         Codec<V> codec,
-        Function<T, V> getter,
-        BiConsumer<T, V> setter,
-        Predicate<T> presence) {
+        Function<? super T, V> getter,
+        BiConsumer<? super T, V> setter,
+        Predicate<? super T> presence) {
       Objects.requireNonNull(name, "name");
       Objects.requireNonNull(codec, "codec");
       Objects.requireNonNull(getter, "getter");
@@ -247,11 +250,14 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
      * <p>The field's presence is determined by {@link FieldSpec#presence()}, which defaults to
      * always true (required field).
      *
+     * <p>The spec may be declared on a supertype of {@code T}, so a spec written for a base class
+     * can be reused by the codec of any subclass.
+     *
      * @param spec the field specification
      * @param <V> the field value type
      * @return this builder
      */
-    public <V> Builder<T> field(FieldSpec<T, V> spec) {
+    public <V> Builder<T> field(FieldSpec<? super T, V> spec) {
       Objects.requireNonNull(spec, "spec");
       return field(spec.name(), spec.codec(), spec::get, spec::set, spec.presence());
     }
@@ -272,16 +278,16 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
   static class FieldCodec<T, V> {
     private final String name;
     private final Codec<V> codec;
-    private final Function<T, V> getter;
-    private final BiConsumer<T, V> setter;
-    private final Predicate<T> presence;
+    private final Function<? super T, V> getter;
+    private final BiConsumer<? super T, V> setter;
+    private final Predicate<? super T> presence;
 
     FieldCodec(
         String name,
         Codec<V> codec,
-        Function<T, V> getter,
-        BiConsumer<T, V> setter,
-        Predicate<T> presence) {
+        Function<? super T, V> getter,
+        BiConsumer<? super T, V> setter,
+        Predicate<? super T> presence) {
       this.name = name;
       this.codec = codec;
       this.getter = getter;
@@ -297,7 +303,7 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
       return codec;
     }
 
-    Predicate<T> presence() {
+    Predicate<? super T> presence() {
       return presence;
     }
 

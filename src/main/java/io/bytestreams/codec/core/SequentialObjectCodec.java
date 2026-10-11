@@ -106,7 +106,7 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
   public Object inspect(T object) {
     Map<String, Object> result = new LinkedHashMap<>();
     for (FieldCodec<T, ?> field : fields) {
-      if (field.presence().test(object)) {
+      if (field.isPresent(object)) {
         result.put(field.name(), Inspector.inspect(field.codec(), field.get(object)));
       }
     }
@@ -307,8 +307,8 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
       return codec;
     }
 
-    Predicate<? super T> presence() {
-      return presence;
+    boolean isPresent(T object) {
+      return presence.test(object);
     }
 
     V get(T object) {

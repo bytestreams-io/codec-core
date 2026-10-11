@@ -74,16 +74,18 @@ public abstract class DataObject {
    *
    * @param name the field name (used as map key)
    * @param codec the codec for the field value
-   * @param presence predicate to determine if field is present
+   * @param presence predicate to determine if field is present; may be declared on a supertype of
+   *     {@code T}
    * @param <T> the DataObject subclass type
    * @param <V> the field value type
    * @return a new FieldSpec
    */
   public static <T extends DataObject, V> FieldSpec<T, V> field(
-      String name, Codec<V> codec, Predicate<T> presence) {
+      String name, Codec<V> codec, Predicate<? super T> presence) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(codec, "codec");
     Objects.requireNonNull(presence, "presence");
+    Predicate<T> narrowed = presence::test;
     return new FieldSpec<>() {
       @Override
       public String name() {
@@ -107,7 +109,7 @@ public abstract class DataObject {
 
       @Override
       public Predicate<T> presence() {
-        return presence;
+        return narrowed;
       }
     };
   }

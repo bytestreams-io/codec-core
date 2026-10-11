@@ -179,4 +179,12 @@ class DataObjectTest {
     b.set("name", "hello");
     assertThat(a).isNotEqualTo(b);
   }
+
+  @Test
+  void field_accepts_presence_predicate_declared_on_supertype() {
+    java.util.function.Predicate<DataObject> never = obj -> false;
+    FieldSpec<Message, String> spec = DataObject.field("x", Codecs.ascii(3), never);
+
+    assertThat(spec.presence().test(new Message())).isFalse();
+  }
 }

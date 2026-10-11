@@ -108,4 +108,61 @@ class SequentialObjectCodecSupertypeSpecTest {
 
     assertThat(decoded.note).isEqualTo("xyz");
   }
+
+  static class Base2 {
+    int id;
+
+    int getId() {
+      return id;
+    }
+
+    void setId(int id) {
+      this.id = id;
+    }
+  }
+
+  static class Left extends Base2 {}
+
+  static class Right extends Base2 {}
+
+  @Test
+  void method_references_on_base_class_and_spec_shared_by_two_subclasses() throws IOException {
+    FieldSpec<Base2, Integer> shared =
+        FieldSpec.of("id", Codecs.uint8(), Base2::getId, Base2::setId);
+    SequentialObjectCodec<Left> left =
+        SequentialObjectCodec.<Left>builder(Left::new).field(shared).build();
+    SequentialObjectCodec<Right> right =
+        SequentialObjectCodec.<Right>builder(Right::new)
+            .field("id", Codecs.uint8(), Base2::getId, Base2::setId)
+            .build();
+    Left l = new Left();
+    l.id = 3;
+    Right r = new Right();
+    r.id = 4;
+
+    ByteArrayOutputStream lo = new ByteArrayOutputStream();
+    left.encode(l, lo);
+    ByteArrayOutputStream ro = new ByteArrayOutputStream();
+    right.encode(r, ro);
+
+    assertThat(left.decode(new ByteArrayInputStream(lo.toByteArray())).id).isEqualTo(3);
+    assertThat(right.decode(new ByteArrayInputStream(ro.toByteArray())).id).isEqualTo(4);
+  }
+
+  @Test
+  void field_spec_of_accepts_base_class_functions() {
+    FieldSpec<Derived, Integer> spec =
+        FieldSpec.of(
+            "id",
+            Codecs.uint8(),
+            (Base b) -> b.id,
+            (Base b, Integer v) -> b.id = v,
+            (Base b) -> b.id > 0);
+    Derived d = new Derived();
+
+    assertThat(spec.presence().test(d)).isFalse();
+    spec.set(d, 5);
+    assertThat(spec.get(d)).isEqualTo(5);
+    assertThat(spec.presence().test(d)).isTrue();
+  }
 }

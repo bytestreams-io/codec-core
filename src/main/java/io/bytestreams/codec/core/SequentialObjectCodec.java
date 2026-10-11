@@ -125,6 +125,8 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
     /**
      * Adds a required field to the codec.
      *
+     * <p>The getter and setter may be declared on a supertype of {@code T}.
+     *
      * @param name the field name (used in error messages)
      * @param codec the codec for this field's value
      * @param getter function to extract the field value for encoding
@@ -220,6 +222,8 @@ public class SequentialObjectCodec<T> implements Codec<T>, Inspectable<T> {
      * <p>The presence predicate determines whether the field should be encoded/decoded. If the
      * predicate returns false, the field is skipped. Note that during decoding, the predicate can
      * only reference fields that have already been decoded (earlier in the field order).
+     *
+     * <p>The getter, setter and presence predicate may be declared on a supertype of {@code T}.
      *
      * @param name the field name (used in error messages)
      * @param codec the codec for this field's value

@@ -35,6 +35,8 @@ public interface FieldSpec<T, V> {
   /**
    * Creates a FieldSpec from explicit getter and setter functions.
    *
+   * <p>The getter and setter may be declared on a supertype of {@code T}.
+   *
    * @param name the field name
    * @param codec the codec for the field value
    * @param getter function to extract the field value
@@ -44,12 +46,14 @@ public interface FieldSpec<T, V> {
    * @return a new FieldSpec
    */
   static <T, V> FieldSpec<T, V> of(
-      String name, Codec<V> codec, Function<T, V> getter, BiConsumer<T, V> setter) {
+      String name, Codec<V> codec, Function<? super T, V> getter, BiConsumer<? super T, V> setter) {
     return of(name, codec, getter, setter, Predicates.alwaysTrue());
   }
 
   /**
    * Creates a FieldSpec from explicit getter, setter, and presence predicate.
+   *
+   * <p>The getter, setter and presence predicate may be declared on a supertype of {@code T}.
    *
    * @param name the field name
    * @param codec the codec for the field value
@@ -63,14 +67,15 @@ public interface FieldSpec<T, V> {
   static <T, V> FieldSpec<T, V> of(
       String name,
       Codec<V> codec,
-      Function<T, V> getter,
-      BiConsumer<T, V> setter,
-      Predicate<T> presence) {
+      Function<? super T, V> getter,
+      BiConsumer<? super T, V> setter,
+      Predicate<? super T> presence) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(codec, "codec");
     Objects.requireNonNull(getter, "getter");
     Objects.requireNonNull(setter, "setter");
     Objects.requireNonNull(presence, "presence");
+    Predicate<T> narrowed = presence::test;
     return new FieldSpec<>() {
       @Override
       public String name() {
@@ -94,7 +99,7 @@ public interface FieldSpec<T, V> {
 
       @Override
       public Predicate<T> presence() {
-        return presence;
+        return narrowed;
       }
     };
   }

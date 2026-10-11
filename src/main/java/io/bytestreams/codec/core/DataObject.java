@@ -3,7 +3,6 @@ package io.bytestreams.codec.core;
 import io.bytestreams.codec.core.util.Predicates;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -82,38 +81,8 @@ public abstract class DataObject {
    */
   public static <T extends DataObject, V> FieldSpec<T, V> field(
       String name, Codec<V> codec, Predicate<? super T> presence) {
-    Objects.requireNonNull(name, "name");
-    Objects.requireNonNull(codec, "codec");
-    Objects.requireNonNull(presence, "presence");
-    // T only flows into the predicate, so a Predicate<? super T> is a Predicate<T>
-    @SuppressWarnings("unchecked")
-    Predicate<T> narrowed = (Predicate<T>) presence;
-    return new FieldSpec<>() {
-      @Override
-      public String name() {
-        return name;
-      }
-
-      @Override
-      public Codec<V> codec() {
-        return codec;
-      }
-
-      @Override
-      public V get(T obj) {
-        return obj.get(name);
-      }
-
-      @Override
-      public void set(T obj, V value) {
-        obj.set(name, value);
-      }
-
-      @Override
-      public Predicate<T> presence() {
-        return narrowed;
-      }
-    };
+    return FieldSpec.of(
+        name, codec, obj -> obj.<V>get(name), (obj, value) -> obj.set(name, value), presence);
   }
 
   @Override

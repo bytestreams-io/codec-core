@@ -3,7 +3,6 @@ package io.bytestreams.codec.core;
 import io.bytestreams.codec.core.util.Predicates;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -74,42 +73,16 @@ public abstract class DataObject {
    *
    * @param name the field name (used as map key)
    * @param codec the codec for the field value
-   * @param presence predicate to determine if field is present
+   * @param presence predicate to determine if field is present; may be declared on a supertype of
+   *     {@code T}
    * @param <T> the DataObject subclass type
    * @param <V> the field value type
    * @return a new FieldSpec
    */
   public static <T extends DataObject, V> FieldSpec<T, V> field(
-      String name, Codec<V> codec, Predicate<T> presence) {
-    Objects.requireNonNull(name, "name");
-    Objects.requireNonNull(codec, "codec");
-    Objects.requireNonNull(presence, "presence");
-    return new FieldSpec<>() {
-      @Override
-      public String name() {
-        return name;
-      }
-
-      @Override
-      public Codec<V> codec() {
-        return codec;
-      }
-
-      @Override
-      public V get(T obj) {
-        return obj.get(name);
-      }
-
-      @Override
-      public void set(T obj, V value) {
-        obj.set(name, value);
-      }
-
-      @Override
-      public Predicate<T> presence() {
-        return presence;
-      }
-    };
+      String name, Codec<V> codec, Predicate<? super T> presence) {
+    return FieldSpec.of(
+        name, codec, obj -> obj.<V>get(name), (obj, value) -> obj.set(name, value), presence);
   }
 
   @Override

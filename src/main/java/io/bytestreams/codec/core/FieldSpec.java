@@ -75,7 +75,9 @@ public interface FieldSpec<T, V> {
     Objects.requireNonNull(getter, "getter");
     Objects.requireNonNull(setter, "setter");
     Objects.requireNonNull(presence, "presence");
-    Predicate<T> narrowed = presence::test;
+    // T only flows into the predicate, so a Predicate<? super T> is a Predicate<T>
+    @SuppressWarnings("unchecked")
+    Predicate<T> narrowed = (Predicate<T>) presence;
     return new FieldSpec<>() {
       @Override
       public String name() {

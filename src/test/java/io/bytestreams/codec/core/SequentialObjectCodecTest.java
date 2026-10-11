@@ -529,4 +529,125 @@ class SequentialObjectCodecTest {
       this.tag = tag;
     }
   }
+
+  // Specs and functions declared on a supertype
+
+  static class Parent {
+    int id;
+    String note;
+
+    int getId() {
+      return id;
+    }
+
+    void setId(int id) {
+      this.id = id;
+    }
+  }
+
+  static class Child extends Parent {
+    int extra;
+  }
+
+  static class Left extends Parent {}
+
+  static class Right extends Parent {}
+
+  static final FieldSpec<Parent, Integer> PARENT_ID =
+      FieldSpec.of("id", Codecs.uint8(), p -> p.id, (p, v) -> p.id = v);
+
+  static final FieldSpec<Parent, String> PARENT_NOTE =
+      FieldSpec.of("note", Codecs.ascii(3), p -> p.note, (p, v) -> p.note = v, p -> p.id > 0);
+
+  private static SequentialObjectCodec<Child> childCodec() {
+    return SequentialObjectCodec.<Child>builder(Child::new)
+        .field(PARENT_ID)
+        .field(PARENT_NOTE)
+        .field("extra", Codecs.uint8(), c -> c.extra, (c, v) -> c.extra = v)
+        .build();
+  }
+
+  private static <T> byte[] encode(SequentialObjectCodec<T> codec, T value) throws IOException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(value, output);
+    return output.toByteArray();
+  }
+
+  @Test
+  void supertype_specs_encode_and_decode() throws IOException {
+    Child original = new Child();
+    original.id = 7;
+    original.note = "abc";
+    original.extra = 9;
+
+    byte[] bytes = encode(childCodec(), original);
+    Child decoded = childCodec().decode(new ByteArrayInputStream(bytes));
+
+    assertThat(bytes).containsExactly(7, 'a', 'b', 'c', 9);
+    assertThat(decoded.id).isEqualTo(7);
+    assertThat(decoded.note).isEqualTo("abc");
+    assertThat(decoded.extra).isEqualTo(9);
+  }
+
+  @Test
+  void supertype_presence_predicate_skips_field_when_false() throws IOException {
+    Child original = new Child();
+    original.extra = 9;
+
+    byte[] bytes = encode(childCodec(), original);
+    Child decoded = childCodec().decode(new ByteArrayInputStream(bytes));
+
+    assertThat(bytes).containsExactly(0, 9);
+    assertThat(decoded.note).isNull();
+    assertThat(decoded.extra).isEqualTo(9);
+  }
+
+  @Test
+  void supertype_specs_inspect() {
+    Child present = new Child();
+    present.id = 7;
+    present.note = "abc";
+    present.extra = 9;
+
+    assertThat(childCodec().inspect(present)).isEqualTo(Map.of("id", 7, "note", "abc", "extra", 9));
+    assertThat(childCodec().inspect(new Child())).isEqualTo(Map.of("id", 0, "extra", 0));
+  }
+
+  @Test
+  void supertype_explicit_getter_setter_and_presence() throws IOException {
+    SequentialObjectCodec<Child> codec =
+        SequentialObjectCodec.<Child>builder(Child::new)
+            .field("id", Codecs.uint8(), (Parent p) -> p.id, (Parent p, Integer v) -> p.id = v)
+            .field(
+                "note",
+                Codecs.ascii(3),
+                (Parent p) -> p.note,
+                (Parent p, String v) -> p.note = v,
+                (Parent p) -> p.id > 0)
+            .build();
+    Child original = new Child();
+    original.id = 1;
+    original.note = "xyz";
+
+    Child decoded = codec.decode(new ByteArrayInputStream(encode(codec, original)));
+
+    assertThat(decoded.note).isEqualTo("xyz");
+  }
+
+  @Test
+  void one_supertype_spec_is_shared_by_sibling_subclass_codecs() throws IOException {
+    SequentialObjectCodec<Left> left =
+        SequentialObjectCodec.<Left>builder(Left::new).field(PARENT_ID).build();
+    SequentialObjectCodec<Right> right =
+        SequentialObjectCodec.<Right>builder(Right::new)
+            .field("id", Codecs.uint8(), Parent::getId, Parent::setId)
+            .build();
+    Left l = new Left();
+    l.id = 3;
+    Right r = new Right();
+    r.id = 4;
+
+    assertThat(left.decode(new ByteArrayInputStream(encode(left, l))).id).isEqualTo(3);
+    assertThat(right.decode(new ByteArrayInputStream(encode(right, r))).id).isEqualTo(4);
+  }
 }

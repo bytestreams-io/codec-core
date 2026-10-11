@@ -3,6 +3,7 @@ package io.bytestreams.codec.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 class FieldSpecTest {
@@ -141,5 +142,26 @@ class FieldSpecTest {
     assertThatThrownBy(() -> FieldSpec.of("id", codec, TestObject::getId, TestObject::setId, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("presence");
+  }
+
+  static class Parent {
+    int id;
+  }
+
+  static class Child extends Parent {}
+
+  @Test
+  void of_accepts_functions_declared_on_supertype() {
+    Predicate<Parent> positive = p -> p.id > 0;
+    FieldSpec<Child, Integer> spec =
+        FieldSpec.of(
+            "id", Codecs.uint8(), (Parent p) -> p.id, (Parent p, Integer v) -> p.id = v, positive);
+    Child child = new Child();
+
+    assertThat(spec.presence()).isSameAs(positive);
+    assertThat(spec.presence().test(child)).isFalse();
+    spec.set(child, 5);
+    assertThat(spec.get(child)).isEqualTo(5);
+    assertThat(spec.presence().test(child)).isTrue();
   }
 }

@@ -186,6 +186,27 @@ class DataObjectTest {
     Predicate<DataObject> never = obj -> false;
     FieldSpec<Message, String> spec = DataObject.field("x", Codecs.ascii(3), never);
 
+    assertThat(spec.presence()).isSameAs(never);
     assertThat(spec.presence().test(new Message())).isFalse();
+  }
+
+  @Test
+  void supertype_presence_predicate_applies_in_codec() throws IOException {
+    Predicate<DataObject> never = obj -> false;
+    FieldSpec<Message, Integer> id = DataObject.field("id", Codecs.uint16());
+    FieldSpec<Message, String> skipped = DataObject.field("skipped", Codecs.ascii(3), never);
+    SequentialObjectCodec<Message> codec =
+        SequentialObjectCodec.<Message>builder(Message::new).field(id).field(skipped).build();
+    Message message = new Message();
+    message.set(id, 7);
+    message.set(skipped, "abc");
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    codec.encode(message, output);
+    Message decoded = codec.decode(new ByteArrayInputStream(output.toByteArray()));
+
+    assertThat(output.toByteArray()).containsExactly(0, 7);
+    assertThat(decoded.get(id)).isEqualTo(7);
+    assertThat(decoded.get(skipped)).isNull();
   }
 }

@@ -14,12 +14,6 @@ permissions:
 jobs:
   Build:
     runs-on: ubuntu-latest
-    env:
-      # Maven 3.10 only sends a server's credentials to the origins tied to its id, and 'central'
-      # is tied to repo.maven.apache.org, so snapshot deploys to central.sonatype.com get a 401.
-      # Restore id-only matching until setup-java releases mvn-server-repository-origins
-      # (actions/setup-java#1282), then replace this with that input.
-      MAVEN_ARGS: -Dmaven.repository.credentialScope=id
     steps:
       - uses: actions/checkout@v7
         with:
@@ -47,7 +41,7 @@ jobs:
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn clean verify
+        run: ./mvnw clean verify
 
       - name: Upload coverage data
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
@@ -66,7 +60,7 @@ jobs:
       - name: SonarQube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+        run: ./mvnw org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
 
       - name: Set release variable (pull request)
         if: github.event_name == 'pull_request'

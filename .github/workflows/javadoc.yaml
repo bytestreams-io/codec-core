@@ -20,7 +20,7 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - run: ./mvnw javadoc:javadoc -q
+      - run: mvn javadoc:javadoc -q
 
       - uses: actions/upload-pages-artifact@v5
         with:
